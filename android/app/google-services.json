@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "819551270360",
+    "project_id": "bees-a5c0c",
+    "storage_bucket": "bees-a5c0c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:819551270360:android:f1bc026a801070a6522ead",
+        "android_client_info": {
+          "package_name": "com.example.bees"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5R4lMmDbLPDo_JnWH39FwPlniSiEjDGo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
