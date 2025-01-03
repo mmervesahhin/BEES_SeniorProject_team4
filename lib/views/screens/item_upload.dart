@@ -150,7 +150,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
     return 'Please enter a value greater than 0';
   }
   return null;
-}
+  }
 
 
   bool _isTitleEmpty = false; // Flag to check if title is empty on submit
