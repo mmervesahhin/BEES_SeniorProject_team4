@@ -3,6 +3,9 @@ import 'package:multi_select_flutter/multi_select_flutter.dart';
 import '/views/screens/item_upload_success.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart'; // InputFormatter için gerekli
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+
 import 'dart:io';
 
 void main() {
@@ -33,6 +36,47 @@ class UploadItemPage extends StatefulWidget {
 }
 
 class _UploadItemPageState extends State<UploadItemPage> {
+    Future<void> uploadItemToFirestore(
+      String title,
+      String description,
+      String category,
+      String condition,
+      String itemType,
+      List<String> departments,
+      double price,
+      File? imageFile,
+  ) async {
+    try {
+      // Resmi Firebase Storage'a yükle
+      String? imageUrl;
+      if (imageFile != null) {
+        final ref = FirebaseStorage.instance
+            .ref()
+            .child('item_images')
+            .child('${DateTime.now().toIso8601String()}.jpg');
+
+        await ref.putFile(imageFile);
+        imageUrl = await ref.getDownloadURL();
+      }
+
+      // Firestore'a belge ekle
+      await FirebaseFirestore.instance.collection('items').add({
+        'title': title,
+        'description': description,
+        'category': category,
+        'condition': condition,
+        'itemType': itemType,
+        'departments': departments,
+        'price': price,
+        'photo': imageUrl,
+      });
+
+      print('Item successfully uploaded to Firestore!');
+    } catch (e) {
+      print('Failed to upload item: $e');
+    }
+  }
+
   // Variables for dropdowns
   String category = 'Sale';
   String itemType = 'Other';
@@ -43,7 +87,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
 
-// Image picker
+  // Image picker
   final ImagePicker _picker = ImagePicker();
   File? _image;
 
@@ -87,6 +131,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
     'FA', 'TRIN', 'PREP'
   ];
 
+  
   // Selected departments
   List<String> selectedDepartments = [];
 
@@ -120,264 +165,267 @@ class _UploadItemPageState extends State<UploadItemPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Upload Item'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Photo Upload Section
-              Row(
-                children: [
-                  _image == null 
-                      ? uploadImagePlaceholder() // Show placeholder if no image is selected
-                      : Image.file(_image!, width: 80, height: 80, fit: BoxFit.cover), // Show selected image
-                  const SizedBox(width: 16),
-                  uploadImagePlaceholder(),
-                ],
-              ),
-              const SizedBox(height: 20),
 
-              // Category Dropdown
-              const Text('Category'),
-              DropdownButton<String>(
-                value: category,
-                isExpanded: true,
-                items: ['Sale', 'Rent', 'Exchange', 'Donate']
-                    .map((value) => DropdownMenuItem(
-                          value: value,
-                          child: Text(value),
-                        ))
-                    .toList(),
-                onChanged: (newValue) {
+
+  // Function to handle "All Departments" selection
+  void toggleAllDepartments(bool isSelected) {
+    setState(() {
+      if (isSelected) {
+        // Select all departments
+        selectedDepartments = List<String>.from(departments);
+      } else {
+        // Deselect all departments
+        selectedDepartments.clear();
+      }
+    });
+  }
+
+
+
+
+
+    @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Upload Item'),
+      centerTitle: true,
+      backgroundColor: Colors.green, // AppBar'ın arka plan rengi
+      foregroundColor: Colors.white, // AppBar'daki yazı ve ikon renkleri
+    ),
+    body: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Fotoğraf Yükleme
+            const Text('Upload Photo', style: TextStyle(color: Colors.black)),
+            Row(
+              children: [
+                _image == null
+                    ? uploadImagePlaceholder() // Eğer resim yoksa placeholder göster
+                    : Image.file(
+                        _image!,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      ), // Resim varsa göster
+                const SizedBox(width: 16),
+                uploadImagePlaceholder(),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Kategori Dropdown
+            const Text('Category', style: TextStyle(color: Colors.black)),
+            DropdownButton<String>(
+              value: category,
+              isExpanded: true,
+              dropdownColor: Colors.white, // Dropdown arka plan rengi
+              items: ['Sale', 'Rent', 'Exchange', 'Donate']
+                  .map((value) => DropdownMenuItem(
+                        value: value,
+                        child: Text(value, style: const TextStyle(color: Colors.black)),
+                      ))
+                  .toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  category = newValue!;
+                  updatePriceField(); // Fiyat alanını güncelle
+                });
+              },
+            ),
+            const SizedBox(height: 10),
+
+            // Başlık Alanı
+            const Text('Title', style: TextStyle(color: Colors.black)),
+            TextFormField(
+              controller: titleController,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: 'Enter title',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            if (_isTitleEmpty)
+              const Text(
+                'Please fill in the title',
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            const SizedBox(height: 10),
+
+            // Açıklama Alanı
+            const Text('Description', style: TextStyle(color: Colors.black)),
+            TextFormField(
+              controller: descriptionController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: 'Enter description',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Item Type Dropdown
+            const Text('Item Type', style: TextStyle(color: Colors.black)),
+            DropdownButton<String>(
+              value: itemType,
+              isExpanded: true,
+              dropdownColor: Colors.white,
+              items: ['Other', 'Electronic', 'Stationary', 'Book', 'Note']
+                  .map((value) => DropdownMenuItem(
+                        value: value,
+                        child: Text(value, style: const TextStyle(color: Colors.black)),
+                      ))
+                  .toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  itemType = newValue!;
+                });
+              },
+            ),
+            const SizedBox(height: 10),
+
+            // Departman Dropdown (Multi-Select)
+            const Text('Department', style: TextStyle(color: Colors.black)),
+            MultiSelectDialogField(
+              items: [
+                MultiSelectItem('All Departments', 'All Departments'),
+                ...departments.map((dept) => MultiSelectItem(dept, dept)).toList(),
+              ],
+              initialValue: selectedDepartments,
+              title: const Text("Departments"),
+              buttonText: const Text("Select Departments"),
+              onConfirm: (results) {
+              setState(() {
+                if (results.contains('All Departments')) {
+                  selectedDepartments = List<String>.from(departments); // Tüm departmanları ekler
+                } else {
+                  selectedDepartments = 
+                      List<String>.from(results.where((item) => item != 'All Departments')); // Sadece seçili olanları ekler
+                }
+              });
+            },
+              chipDisplay: MultiSelectChipDisplay(
+              onTap: (item) {
+                setState(() {
+                  selectedDepartments.remove(item);
+                });
+              },
+            ),
+            searchable: true,
+            listType: MultiSelectListType.CHIP,
+
+            
+            onSelectionChanged: (results) {
+            setState(() {
+              if (results.contains('All Departments')) {
+        selectedDepartments = List.from(departments);
+              } else {
+                selectedDepartments = results
+                .where((item) => item != 'All Departments')
+                .map((item) => item as String) // Türü açıkça belirt
+                .toList();
+              }
+            });
+          },
+
+            ),
+            const SizedBox(height: 10),
+
+            // Şart Dropdown
+            const Text('Condition', style: TextStyle(color: Colors.black)),
+            DropdownButton<String>(
+              value: condition,
+              isExpanded: true,
+              dropdownColor: Colors.white,
+              items: (itemType == 'Other'
+                      ? ['New', 'Lightly Used', 'Moderately Used', 'Heavily Used', '']
+                      : ['New', 'Lightly Used', 'Moderately Used', 'Heavily Used'])
+                  .map((value) => DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, style: const TextStyle(color: Colors.black)),
+                      ))
+                  .toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  condition = newValue!;
+                });
+              },
+            ),
+            const SizedBox(height: 10),
+
+            // Fiyat Alanı
+            const Text('Price', style: TextStyle(color: Colors.black)),
+            TextFormField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                prefixText: '₺ ',
+                prefixStyle: const TextStyle(color: Colors.black),
+                hintText: 'Enter price',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            if (_isPriceEmpty)
+              const Text(
+                'Please fill in the price',
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            if (_isPriceInvalid)
+              const Text(
+                'Price must be greater than 0',
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            const SizedBox(height: 20),
+
+            // Yükleme Butonu
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green, // Buton arka plan rengi
+                  foregroundColor: Colors.white, // Buton yazı rengi
+                ),
+                onPressed: () async {
                   setState(() {
-                    category = newValue!;
-                    updatePriceField(); // Update price when category changes
-                  });
-                },
-              ),
-              const SizedBox(height: 10),
+                    _isTitleEmpty = titleController.text.isEmpty;
+                    _isPriceEmpty = priceController.text.isEmpty;
+                    _isPriceInvalid = !_isPriceEmpty &&
+                        (double.tryParse(priceController.text) == null ||
+                            double.parse(priceController.text) <= 0);
+                    if (!_isTitleEmpty && !_isPriceEmpty && !_isPriceInvalid ) {
 
-              // Title TextField (Required)
-              const Text('Title'),
-              TextFormField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Enter title',
-                ),
-                validator: titleValidator, // Apply title validator
-              ),
-              const SizedBox(height: 5),
+                       uploadItemToFirestore( // burda aslında await olmalı ama bi türlü çalışmadığı için çıkarttım
+                      titleController.text,
+                      descriptionController.text,
+                      category,
+                      condition,
+                      itemType,
+                      selectedDepartments,
+                      double.parse(priceController.text),
+                      _image,
+                    );
 
-              // Display error if title is empty after trying to upload
-              if (_isTitleEmpty && titleController.text.isEmpty)
-                const Text(
-                  'Please fill in the title',
-                  style: TextStyle(color: Colors.red, fontSize: 12),
-                ),
-              const SizedBox(height: 10),
-
-              // Description (Optional)
-              const Text('Description'),
-              TextFormField(
-                controller: descriptionController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Enter description',
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Row for Item Type and Department Dropdowns
-              Row(
-                children: [
-                  // Item Type Dropdown
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Item Type'),
-                        DropdownButton<String>(
-                          value: itemType,
-                          isExpanded: true,
-                          items: ['Other', 'Electronic', 'Stationary', 'Book', 'Note']
-                              .map((value) => DropdownMenuItem(
-                                    value: value,
-                                    child: Text(value),
-                                  ))
-                              .toList(),
-                          onChanged: (newValue) {
-                            setState(() {
-                              itemType = newValue!;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Department Dropdown (multi-select)
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Department'),
-                        MultiSelectDialogField(
-                          items: departments.map((dept) => MultiSelectItem(dept, dept)).toList(),
-                          initialValue: selectedDepartments,
-                          onConfirm: (results) {
-                            setState(() {
-                              selectedDepartments = List.from(results);
-                            });
-                          },
-                          title: const Text("Departments"),
-                          buttonText: const Text("Select Departments"),
-                          chipDisplay: MultiSelectChipDisplay.none(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              // Condition Dropdown (Empty option for some types)
-              const Text('Condition'),
-              DropdownButton<String>(
-                value: condition,
-                isExpanded: true,
-                items: (itemType == 'Other' 
-                  ? ['New', 'Lightly Used', 'Moderately Used', 'Heavily Used', ''] 
-                  : ['New', 'Lightly Used', 'Moderately Used', 'Heavily Used'])
-                    .map((value) => DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        ))
-                    .toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    condition = newValue!;
-                  });
-                },
-              ),
-              const SizedBox(height: 10),
-
-              // Row for Price Field and Payment Plan
-              Row(
-                children: [
-                  // Price Field
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Price'),
-                        TextFormField(
-                          controller: priceController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            prefixText: '₺ ',
-                          ),
-                          validator: priceValidator,
-                          readOnly: category == 'Exchange' || category == 'Donate', // Make price field readonly for certain categories
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')), // Allow only positive numbers
-                          ],
-                        ),
-                        if (_isPriceEmpty)
-                          const Text(
-                            'Please fill in the price',
-                            style: TextStyle(color: Colors.red, fontSize: 12),
-                          ),
-                        if (_isPriceInvalid)
-                          const Text(
-                            'Price must be greater than 0',
-                            style: TextStyle(color: Colors.red, fontSize: 12),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Payment Plan Dropdown (Enabled for Rent only)
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Payment Plan'),
-                        DropdownButton<String>(
-                          value: paymentPlan,
-                          isExpanded: true,
-                          items: ['Per Hour', 'Per Day', 'Per Month']
-                              .map((value) => DropdownMenuItem(
-                                    value: value,
-                                    child: Text(value),
-                                  ))
-                              .toList(),
-                          onChanged: category == 'Rent' 
-                              ? (newValue) {
-                                  setState(() {
-                                    paymentPlan = newValue!;
-                                  });
-                                }
-                              : null, // Disabled for categories other than Rent
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Upload Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                  onPressed: () {
-                    setState(() {
-                      // Check if title and price are empty or invalid
-                      _isTitleEmpty = titleController.text.isEmpty;
-                      _isPriceEmpty = priceController.text.isEmpty;
-
-                      if (category == 'Sale' || category == 'Rent'){
-                          _isPriceInvalid = !_isPriceEmpty &&
-                          (double.tryParse(priceController.text) == null ||
-                           double.parse(priceController.text) <= 0);
-                      }else if (category == 'Exchange' || category == 'Donate') {
-                        _isPriceInvalid = false; // No need to check for price for these categories
-                      } else {
-                        _isPriceInvalid = false; // Any other categories (if any)
-                      }
-
-                      
-                    });
-
-                    // Only navigate if title is not empty
-                    if (!_isTitleEmpty && !_isPriceEmpty && !_isPriceInvalid && _image != null) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => UploadSuccessPage()),
                       );
                     }
-                  },
-                  child: const Text('Upload Item', style: TextStyle(color: Colors.white)),
-                ),
+                  });
+                },
+                child: const Text('Upload Item'),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
