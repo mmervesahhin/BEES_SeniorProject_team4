@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/home_controller.dart';
+import 'package:multi_select_flutter/multi_select_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,6 +11,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<String> departmentList = [
+      'All Departments', 'AMER', 'ARCH', 'CHEM', 'COMD', 'CS', 'CTIS', 'ECON', 'EDU', 'EEE', 'ELIT', 'FA', 'GRA',
+      'HART', 'IAED', 'IE', 'IR', 'LAUD', 'LAW', 'MAN', 'MATH', 'MBG', 'ME', 'MSC', 'PHIL', 'PHYS', 'POLS', 'PREP',
+      'PSYC', 'THM', 'THR', 'TRIN'
+    ];
+
+    List<String> selectedDepartments = [];
+                  
   final HomeController _controller = HomeController();
   final TextEditingController _searchController = TextEditingController();
   Map<String, bool> _favorites = {};
@@ -18,295 +27,327 @@ class _HomeScreenState extends State<HomeScreen> {
     'priceRange': RangeValues(0, 1000),
     'condition': 'All',
     'category': 'All',
-    'itemType': 'All'
+    'itemType': 'All',
+    'departments' : [],
   };
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 59, 137, 62),
-        title: Text(
-          'BEES',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.yellow,
-          ),
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      backgroundColor: const Color.fromARGB(255, 59, 137, 62),
+      title: Text(
+        'BEES',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.yellow,
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.message),
-            onPressed: () {},
-            color: Colors.black,
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search...',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value.toLowerCase();
-                      });
-                    },
+      actions: [
+        IconButton(
+          icon: Icon(Icons.message),
+          onPressed: () {},
+          color: Colors.black,
+        ),
+      ],
+    ),
+    body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search...',
+                    border: OutlineInputBorder(),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.filter_list),
-                  onPressed: () {
-                    _showFiltersDialog();
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
                   },
                 ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: Icon(Icons.filter_list),
+                onPressed: () {
+                  _showFiltersDialog();
+                },
+              ),
+            ],
           ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _controller.getItems(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('An error occurred: ${snapshot.error}'));
-                }
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: _controller.getItems(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('An error occurred: ${snapshot.error}'));
+              }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text('No items found.'));
-                }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Center(child: Text('No items found.'));
+              }
 
-                final items = snapshot.data!.docs.where((doc) {
-                  var title = (doc['title'] ?? '').toString().toLowerCase();
-                  var price = doc['price'] ?? 0;
-                  var condition = doc['condition'] ?? 'Unknown';
-                  var category = doc['category'] ?? 'Unknown';
-                  var itemType = doc['itemType'] ?? 'Unknown';
+              final items = snapshot.data!.docs.where((doc) {
+                var title = (doc['title'] ?? '').toString().toLowerCase();
+                var price = doc['price'] ?? 0;
+                var condition = doc['condition'] ?? 'Unknown';
+                var category = doc['category'] ?? 'Unknown';
+                var itemType = doc['itemType'] ?? 'Unknown';
+                var departments = doc['departments'] ?? [];
 
-                  bool matchesSearch = title.contains(_searchQuery);
-                  bool matchesFilters = _applyFilters(price, condition, category, itemType);
+                bool matchesSearch = title.contains(_searchQuery);
+                bool matchesFilters = _applyFilters(price, condition, category, itemType, departments);
 
-                  return matchesSearch && matchesFilters;
-                }).toList();
+                return matchesSearch && matchesFilters;
+              }).toList();
 
-                items.sort((a, b) {
-                  var titleA = (a['title'] ?? '').toString().toLowerCase();
-                  var titleB = (b['title'] ?? '').toString().toLowerCase();
-                  return titleA.indexOf(_searchQuery).compareTo(titleB.indexOf(_searchQuery));
-                });
+              items.sort((a, b) {
+                var titleA = (a['title'] ?? '').toString().toLowerCase();
+                var titleB = (b['title'] ?? '').toString().toLowerCase();
+                return titleA.indexOf(_searchQuery).compareTo(titleB.indexOf(_searchQuery));
+              });
 
-                return GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 0.7,
-                  ),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    var item = items[index].data() as Map<String, dynamic>;
-                    String itemId = items[index].id;
+              return GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  var item = items[index].data() as Map<String, dynamic>;
+                  String itemId = items[index].id;
 
-                    bool isFavorited = _favorites[itemId] ?? false;
+                  bool isFavorited = _favorites[itemId] ?? false;
 
-                    String imageUrl = _controller.getImageUrl(item['photos']);
-                    String category = _controller.getCategory(item['category']);
-                    String departments = _controller.getDepartments(item['departments']);
-                    String condition = item['condition'] ?? 'Unknown';
+                  String imageUrl = _controller.getImageUrl(item['photos']);
+                  String category = _controller.getCategory(item['category']);
+                  List<String> departments = _controller.getDepartments(item['departments']);
+                  String condition = item['condition'] ?? 'Unknown';
 
-                    bool hidePrice = category.toLowerCase() == 'donation' || category.toLowerCase() == 'exchange';
+                  bool hidePrice = category.toLowerCase() == 'donation' || category.toLowerCase() == 'exchange';
 
-                    return Card(
-                      elevation: 5,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Stack(
-                        children: [
-                          Column(
-                            children: [
-                              if (imageUrl.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Image.network(
-                                    imageUrl,
-                                    height: 120,
-                                    width: 150,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              SizedBox(height: 8),
+                  return Card(
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Stack(
+                      children: [
+                        Column(
+                          children: [
+                            if (imageUrl.isNotEmpty)
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item['title'],
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                      ),
-                                      SizedBox(height: 5),
-                                      if (!hidePrice)
-                                        Row(
-                                          children: [
-                                            Text('₺${item['price']}'),
-                                            SizedBox(width: 5),
-                                            Text(
-                                              item['paymentPlan'],
-                                              style: TextStyle(fontSize: 12),
-                                            ),
-                                          ],
-                                        ),
-                                    ],
-                                  ),
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Image.network(
+                                  imageUrl,
+                                  height: 120,
+                                  width: 150,
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                              SizedBox(height: 10),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
+                            SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Color.fromARGB(255, 59, 137, 62),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        category,
-                                        style: TextStyle(color: Colors.white),
-                                      ),
+                                    Text(
+                                      item['title'],
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                     ),
-                                    SizedBox(width: 4),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: const Color.fromARGB(255, 240, 217, 11),
-                                        borderRadius: BorderRadius.circular(20),
+                                    SizedBox(height: 5),
+                                    if (!hidePrice)
+                                      Row(
+                                        children: [
+                                          Text('₺${item['price']}'),
+                                          SizedBox(width: 5),
+                                          Text(
+                                            item['paymentPlan'],
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                        ],
                                       ),
-                                      child: Text(
-                                        departments,
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),
-                              if (condition.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            ),
+                            SizedBox(height: 10),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Color.fromARGB(255, 59, 137, 62), // Green container for category
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      category,
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                  SizedBox(width: 2),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color.fromARGB(255, 240, 217, 11), // Yellow for condition
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      condition,
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            // Orange container for departments
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: Colors.orange,
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        condition,
+                                        departments[0],
                                         style: TextStyle(color: Colors.white),
                                       ),
                                     ),
-                                  ),
+                                    // Additional orange box if there are more than one department
+                                    if (departments.length > 1) ...[
+                                      SizedBox(width: 4),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange,
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          '...',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold, // This makes the text bold
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                              SizedBox(height: 10),
-                            ],
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 5,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                              child: IconButton(
-                                icon: Icon(
-                                  isFavorited ? Icons.favorite : Icons.favorite_border,
-                                  color: isFavorited ? Colors.red : Colors.grey,
-                                ),
-                                onPressed: () async {
-                                  setState(() {
-                                    _favorites[itemId] = !isFavorited;
-                                  });
-
-                                  _controller.updateFavoriteCount(itemId, !isFavorited);
-                                },
                               ),
                             ),
+                            SizedBox(height: 10),
+                          ],
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 5,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                isFavorited ? Icons.favorite : Icons.favorite_border,
+                                color: isFavorited ? Colors.red : Colors.grey,
+                              ),
+                              onPressed: () async {
+                                setState(() {
+                                  _favorites[itemId] = !isFavorited;
+                                });
+
+                                _controller.updateFavoriteCount(itemId, !isFavorited);
+                              },
+                            ),
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        // Handle item upload action here
+      },
+      backgroundColor: Color.fromARGB(255, 59, 137, 62),
+      child: Icon(Icons.add, color: Colors.white),
+    ),
+    bottomNavigationBar: Padding(
+      padding: const EdgeInsets.only(bottom: 0),
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color.fromARGB(255, 59, 137, 62),
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: FaIcon(FontAwesomeIcons.shop),
+            label: 'Items',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Requests',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_circle),
+            label: 'Profile',
           ),
         ],
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              break;
+            case 1:
+              break;
+            case 2:
+              break;
+            case 3:
+              break;
+          }
+        },
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color.fromARGB(255, 59, 137, 62),
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: FaIcon(FontAwesomeIcons.shop),
-              label: 'Items',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.assignment),
-              label: 'Requests',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.favorite),
-              label: 'Favorites',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle),
-              label: 'Profile',
-            ),
-          ],
-          onTap: (index) {
-            switch (index) {
-              case 0:
-                break;
-              case 1:
-                break;
-              case 2:
-                break;
-              case 3:
-                break;
-            }
-          },
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 
 void _showFiltersDialog() {
   // Create controllers only once for the dialog
@@ -348,8 +389,7 @@ void _showFiltersDialog() {
                           ),
                           onChanged: (value) {
                             setDialogState(() {
-                              _filters['minPrice'] =
-                                  value.isEmpty ? null : int.tryParse(value);
+                              _filters['minPrice'] = value.isEmpty ? null : double.tryParse(value);
                             });
                           },
                           enabled: _filters['category'] != 'Donation' && _filters['category'] != 'Exchange',
@@ -365,8 +405,7 @@ void _showFiltersDialog() {
                           ),
                           onChanged: (value) {
                             setDialogState(() {
-                              _filters['maxPrice'] =
-                                  value.isEmpty ? null : int.tryParse(value);
+                              _filters['maxPrice'] = value.isEmpty ? null : double.tryParse(value);
                             });
                           },
                           enabled: _filters['category'] != 'Donation' && _filters['category'] != 'Exchange',
@@ -374,6 +413,7 @@ void _showFiltersDialog() {
                       ),
                     ],
                   ),
+                  SizedBox(height: 16),
                   if (errorMessage.isNotEmpty) 
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
@@ -382,6 +422,49 @@ void _showFiltersDialog() {
                         style: TextStyle(color: Colors.red, fontSize: 12),
                       ),
                     ),
+                  SizedBox(height: 16),
+                  // Departments Section
+                  Text(
+                    'Departments',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  MultiSelectDialogField(
+                    items: departmentList.map((e) => MultiSelectItem(e, e)).toList(),
+                    initialValue: selectedDepartments.where((dept) => dept != 'All Departments').toList(),
+                    onConfirm: (values) {
+                      setDialogState(() {
+                        selectedDepartments = values;
+
+                        // If 'All Departments' is selected, select all departments and remove 'All Departments' from the list
+                        if (selectedDepartments.contains('All Departments')) {
+                          selectedDepartments = List.from(departmentList);
+                          // selectedDepartments.remove('All Departments');
+                        }
+
+                        // If no departments are selected, add 'All Departments' to the list
+                        if (selectedDepartments.isEmpty) {
+                          selectedDepartments.add('All Departments');
+                        }
+
+                        // Update the _filters['departments'] with the selected departments
+                        _filters['departments'] = selectedDepartments;
+                      });
+                    },
+                    onSelectionChanged: (selectedList) {
+                      setDialogState(() {
+                        if (selectedList.contains('All Departments') && selectedList.length == departmentList.length) {
+                          // Keep 'All Departments' selected if all are selected
+                          selectedDepartments = List.from(departmentList);
+                        } else if (!selectedList.contains('All Departments')) {
+                          // Uncheck 'All Departments' if not all are selected
+                          selectedDepartments = selectedList;
+                        }
+
+                        // Update _filters['departments'] whenever selection changes
+                        _filters['departments'] = selectedDepartments;
+                      });
+                    },
+                  ),
                   SizedBox(height: 16),
 
                   // Condition Section
@@ -466,47 +549,62 @@ void _showFiltersDialog() {
               ),
             ),
             actions: [
-              // Clear Filters Button
-              TextButton(
-                onPressed: () {
-                  setDialogState(() {
-                    _filters = {
-                      'minPrice': null,
-                      'maxPrice': null,
-                      'condition': 'All',
-                      'itemType': 'All',
-                      'category': 'All',
-                    };
-                    minPriceController.clear();
-                    maxPriceController.clear();
-                    errorMessage = ''; // Clear error when filters are cleared
-                  });
-                },
-                child: Text(
-                  'Clear Filters',
-                  style: TextStyle(color: Color.fromARGB(255, 59, 137, 62)),
-                ),
-              ),
-              // Apply Filters Button
-              TextButton(
-                onPressed: () {
-                  // Check if min price is greater than max price
-                  if (_filters['minPrice'] != null &&
-                      _filters['maxPrice'] != null &&
-                      _filters['minPrice'] > _filters['maxPrice']) {
-                    setDialogState(() {
-                      errorMessage =
-                          'Min price value cannot be smaller than the max price value!';
-                    });
-                  } else {
-                    setState(() {}); // Apply filters globally
-                    Navigator.pop(context);
-                  }
-                },
-                child: Text(
-                  'Apply Filters',
-                  style: TextStyle(color: Color.fromARGB(255, 59, 137, 62)),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setDialogState(() {
+                        _filters = {
+                          'minPrice': null,
+                          'maxPrice': null,
+                          'condition': 'All',
+                          'itemType': 'All',
+                          'category': 'All',
+                          'selectedDepartments': [],
+                        };
+                        minPriceController.clear();
+                        maxPriceController.clear();
+                        errorMessage = ''; // Clear error when filters are cleared
+
+                        // Reset selected departments to none (unselect everything)
+                        selectedDepartments = [];
+                      });
+                    },
+                    child: Text(
+                      'Clear Filters',
+                      style: TextStyle(color: Color.fromARGB(255, 59, 137, 62)),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                   TextButton(
+                    onPressed: () {
+                      // Check if min price or max price is negative
+                      if ((_filters['minPrice'] != null && _filters['minPrice'] < 0) ||
+                          (_filters['maxPrice'] != null && _filters['maxPrice'] < 0)) {
+                        setDialogState(() {
+                          errorMessage = 'Price values cannot be negative!';
+                        });
+                      } 
+                      // Check if min price is greater than max price
+                      else if (_filters['minPrice'] != null &&
+                          _filters['maxPrice'] != null &&
+                          _filters['minPrice'] > _filters['maxPrice']) {
+                        setDialogState(() {
+                          errorMessage =
+                              'Min price value cannot be smaller than the max price value!';
+                        });
+                      } else {
+                        setState(() {}); // Apply filters globally
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: Text(
+                      'Apply Filters',
+                      style: TextStyle(color: Color.fromARGB(255, 59, 137, 62)),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
@@ -516,7 +614,13 @@ void _showFiltersDialog() {
   );
 }
 
- bool _applyFilters(int price, String condition, String category, String itemType) {
+bool _applyFilters(
+  int price, 
+  String condition, 
+  String category, 
+  String itemType, 
+  List<dynamic> selectedDepartments // The departments parameter should be a list of selected departments
+) {
   bool priceValid = true;
 
   // Only apply price filter if minPrice and maxPrice are not null
@@ -524,10 +628,18 @@ void _showFiltersDialog() {
     priceValid = price >= _filters['minPrice']! && price <= _filters['maxPrice']!;
   }
 
-  // Apply other filters for condition, category, and item type
+  // Apply filters for condition, category, item type, and departments
+  bool departmentValid = true;
+  if (_filters['departments'] != null && _filters['departments'].isNotEmpty) {
+    // Check if any of the selected departments match the departments filter
+    departmentValid = selectedDepartments.any((dept) => _filters['departments']!.contains(dept)) || _filters['departments']!.contains('All Departments');
+  }
+
+  // Return true if all filters are valid
   return priceValid &&
       (condition == _filters['condition'] || _filters['condition'] == 'All') &&
       (category == _filters['category'] || _filters['category'] == 'All') &&
-      (itemType == _filters['itemType'] || _filters['itemType'] == 'All');
+      (itemType == _filters['itemType'] || _filters['itemType'] == 'All') &&
+      departmentValid;
 }
 }

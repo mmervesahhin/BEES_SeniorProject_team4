@@ -11,7 +11,7 @@ class HomeController {
     double? minPrice,
     double? maxPrice,
     String? category,
-    String? department,
+    List<String>? departments,
     String? condition,
   }) {
     // Start with the basic collection reference
@@ -27,8 +27,8 @@ class HomeController {
     if (category != null) {
       query = query.where('category', isEqualTo: category);
     }
-    if (department != null) {
-      query = query.where('departments', arrayContains: department);
+    if (departments != null && departments.isNotEmpty) {
+      query = query.where('departments', arrayContainsAny: departments); 
     }
     if (condition != null) {
       query = query.where('condition', isEqualTo: condition);
@@ -50,11 +50,12 @@ class HomeController {
     return category;
   }
 
-  // This function takes a list of departments and returns them as a comma-separated string
-  String getDepartments(List<dynamic> departments) {
-    // Join all the department names into a single string, separated by commas
-    return departments.join(', ');
+  // This function takes a list of departments and returns the same list as a list of strings
+  List<String> getDepartments(List<dynamic> departments) {
+    // Simply return the departments list as a list of strings
+    return List<String>.from(departments);
   }
+
 
   // This method is used to update the favorite count for an item
   Future<void> updateFavoriteCount(String itemId, bool isFavorited) async {
