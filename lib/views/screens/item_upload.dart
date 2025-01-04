@@ -44,21 +44,35 @@ class _UploadItemPageState extends State<UploadItemPage> {
       String itemType,
       List<String> departments,
       double price,
-      File? imageFile,
+      File? imageFileCover,
       String? paymentPlan, // Payment Plan 
+      List<File> additionalImages,
   ) async {
     try {
       // Resmi Firebase Storage'a yükle
-      String? imageUrl;
-      if (imageFile != null) {
+      String? imageUrlCover;
+      if (imageFileCover != null) {
         final ref = FirebaseStorage.instance
             .ref()
             .child('item_images')
             .child('${DateTime.now().toIso8601String()}.jpg');
 
-        await ref.putFile(imageFile);
-        imageUrl = await ref.getDownloadURL();
+        await ref.putFile(imageFileCover);
+        imageUrlCover = await ref.getDownloadURL();
       }
+
+        // Upload additional images to Firebase Storage
+        List<String> additionalImageUrls = [];
+        for (File image in additionalImages) {
+          final ref = FirebaseStorage.instance
+              .ref()
+              .child('item_images')
+              .child('${DateTime.now().toIso8601String()}_additional.jpg');
+    
+          await ref.putFile(image);
+          String imageUrl = await ref.getDownloadURL();
+          additionalImageUrls.add(imageUrl);
+        }
 
       // Firestore'a belge ekle
       await FirebaseFirestore.instance.collection('items').add({
@@ -70,9 +84,9 @@ class _UploadItemPageState extends State<UploadItemPage> {
         'departments': departments,
         'price': price,
         'paymentPlan': paymentPlan, // Payment Plan
-        'photo': imageUrl,
+        'photo': imageUrlCover,
+        'additionalPhotos': additionalImageUrls,
       });
-
       print('Item successfully uploaded to Firestore!');
     } catch (e) {
       print('Failed to upload item: $e');
@@ -91,7 +105,10 @@ class _UploadItemPageState extends State<UploadItemPage> {
 
   // Image picker
   final ImagePicker _picker = ImagePicker();
-  File? _image;
+  File? _imageCover;
+
+  // List to hold additional images
+  List<File> _additionalImages = [];
 
   // Title validator
   String? titleValidator(String? value) {
@@ -102,7 +119,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
   }
 
   // Placeholder for uploaded image
-  Widget uploadImagePlaceholder() {
+  Widget uploadCoverImagePlaceholder() {
     return GestureDetector(
       onTap: () => _pickImage(),  // Trigger image picker when placeholder is tapped
       child: Container(
@@ -116,14 +133,78 @@ class _UploadItemPageState extends State<UploadItemPage> {
       ),
     );
   }
-  // Method to pick an image from gallery or camera
+
+  // Placeholder for adding multiple photos
+  Widget addMorePhotosPlaceholder() {
+    return GestureDetector(
+      onTap: () => _pickAdditionalImage(), // Trigger additional image picker
+      child: Container(
+        width: 60, // Smaller size
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.green[300], // Lighter green
+          borderRadius: BorderRadius.circular(8), // Rounded corners
+        ),
+        child: const Center(
+          child: Icon(Icons.add, size: 30, color: Colors.white), // + symbol
+        ),
+      ),
+    );
+  }
+
+  // Method to pick an additional image with size validation
+  Future<void> _pickAdditionalImage() async {
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final selectedImage = File(pickedFile.path);
+
+      if (isImageSizeValid(selectedImage)) {
+        setState(() {
+          _additionalImages.add(selectedImage);
+        });
+      } else {
+        // Show error if image exceeds 5MB
+        _showImageSizeError();
+      }
+    }
+  }
+
+  // Method to pick the cover image with size validation
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
+      final selectedImage = File(pickedFile.path);
+  
+      if (isImageSizeValid(selectedImage)) {
+        setState(() {
+          _imageCover = selectedImage;
+        });
+      } else {
+        // Show error if image exceeds 5MB
+        _showImageSizeError();
+      }
     }
+  }
+
+  // Function to show an error dialog or message if the image exceeds the size limit
+  void _showImageSizeError() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: const Text('The selected image exceeds the 5MB size limit. Please choose a smaller image.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // Department list for multi-select dropdown
@@ -156,6 +237,18 @@ class _UploadItemPageState extends State<UploadItemPage> {
   bool _isTitleEmpty = false; // Flag to check if title is empty on submit
   bool _isPriceEmpty = false; // Flag for empty price field
   bool _isPriceInvalid = false; // Flag for invalid price (e.g., <= 0)
+  bool _isCoverPhotoMissing = false; // Flag for cover photo missing
+  // Update to disable price field when category is 'Donate' or 'Exchange'
+  bool isPriceFieldDisabled() {
+    return category == 'Donate' || category == 'Exchange';
+  }
+  // Function to check if the image size is under 5MB
+  bool isImageSizeValid(File imageFile) {
+    final fileSize = imageFile.lengthSync();
+    print('Selected image size: ${fileSize / (1024 * 1024)} MB'); 
+    const maxSizeInBytes = 5 * 1024 * 1024; // 5MB in bytes
+    return fileSize <= maxSizeInBytes;
+  }
 
   // Update the price based on selected category
   void updatePriceField() {
@@ -194,25 +287,84 @@ class _UploadItemPageState extends State<UploadItemPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Fotoğraf Yükleme
-                const Text('Upload Photo', style: TextStyle(color: Colors.black)),
+                const Text('Upload Photo* and Additional Photos', style: TextStyle(color: Colors.black)),
                 Row(
                   children: [
-                    _image == null
-                        ? uploadImagePlaceholder() // Eğer resim yoksa placeholder göster
-                        : Image.file(
-                            _image!,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
+                    _imageCover == null
+                        ? uploadCoverImagePlaceholder() // Eğer resim yoksa placeholder göster
+                        : Stack(
+                            clipBehavior: Clip.none, // Button dışarı taşsın diye
+                            children: [
+                              Image.file(
+                                _imageCover!,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                top: -7,
+                                right: -7,
+                                child: IconButton(
+                                  icon: Icon(Icons.delete, color: Colors.red, size: 20),
+                                  onPressed: () {
+                                    setState(() {
+                                      _imageCover = null; // Cover fotoğrafı sil
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
                           ), // Resim varsa göster
                     const SizedBox(width: 16),
-                    uploadImagePlaceholder(),
+                    addMorePhotosPlaceholder(),
                   ],
                 ),
+
+                if (_isCoverPhotoMissing)
+                  const Text(
+                    'Please add a cover photo',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                const SizedBox(height: 20),
+
+                // Display additional images
+                const Text('Additional Photos', style: TextStyle(color: Colors.black)),
+                Wrap(
+                  spacing: 8, // Horizontal spacing
+                  runSpacing: 8, // Vertical spacing
+                  children: _additionalImages
+                      .map((image) => Stack(
+                            clipBehavior: Clip.none, // To allow the button to go outside the image
+                            children: [
+                              // Display the image
+                              Image.file(
+                                image,
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                              ),
+                              // Delete button
+                              Positioned(
+                                top: -7,
+                                right: -7,
+                                child: IconButton(
+                                  icon: Icon(Icons.delete, color: Colors.red, size: 20),
+                                  onPressed: () {
+                                    setState(() {
+                                      _additionalImages.remove(image); // Remove the image from the list
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ))
+                      .toList(),
+                ),
+
                 const SizedBox(height: 20),
 
                 // Kategori Dropdown
-                const Text('Category', style: TextStyle(color: Colors.black)),
+                const Text('Category*', style: TextStyle(color: Colors.black)),
                 DropdownButton<String>(
                   value: category,
                   isExpanded: true,
@@ -233,7 +385,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
                 const SizedBox(height: 10),
 
                 // Başlık Alanı
-                const Text('Title', style: TextStyle(color: Colors.black)),
+                const Text('Title*', style: TextStyle(color: Colors.black)),
                 TextFormField(
                   controller: titleController,
                   decoration: InputDecoration(
@@ -351,45 +503,13 @@ class _UploadItemPageState extends State<UploadItemPage> {
 
               Row(
                 children: [
-                  // Payment Plan Dropdown
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Payment Plan', style: TextStyle(color: Colors.black)),
-                        DropdownButton<String>(
-                          value: paymentPlan,
-                          isExpanded: true,
-                          items: ['Per Hour', 'Per Day']
-                              .map((value) => DropdownMenuItem(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(color: Colors.black)),
-                                  ))
-                              .toList(),
-                          onChanged: category == 'Rent'
-                              ? (newValue) {
-                                  setState(() {
-                                    paymentPlan = newValue!;
-                                  });
-                                }
-                              : null, // Eğer Rent seçili değilse disable
-                          disabledHint: const Text(
-                            'Not available',
-                            style: TextStyle(color: Colors.grey),
-                          ), // Devre dışı olduğunda gösterilecek metin
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16), // İki alan arasında boşluk
                   // Price TextField
                   Expanded(
                     flex: 1,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Price (₺)', style: TextStyle(color: Colors.black)),
+                        const Text('Price* (₺)', style: TextStyle(color: Colors.black)),
                         TextFormField(
                           controller: priceController,
                           keyboardType: TextInputType.number,
@@ -399,6 +519,44 @@ class _UploadItemPageState extends State<UploadItemPage> {
                             prefixStyle: const TextStyle(color: Colors.black),
                             hintText: 'Enter price',
                             hintStyle: TextStyle(color: Colors.grey[600]),
+                          ),
+                          enabled: !isPriceFieldDisabled(), // Disable when category is 'Donate' or 'Exchange'
+                          validator: priceValidator,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16), // Space between fields
+              
+                  // Payment Plan Dropdown with opacity change
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Payment Plan', style: TextStyle(color: Colors.black)),
+                        Opacity(
+                          opacity: category == 'Rent' ? 1.0 : 0.5,  // Adjust opacity based on category
+                          child: DropdownButton<String>(
+                            value: paymentPlan,
+                            isExpanded: true,
+                            items: ['Per Hour', 'Per Day', 'Per Month']
+                                .map((value) => DropdownMenuItem(
+                                      value: value,
+                                      child: Text(value, style: const TextStyle(color: Colors.black)),
+                                    ))
+                                .toList(),
+                            onChanged: category == 'Rent'
+                                ? (newValue) {
+                                    setState(() {
+                                      paymentPlan = newValue!;
+                                    });
+                                  }
+                                : null, // Disable when Rent is not selected
+                            disabledHint: const Text(
+                              'Not available',
+                              style: TextStyle(color: Colors.grey),
+                            ),
                           ),
                         ),
                       ],
@@ -433,10 +591,10 @@ class _UploadItemPageState extends State<UploadItemPage> {
                         _isTitleEmpty = titleController.text.isEmpty;
                         _isPriceEmpty = priceController.text.isEmpty;
                         _isPriceInvalid = !_isPriceEmpty &&
-                            (double.tryParse(priceController.text) == null ||
-                                double.parse(priceController.text) <= 0);
-                        if (!_isTitleEmpty && !_isPriceEmpty && !_isPriceInvalid ) {
-
+                        (double.tryParse(priceController.text) == null ||
+                        (double.parse(priceController.text) <= 0 && category != 'Donate' && category != 'Exchange'));
+                         _isCoverPhotoMissing = _imageCover == null;
+                        if (!_isTitleEmpty && !_isPriceEmpty && !_isPriceInvalid && !_isCoverPhotoMissing) {
                               uploadItemToFirestore( // burda aslında await olmalı ama bi türlü çalışmadığı için çıkarttım
                           titleController.text,
                           descriptionController.text,
@@ -445,8 +603,9 @@ class _UploadItemPageState extends State<UploadItemPage> {
                           itemType,
                           selectedDepartments,
                           double.parse(priceController.text),
-                          _image,
+                          _imageCover,
                           category == 'Rent' ? paymentPlan : null, // Rent değilse null gönderiliyor
+                           _additionalImages,
                         );
 
                           Navigator.push(
@@ -465,5 +624,4 @@ class _UploadItemPageState extends State<UploadItemPage> {
         ),
       );
     }
-
 }
