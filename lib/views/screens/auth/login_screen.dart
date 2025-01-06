@@ -1,4 +1,4 @@
-import 'package:bees/register_screen.dart';
+import 'package:bees/views/screens/auth/register_screen.dart';
 import 'package:bees/views/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
