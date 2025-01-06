@@ -1,3 +1,4 @@
+import 'package:bees/views/screens/item_upload.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -305,7 +306,10 @@ Widget build(BuildContext context) {
     ),
     floatingActionButton: FloatingActionButton(
       onPressed: () {
-        // Handle item upload action here
+        Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UploadItemPage()),
+                );
       },
       backgroundColor: Color.fromARGB(255, 59, 137, 62),
       child: Icon(Icons.add, color: Colors.white),
