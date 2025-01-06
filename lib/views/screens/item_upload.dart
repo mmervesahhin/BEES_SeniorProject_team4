@@ -86,6 +86,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
         'paymentPlan': paymentPlan, // Payment Plan
         'photo': imageUrlCover,
         'additionalPhotos': additionalImageUrls,
+        'favoriteCount': 0,
       });
       print('Item successfully uploaded to Firestore!');
     } catch (e) {
@@ -208,11 +209,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
   }
 
   // Department list for multi-select dropdown
-  List<String> departments = [
-    'CTIS', 'CS', 'COMD', 'CHEM', 'MBG', 'PHYS', 'ARCH', 'IAED', 'IR', 'POLS', 
-    'PSYC', 'ME', 'MAN', 'IE', 'EEE', 'AMER', 'ELIT', 'GRA', 'PHIL', 'THM', 'MUS', 
-    'FA', 'TRIN', 'PREP'
-  ];
+  List<String> departments = ['AMER', 'ARCH', 'CHEM', 'COMD', 'CS', 'CTIS', 'ECON', 'EDU', 'EEE', 'ELIT', 'FA', 'GRA', 'HART', 'IAED', 'IE', 'IR', 'LAUD', 'LAW', 'MAN', 'MATH', 'MBG', 'ME', 'MSC', 'PHIL', 'PHYS', 'POLS', 'PREP', 'PSYC', 'THM','THR','TRIN'];
   
   // Selected departments
   List<String> selectedDepartments = [];
@@ -420,7 +417,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
                   value: itemType,
                   isExpanded: true,
                   dropdownColor: Colors.white,
-                  items: ['Other', 'Electronic', 'Stationary', 'Book', 'Note']
+                  items: [ 'Notes', 'Books', 'Electronics', 'Stationary', 'Other']
                       .map((value) => DropdownMenuItem(
                             value: value,
                             child: Text(value, style: const TextStyle(color: Colors.black)),
@@ -594,6 +591,12 @@ class _UploadItemPageState extends State<UploadItemPage> {
                         (double.tryParse(priceController.text) == null ||
                         (double.parse(priceController.text) <= 0 && category != 'Donate' && category != 'Exchange'));
                          _isCoverPhotoMissing = _imageCover == null;
+
+                        // Default to all departments if none are selected
+                        if (selectedDepartments.isEmpty) {
+                          selectedDepartments = List<String>.from(departments);
+                        }
+
                         if (!_isTitleEmpty && !_isPriceEmpty && !_isPriceInvalid && !_isCoverPhotoMissing) {
                               uploadItemToFirestore( // burda aslında await olmalı ama bi türlü çalışmadığı için çıkarttım
                           titleController.text,
