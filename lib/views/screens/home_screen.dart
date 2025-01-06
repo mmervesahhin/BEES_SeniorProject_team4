@@ -130,7 +130,7 @@ Widget build(BuildContext context) {
 
                   bool isFavorited = _favorites[itemId] ?? false;
 
-                  String imageUrl = _controller.getImageUrl(item['photos']);
+                  String imageUrl = _controller.getImageUrl(item['photo']);
                   String category = _controller.getCategory(item['category']);
                   List<String> departments = _controller.getDepartments(item['departments']);
                   String condition = item['condition'] ?? 'Unknown';
@@ -174,6 +174,7 @@ Widget build(BuildContext context) {
                                         children: [
                                           Text('₺${item['price']}'),
                                           SizedBox(width: 5),
+                                          if (item['paymentPlan'] != null)
                                           Text(
                                             item['paymentPlan'],
                                             style: TextStyle(fontSize: 12),
@@ -481,6 +482,7 @@ void _showFiltersDialog() {
                     },
                     items: <String>[
                       'All',
+                      'New',
                       'Lightly Used',
                       'Moderately Used',
                       'Heavily Used'
@@ -507,7 +509,8 @@ void _showFiltersDialog() {
                     },
                     items: <String>[
                       'All',
-                      'Book',
+                      'Notes',
+                      'Books',
                       'Electronics',
                       'Stationery',
                       'Other'
@@ -536,8 +539,9 @@ void _showFiltersDialog() {
                       'All',
                       'Sale',
                       'Rent',
-                      'Donation',
-                      'Exchange'
+                      'Exchange',
+                      'Donation'
+                      
                     ].map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -615,7 +619,7 @@ void _showFiltersDialog() {
 }
 
 bool _applyFilters(
-  int price, 
+  double price, 
   String condition, 
   String category, 
   String itemType, 

@@ -39,9 +39,9 @@ class HomeController {
   }
 
   // This function returns the URL of the first image in the 'photos' field
-  String getImageUrl(List<dynamic> photos) {
+  String getImageUrl(String photo) {
     // If 'photos' list is not empty, return the first image URL
-    return photos.isNotEmpty ? photos[0] : '';
+    return photo;
   }
 
   // This function returns the category of the item (could be extended for more complex logic)
