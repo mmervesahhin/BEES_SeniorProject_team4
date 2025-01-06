@@ -1,3 +1,4 @@
+import 'package:bees/views/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -93,7 +94,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           );
         }
 
-        Navigator.pushNamed(context, '/login');
+        Navigator.pushNamed(context, '/bees/views/screens/auth/login_screen.dart');
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to register: $e')),
@@ -270,6 +271,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   GestureDetector(
                     onTap: () {
                       //for now do nothing, berke'ninkiyle birleştirince login direct et.
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),);
                     },
                     child: Text(
                       'Already registered? Click here to login.',

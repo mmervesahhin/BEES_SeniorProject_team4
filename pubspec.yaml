@@ -38,6 +38,8 @@ dependencies:
   firebase_core: ^3.9.0
   firebase_auth: ^5.3.4
   firebase_storage: ^12.3.7
+  #webview_flutter_plus: ^0.4.10
+  #flutter_recaptcha_v2: ^1.0.0
 
 dev_dependencies:
   flutter_test:
