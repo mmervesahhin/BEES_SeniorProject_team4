@@ -136,7 +136,7 @@ Widget build(BuildContext context) {
                   List<String> departments = _controller.getDepartments(item['departments']);
                   String condition = item['condition'] ?? 'Unknown';
 
-                  bool hidePrice = category.toLowerCase() == 'donation' || category.toLowerCase() == 'exchange';
+                  bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
 
                   return Card(
                     elevation: 5,

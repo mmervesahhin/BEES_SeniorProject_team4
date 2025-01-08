@@ -1,12 +1,23 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.4'  // or your required version
+        classpath 'com.google.gms:google-services:4.3.15'  // Correct placement here
+    }
+}
+
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
     id 'com.google.gms.google-services'  // Correctly applied here
 }
 
 android {
+    ndkVersion = "25.1.8937393"
     namespace = "com.example.bees"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -46,9 +57,5 @@ dependencies {
   // Add Firebase dependencies here, e.g.
   implementation 'com.google.firebase:firebase-analytics'
 
-  // Ensure Google Services plugin is included
-  classpath 'com.google.gms:google-services:4.3.15'
+  // No need to include 'classpath' in dependencies here
 }
-
-// Apply the Google Services plugin at the bottom of the file
-apply plugin: 'com.google.gms.google-services'
