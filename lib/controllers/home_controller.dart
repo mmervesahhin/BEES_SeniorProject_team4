@@ -59,4 +59,28 @@ class HomeController {
     });
   }
   
+  bool applyFilters(
+    double price,
+    String condition,
+    String category,
+    String itemType,
+    List<dynamic> selectedDepartments,
+    Map<String, dynamic> filters,
+  ) {
+    bool priceValid = true;
+    if (filters['minPrice'] != null && filters['maxPrice'] != null) {
+      priceValid = price >= filters['minPrice']! && price <= filters['maxPrice']!;
+    }
+
+    bool departmentValid = true;
+    if (filters['departments'] != null && filters['departments'].isNotEmpty) {
+      departmentValid = selectedDepartments.any((dept) => filters['departments']!.contains(dept)) || filters['departments']!.contains('All Departments');
+    }
+
+    return priceValid &&
+        (condition == filters['condition'] || filters['condition'] == 'All') &&
+        (category == filters['category'] || filters['category'] == 'All') &&
+        (itemType == filters['itemType'] || filters['itemType'] == 'All') &&
+        departmentValid;
+  }
 }

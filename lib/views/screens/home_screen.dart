@@ -106,7 +106,7 @@ Widget build(BuildContext context) {
                 var departments = doc['departments'] ?? [];
 
                 bool matchesSearch = title.contains(_searchQuery);
-                bool matchesFilters = _applyFilters(price, condition, category, itemType, departments);
+                bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
 
                 return matchesSearch && matchesFilters;
               }).toList();
@@ -620,34 +620,5 @@ void _showFiltersDialog() {
       );
     },
   );
-}
-
-bool _applyFilters(
-  double price, 
-  String condition, 
-  String category, 
-  String itemType, 
-  List<dynamic> selectedDepartments // The departments parameter should be a list of selected departments
-) {
-  bool priceValid = true;
-
-  // Only apply price filter if minPrice and maxPrice are not null
-  if (_filters['minPrice'] != null && _filters['maxPrice'] != null) {
-    priceValid = price >= _filters['minPrice']! && price <= _filters['maxPrice']!;
-  }
-
-  // Apply filters for condition, category, item type, and departments
-  bool departmentValid = true;
-  if (_filters['departments'] != null && _filters['departments'].isNotEmpty) {
-    // Check if any of the selected departments match the departments filter
-    departmentValid = selectedDepartments.any((dept) => _filters['departments']!.contains(dept)) || _filters['departments']!.contains('All Departments');
-  }
-
-  // Return true if all filters are valid
-  return priceValid &&
-      (condition == _filters['condition'] || _filters['condition'] == 'All') &&
-      (category == _filters['category'] || _filters['category'] == 'All') &&
-      (itemType == _filters['itemType'] || _filters['itemType'] == 'All') &&
-      departmentValid;
 }
 }
