@@ -1,17 +1,7 @@
 import 'package:bees/views/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-Future<void> sendVerificationEmail(String email) async {
-  final auth = FirebaseAuth.instance;
-  User? user = auth.currentUser;
-
-  try {
-    await user?.sendEmailVerification();
-  } catch (e) {
-    // Handle error
-  }
-}
+import 'package:bees/controllers/register_controller.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -29,6 +19,21 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _passwordController = TextEditingController();
   bool _termsAccepted = false;
 
+  late RegisterController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = RegisterController(
+      formKey: _formKey,
+      firstNameController: _firstNameController,
+      lastNameController: _lastNameController,
+      emailController: _emailController,
+      passwordController: _passwordController,
+      context: context,
+    );
+  }
+
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -37,75 +42,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _passwordController.dispose();
     super.dispose();
   }
-
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your email';
-    }
-    if (!RegExp(r"^[a-zA-Z0-9._%+-]+@(?:ug\.)?bilkent\.edu\.tr$").hasMatch(value)) {
-      return 'Enter a valid Bilkent email address';
-    }
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your password';
-    }
-    if (value.length < 8 || value.length > 16) {
-      return 'Password must be between 8 and 16 characters';
-    }
-    if (!RegExp(r"(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$%^&*])").hasMatch(value)) {
-      return 'Password must contain at least one uppercase letter, one digit, and one special character';
-    }
-    return null;
-  }
-
-  String? _validateName(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'This field is required';
-    }
-    if (value.length < 2 || value.length > 16) {
-      return 'Name must be between 2 and 16 characters';
-    }
-    return null;
-  }
-
-  void _submitForm() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      if (!_termsAccepted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('You must accept the terms and conditions')),
-        );
-        return;
-      }
-
-      try {
-        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text,
-          password: _passwordController.text,
-        );
-
-        User? user = userCredential.user;
-        if (user != null && !user.emailVerified) {
-          await user.sendEmailVerification();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Verification email sent! Please check your inbox.')),
-          );
-        }
-
-        Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to register: $e')),
-        );
-      }
-    }
-  }
-
+  
   void _showTermsPopup() {
     showDialog(
       context: context,
@@ -140,6 +77,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   onPressed: () {
                     setState(() {
                       _termsAccepted = true;
+                      _controller.termsAccepted = true; // Sync with controller
                     });
                     Navigator.of(context).pop();
                   },
@@ -191,7 +129,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    validator: _validateName,
+                    validator: _controller.validateName,
                   ),
                   SizedBox(height: 10),
                   TextFormField(
@@ -203,7 +141,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    validator: _validateName,
+                    validator: _controller.validateName,
                   ),
                   SizedBox(height: 10),
                   TextFormField(
@@ -215,7 +153,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    validator: _validateEmail,
+                    validator: _controller.validateEmail,
                   ),
                   SizedBox(height: 10),
                   TextFormField(
@@ -228,7 +166,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    validator: _validatePassword,
+                    validator: _controller.validatePassword,
                   ),
                   SizedBox(height: 20),
                   Row(
@@ -264,7 +202,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ),
                       padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                     ),
-                    onPressed: _submitForm,
+                    onPressed: _controller.submitForm,
                     child: Text(
                       'Register',
                       style: TextStyle(fontSize: 16, color: Colors.white),

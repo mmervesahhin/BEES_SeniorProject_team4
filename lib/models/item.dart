@@ -12,7 +12,7 @@ class Item {
   final String itemType;
   final String paymentPlan;
   final String itemStatus; //string olması uygun mu yoksa int mi olmalı?
-  final int itemOwnerId; //userId int olacak değil mi?
+  final String itemOwnerId; 
 
   Item({
     required this.title,
@@ -44,7 +44,7 @@ class Item {
       itemType: json['itemType'] as String,
       paymentPlan: json['paymentPlan'] as String,
       itemStatus: json['itemStatus'] as String,
-      itemOwnerId: json['itemOwnerId'] as int,
+      itemOwnerId: json['itemOwnerId'] as String,
     );
   }
   
