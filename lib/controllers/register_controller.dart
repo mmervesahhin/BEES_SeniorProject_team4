@@ -1,9 +1,10 @@
+import 'package:bees/models/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:bees/views/screens/auth/login_screen.dart';
 import 'package:bcrypt/bcrypt.dart'; // Importing bcrypt package
-import 'package:bees/models/user.dart';
+import 'package:bees/models/user.dart' as bees;
 
 class RegisterController {
   final GlobalKey<FormState> formKey;
@@ -56,7 +57,7 @@ class RegisterController {
     return null;
   }
 
-  void submitForm() async {
+ void submitForm() async {
   if (formKey.currentState?.validate() ?? false) {
     if (!termsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -66,51 +67,56 @@ class RegisterController {
     }
 
     try {
-      // Hash the password
-       String hashedPassword = BCrypt.hashpw(passwordController.text, BCrypt.gensalt());
-
-      // Create a new User object
-      User newUser = User(
-        userID: auth.FirebaseAuth.instance.currentUser?.uid ?? '',  // Get the user ID from Firebase Auth
-        firstName: firstNameController.text,
-        lastName: lastNameController.text,
-        emailAddress: emailController.text,
-        hashedPassword: hashedPassword,
-        profilePicture: '',  // Default or empty, could be updated later
-        userRating: 0.0,      // Default rating, can be updated later
-        accountStatus: 'active',  // Default status
-      );
-
-      // Save user data to Firestore
-      await FirebaseFirestore.instance.collection('users').doc(newUser.userID).set(newUser.toMap());
-
-      // Optionally, you can also update the user's profile picture here after registration
-      // For example, if they uploaded a profile picture.
-
-      // Send email verification
+      // Create user in Firebase Authentication
       auth.UserCredential userCredential = await auth.FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
       auth.User? user = userCredential.user;
-      if (user != null && !user.emailVerified) {
+      if (user != null) {
+        // Send email verification
         await user.sendEmailVerification();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Verification email sent! Please check your inbox.')),
         );
-      }
 
-      // Navigate to Login screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+        // Wait until the user verifies their email
+        await Future.doWhile(() async {
+          await user?.reload(); // Refresh user data
+          user = auth.FirebaseAuth.instance.currentUser;
+          return !(user?.emailVerified ?? false); // Keep looping until email is verified
+        });
+
+        // Hash the password before storing
+        String hashedPassword = BCrypt.hashpw(passwordController.text, BCrypt.gensalt());
+
+        // Create a new User object
+        User newUser = User(
+          userID: user!.uid,  // Get the user ID from Firebase Auth
+          firstName: firstNameController.text,
+          lastName: lastNameController.text,
+          emailAddress: emailController.text,
+          hashedPassword: hashedPassword,
+          profilePicture: '',  // Default or empty, could be updated later
+          userRating: 0.0,      // Default rating, can be updated later
+          accountStatus: 'active',  // Default status
+        );
+
+        // Save user data to Firestore
+        await FirebaseFirestore.instance.collection('users').doc(newUser.userID).set(newUser.toMap());
+
+        // Navigate to Login screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to register: $e')),
       );
     }
   }
-}
-}
+
+}}
