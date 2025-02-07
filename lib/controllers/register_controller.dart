@@ -101,6 +101,7 @@ class RegisterController {
           profilePicture: '',  // Default or empty, could be updated later
           userRating: 0.0,      // Default rating, can be updated later
           accountStatus: 'active',  // Default status
+          isAdmin: false,       // Default status
         );
 
         // Save user data to Firestore

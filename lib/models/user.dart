@@ -9,6 +9,7 @@ class User {
   String hashedPassword;
   String profilePicture;
   double userRating;
+  bool isAdmin;
   String accountStatus;
 
   User({
@@ -19,6 +20,7 @@ class User {
     required this.hashedPassword,
     required this.profilePicture,
     required this.userRating,
+    required this.isAdmin,
     required this.accountStatus,
   });
 
@@ -32,6 +34,7 @@ class User {
       'hashedPassword': hashedPassword,
       'profilePicture': profilePicture,
       'userRating': userRating,
+      'isAdmin': isAdmin,
       'accountStatus': accountStatus,
     };
   }
@@ -46,6 +49,7 @@ class User {
       hashedPassword: map['hashedPassword'],
       profilePicture: map['profilePicture'],
       userRating: map['userRating'],
+      isAdmin: map['isAdmin'],
       accountStatus: map['accountStatus'],
     );
   }
