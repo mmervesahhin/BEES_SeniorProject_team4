@@ -2,6 +2,8 @@ import 'package:bees/views/screens/auth/register_screen.dart';
 import 'package:bees/views/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bees/controllers/login_controller.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,12 +16,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final LoginController _loginController = LoginController();
 
   String email = ''; 
   String password = ''; 
   bool _isPasswordVisible = false;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance; // Instance of FirebaseAuth
+  //final FirebaseAuth _auth = FirebaseAuth.instance; // Instance of FirebaseAuth
 
   @override
   Widget build(BuildContext context) {
@@ -143,18 +146,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (value == null || value.isEmpty) {
                               return 'This field is required';
                             }
-                            final passwordPattern = RegExp(
-                              r'^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,16}$',
-                            );
-                            if (!passwordPattern.hasMatch(value)) {
-                              return 'Invalid password';
-                            }
+                            // final passwordPattern = RegExp(
+                            //   r'^(?=.[A-Z])(?=.\d)(?=.*[\W_]).{8,16}$',
+                            // );
+                            // if (!passwordPattern.hasMatch(value)) {
+                            //   return 'Invalid password';
+                            // }
                             return null;
                           },
                           obscureText: !_isPasswordVisible,
                           onFieldSubmitted: (_) {
                             // Trigger login when "Enter" is pressed in the password field
-                            handleLogin();
+                            _loginController.handleLogin(
+                            emailAddress: email,
+                            password: password,
+                            formKey: _formKey,
+                            context: context,
+                          );
+
                           },
                           decoration: InputDecoration(
                             hintText: 'Password',
@@ -195,7 +204,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               // Login button
                               ElevatedButton(
-                                onPressed: handleLogin,
+                                onPressed: () {
+                                    _loginController.handleLogin(
+                                      emailAddress: email,
+                                      password: password,
+                                      formKey: _formKey,
+                                      context: context,
+                                    );
+                                  },
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                                   backgroundColor: Colors.green[700],
@@ -245,63 +261,5 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
-  }
-
-  void handleLogin() async {
-    if (_formKey.currentState?.validate() == true) {
-      try {
-        // Attempt to sign in with Firebase
-        UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-
-        if (userCredential.user != null) {
-          // If login is successful, show a success message
-            Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
-        } else {
-          // If user is null or login fails, show a failure message
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Login failed. Please try again.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      } on FirebaseAuthException catch (e) {
-        String errorMessage = 'Wrong email or invalid address.';
-        if (e.code == 'user-not-found') {
-          errorMessage = 'No user found for that email.';
-        } else if (e.code == 'wrong-password') {
-          errorMessage = 'Incorrect password.';
-        }
-
-        if (mounted) {
-          // Safely show error message if widget is still mounted
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } catch (e) {
-        // Catch any other errors
-        if (mounted) {
-          // Safely show an unexpected error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('An unexpected error occurred. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
   }
 }
