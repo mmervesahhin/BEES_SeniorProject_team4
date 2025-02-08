@@ -1,56 +1,58 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bcrypt/bcrypt.dart';
+import 'actor.dart';
 
-class User {
-  String userID;
-  String firstName;
-  String lastName;
-  String emailAddress;
-  String hashedPassword;
+class User extends Actor {
   String profilePicture;
   double userRating;
-  bool isAdmin;
-  String accountStatus;
+  List<String> favoriteItems;
 
   User({
-    required this.userID,
-    required this.firstName,
-    required this.lastName,
-    required this.emailAddress,
-    required this.hashedPassword,
+    required String userID,
+    required String firstName,
+    required String lastName,
+    required String emailAddress,
+    required String password,
+    required bool isAdmin,
+    required String accountStatus,
     required this.profilePicture,
     required this.userRating,
-    required this.isAdmin,
-    required this.accountStatus,
-  });
+    List<String>? favoriteItems,
+  })  : favoriteItems = favoriteItems ?? [],
+        super(
+          userID: userID,
+          firstName: firstName,
+          lastName: lastName,
+          emailAddress: emailAddress,
+          password: password,
+          isAdmin: isAdmin,
+          accountStatus: accountStatus,
+        );
 
-  // Convert User object to a map for saving to Firestore
+  // Firestore'a kaydetmek için nesneyi Map'e çevirir
+  @override
   Map<String, dynamic> toMap() {
-    return {
-      'userID': userID,
-      'firstName': firstName,
-      'lastName': lastName,
-      'emailAddress': emailAddress,
-      'hashedPassword': hashedPassword,
+    final map = super.toMap();
+    map.addAll({
       'profilePicture': profilePicture,
       'userRating': userRating,
-      'isAdmin': isAdmin,
-      'accountStatus': accountStatus,
-    };
+      'favoriteItems': favoriteItems,
+    });
+    return map;
   }
 
-  // Create User object from Firestore data (map)
+  // Firestore'dan gelen veriyi User nesnesine çevirir
   static User fromMap(Map<String, dynamic> map) {
     return User(
       userID: map['userID'],
       firstName: map['firstName'],
       lastName: map['lastName'],
       emailAddress: map['emailAddress'],
-      hashedPassword: map['hashedPassword'],
-      profilePicture: map['profilePicture'],
-      userRating: map['userRating'],
+      password: map['password'],
       isAdmin: map['isAdmin'],
       accountStatus: map['accountStatus'],
+      profilePicture: map['profilePicture'],
+      userRating: (map['userRating'] as num).toDouble(),
+      favoriteItems: List<String>.from(map['favoriteItems'] ?? []),
     );
   }
 }

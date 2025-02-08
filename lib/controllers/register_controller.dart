@@ -89,7 +89,7 @@ class RegisterController {
         });
 
         // Hash the password before storing
-        String hashedPassword = BCrypt.hashpw(passwordController.text, BCrypt.gensalt());
+        String password = BCrypt.hashpw(passwordController.text, BCrypt.gensalt());
 
         // Create a new User object
         User newUser = User(
@@ -97,11 +97,12 @@ class RegisterController {
           firstName: firstNameController.text,
           lastName: lastNameController.text,
           emailAddress: emailController.text,
-          hashedPassword: hashedPassword,
+          password: password,
           profilePicture: '',  // Default or empty, could be updated later
           userRating: 0.0,      // Default rating, can be updated later
           accountStatus: 'active',  // Default status
           isAdmin: false,       // Default status
+          favoriteItems: [],    // Default empty list
         );
 
         // Save user data to Firestore
