@@ -8,6 +8,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 
 import 'dart:io';
 
+// Import item model and controller
+import '../../models/item_model.dart';
+import '../../controllers/item_upload_controller.dart';
+
 void main() {
   runApp(const UploadItemApp());
 }
@@ -36,73 +40,15 @@ class UploadItemPage extends StatefulWidget {
 }
 
 class _UploadItemPageState extends State<UploadItemPage> {
-    Future<void> uploadItemToFirestore(
-      String title,
-      String description,
-      String category,
-      String condition,
-      String itemType,
-      List<String> departments,
-      double price,
-      File? imageFileCover,
-      String? paymentPlan, // Payment Plan 
-      List<File> additionalImages,
-  ) async {
-    try {
-      // Resmi Firebase Storage'a yükle
-      String? imageUrlCover;
-      if (imageFileCover != null) {
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child('item_images')
-            .child('${DateTime.now().toIso8601String()}.jpg');
 
-        await ref.putFile(imageFileCover);
-        imageUrlCover = await ref.getDownloadURL();
-      }
-
-        // Upload additional images to Firebase Storage
-        List<String> additionalImageUrls = [];
-        for (File image in additionalImages) {
-          final ref = FirebaseStorage.instance
-              .ref()
-              .child('item_images')
-              .child('${DateTime.now().toIso8601String()}_additional.jpg');
-    
-          await ref.putFile(image);
-          String imageUrl = await ref.getDownloadURL();
-          additionalImageUrls.add(imageUrl);
-        }
-
-      // Firestore'a belge ekle
-      await FirebaseFirestore.instance.collection('items').add({
-        'title': title,
-        'description': description,
-        'category': category,
-        'condition': condition,
-        'itemType': itemType,
-        'departments': departments,
-        'price': price,
-        'paymentPlan': paymentPlan, // Payment Plan
-        'photo': imageUrlCover,
-        'additionalPhotos': additionalImageUrls,
-        'favoriteCount': 0,
-      });
-      print('Item successfully uploaded to Firestore!');
-    } catch (e) {
-      print('Failed to upload item: $e');
-    }
-  }
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>(); // FormKey for validation
 
   // Variables for dropdowns
   String category = 'Sale';
   String itemType = 'Other';
   String condition = 'New';
 
-  // Controllers for text fields
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController priceController = TextEditingController();
+  final ItemController itemController = ItemController();
 
   // Image picker
   final ImagePicker _picker = ImagePicker();
@@ -111,81 +57,63 @@ class _UploadItemPageState extends State<UploadItemPage> {
   // List to hold additional images
   List<File> _additionalImages = [];
 
-  // Title validator
-  String? titleValidator(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please fill in the title';
-    }
-    return null;
-  }
 
   // Placeholder for uploaded image
-  Widget uploadCoverImagePlaceholder() {
-    return GestureDetector(
-      onTap: () => _pickImage(),  // Trigger image picker when placeholder is tapped
-      child: Container(
-        width: 80,
-        height: 80,
-        decoration: BoxDecoration(
-          color: Colors.green[200],
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Icon(Icons.add_a_photo, size: 40, color: Colors.white),
+Widget uploadCoverImagePlaceholder() {
+  return GestureDetector(
+    onTap: () async {
+      try {
+        final selectedImage = await itemController.pickCoverImage();
+        if (selectedImage != null) {
+          setState(() {
+            _imageCover = selectedImage;
+          });
+        }
+      } catch (e) {
+        _showImageSizeError(); // Hata mesajı göster
+      }
+    },
+    child: Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.green[200],
+        borderRadius: BorderRadius.circular(10),
       ),
-    );
-  }
+      child: const Icon(Icons.add_a_photo, size: 40, color: Colors.white),
+    ),
+  );
+}
+
 
   // Placeholder for adding multiple photos
-  Widget addMorePhotosPlaceholder() {
-    return GestureDetector(
-      onTap: () => _pickAdditionalImage(), // Trigger additional image picker
-      child: Container(
-        width: 60, // Smaller size
-        height: 60,
-        decoration: BoxDecoration(
-          color: Colors.green[300], // Lighter green
-          borderRadius: BorderRadius.circular(8), // Rounded corners
-        ),
-        child: const Center(
-          child: Icon(Icons.add, size: 30, color: Colors.white), // + symbol
-        ),
+Widget addMorePhotosPlaceholder() {
+  return GestureDetector(
+    onTap: () async {
+      try {
+        final selectedImage = await itemController.pickAdditionalImage();
+        if (selectedImage != null) {
+          setState(() {
+            _additionalImages.add(selectedImage);
+          });
+        }
+      } catch (e) {
+        _showImageSizeError(); // Hata mesajı göster
+      }
+    },
+    child: Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: Colors.green[300],
+        borderRadius: BorderRadius.circular(8),
       ),
-    );
-  }
-
-  // Method to pick an additional image with size validation
-  Future<void> _pickAdditionalImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final selectedImage = File(pickedFile.path);
-
-      if (isImageSizeValid(selectedImage)) {
-        setState(() {
-          _additionalImages.add(selectedImage);
-        });
-      } else {
-        // Show error if image exceeds 5MB
-        _showImageSizeError();
-      }
-    }
-  }
-
-  // Method to pick the cover image with size validation
-  Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final selectedImage = File(pickedFile.path);
-  
-      if (isImageSizeValid(selectedImage)) {
-        setState(() {
-          _imageCover = selectedImage;
-        });
-      } else {
-        // Show error if image exceeds 5MB
-        _showImageSizeError();
-      }
-    }
-  }
+      child: const Center(
+        child: Icon(Icons.add, size: 30, color: Colors.white),
+      ),
+    ),
+  );
+}
 
   // Function to show an error dialog or message if the image exceeds the size limit
   void _showImageSizeError() {
@@ -208,6 +136,22 @@ class _UploadItemPageState extends State<UploadItemPage> {
     );
   }
 
+  // Function to handle form submission
+  void _uploadItem() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      // If the form is valid, upload the item
+      await itemController.validateAndUploadItem(
+        category: category,
+        condition: condition,
+        coverImage: _imageCover,
+        additionalImages: _additionalImages,
+        selectedDepartments: selectedDepartments,
+        context: context,
+      );
+    }
+  }
+
+
   // Department list for multi-select dropdown
   List<String> departments = ['AMER', 'ARCH', 'CHEM', 'COMD', 'CS', 'CTIS', 'ECON', 'EDU', 'EEE', 'ELIT', 'FA', 'GRA', 'HART', 'IAED', 'IE', 'IR', 'LAUD', 'LAW', 'MAN', 'MATH', 'MBG', 'ME', 'MSC', 'PHIL', 'PHYS', 'POLS', 'PREP', 'PSYC', 'THM','THR','TRIN'];
   
@@ -217,54 +161,19 @@ class _UploadItemPageState extends State<UploadItemPage> {
   // Payment plan options
   String paymentPlan = 'Per Hour';
   bool isPaymentPlanEnabled = false;
-
-  // Validate if price is a positive number
-  String? priceValidator(String? value) {
-  if (value == null || value.isEmpty) {
-    return 'Please enter the price'; // Error message when price is empty
-  }
-  final price = double.tryParse(value);
-  if ((category == 'Sale' || category == 'Rent') && (price == null || price <= 0)) {
-    return 'Please enter a value greater than 0';
-  }
-  return null;
-  }
-
-
-  bool _isTitleEmpty = false; // Flag to check if title is empty on submit
-  bool _isPriceEmpty = false; // Flag for empty price field
-  bool _isPriceInvalid = false; // Flag for invalid price (e.g., <= 0)
-  bool _isCoverPhotoMissing = false; // Flag for cover photo missing
   // Update to disable price field when category is 'Donate' or 'Exchange'
   bool isPriceFieldDisabled() {
     return category == 'Donate' || category == 'Exchange';
   }
-  // Function to check if the image size is under 5MB
-  bool isImageSizeValid(File imageFile) {
-    final fileSize = imageFile.lengthSync();
-    print('Selected image size: ${fileSize / (1024 * 1024)} MB'); 
-    const maxSizeInBytes = 5 * 1024 * 1024; // 5MB in bytes
-    return fileSize <= maxSizeInBytes;
-  }
 
-  // Update the price based on selected category
-  void updatePriceField() {
-    if (category == 'Exchange' || category == 'Donate') {
-      priceController.text = '0';
-    } else {
-      priceController.text = '';
-    }
-  }
-
+  bool get allSelected => selectedDepartments.length == departments.length;
   // Function to handle "All Departments" selection
-  void toggleAllDepartments(bool isSelected) {
+   void toggleSelection() {
     setState(() {
-      if (isSelected) {
-        // Select all departments
-        selectedDepartments = List<String>.from(departments);
+      if (allSelected) {
+        selectedDepartments = []; // Hepsini kaldır
       } else {
-        // Deselect all departments
-        selectedDepartments.clear();
+        selectedDepartments = List<String>.from(departments); // Hepsini seç
       }
     });
   }
@@ -280,48 +189,44 @@ class _UploadItemPageState extends State<UploadItemPage> {
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: SingleChildScrollView(
+            child: Form(
+            key: _formKey,
             child: Column(
+
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Fotoğraf Yükleme
                 const Text('Upload Photo* and Additional Photos', style: TextStyle(color: Colors.black)),
-                Row(
-                  children: [
-                    _imageCover == null
-                        ? uploadCoverImagePlaceholder() // Eğer resim yoksa placeholder göster
-                        : Stack(
-                            clipBehavior: Clip.none, // Button dışarı taşsın diye
-                            children: [
-                              Image.file(
-                                _imageCover!,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                top: -7,
-                                right: -7,
-                                child: IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red, size: 20),
-                                  onPressed: () {
-                                    setState(() {
-                                      _imageCover = null; // Cover fotoğrafı sil
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
-                          ), // Resim varsa göster
-                    const SizedBox(width: 16),
-                    addMorePhotosPlaceholder(),
-                  ],
+              
+             Row(
+              children: [
+                _imageCover == null
+                    ? Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        child: uploadCoverImagePlaceholder(),
+                      )
+                    : Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.file(
+                            _imageCover!,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                const SizedBox(width: 16),
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  child: addMorePhotosPlaceholder(),
                 ),
-
-                if (_isCoverPhotoMissing)
-                  const Text(
-                    'Please add a cover photo',
-                    style: TextStyle(color: Colors.red, fontSize: 12),
-                  ),
+              ],
+            ),
                 const SizedBox(height: 20),
 
                 // Display additional images
@@ -375,7 +280,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
                   onChanged: (newValue) {
                     setState(() {
                       category = newValue!;
-                      updatePriceField(); // Fiyat alanını güncelle
+                      itemController.updatePriceField(category, itemController.priceController); // Controller'dan çağırıyoruz
                     });
                   },
                 ),
@@ -384,24 +289,20 @@ class _UploadItemPageState extends State<UploadItemPage> {
                 // Başlık Alanı
                 const Text('Title*', style: TextStyle(color: Colors.black)),
                 TextFormField(
-                  controller: titleController,
+                  controller: itemController.titleController,
+                  validator: (value) => itemController.validateTitle(value),
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     hintText: 'Enter title',
                     hintStyle: TextStyle(color: Colors.grey[600]),
                   ),
                 ),
-                if (_isTitleEmpty)
-                  const Text(
-                    'Please fill in the title',
-                    style: TextStyle(color: Colors.red, fontSize: 12),
-                  ),
                 const SizedBox(height: 10),
 
                 // Açıklama Alanı
                 const Text('Description', style: TextStyle(color: Colors.black)),
                 TextFormField(
-                  controller: descriptionController,
+                  controller: itemController.descriptionController,
                   maxLines: 4,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
@@ -432,49 +333,34 @@ class _UploadItemPageState extends State<UploadItemPage> {
                 const SizedBox(height: 10),
 
                 // Departman Dropdown (Multi-Select)
-                const Text('Department', style: TextStyle(color: Colors.black)),
-                MultiSelectDialogField(
-                  items: [
-                    MultiSelectItem('All Departments', 'All Departments'),
-                    ...departments.map((dept) => MultiSelectItem(dept, dept)).toList(),
-                  ],
-                  initialValue: selectedDepartments,
-                  title: const Text("Departments"),
-                  buttonText: const Text("Select Departments"),
-                  onConfirm: (results) {
-                  setState(() {
-                    if (results.contains('All Departments')) {
-                      selectedDepartments = List<String>.from(departments); // Tüm departmanları ekler
-                    } else {
-                      selectedDepartments = 
-                          List<String>.from(results.where((item) => item != 'All Departments')); // Sadece seçili olanları ekler
-                    }
-                  });
-                },
-                  chipDisplay: MultiSelectChipDisplay(
-                  onTap: (item) {
-                    setState(() {
-                      selectedDepartments.remove(item);
-                    });
-                  },
-                ),
-                searchable: true,
-                listType: MultiSelectListType.CHIP,
+const Text('Department', style: TextStyle(color: Colors.black)),
+        MultiSelectDialogField(
+          items: departments.map((dept) => MultiSelectItem(dept, dept)).toList(),
+          initialValue: selectedDepartments,
+          title: const Text("Departments"),
+          buttonText: const Text("Select Departments"),
+          searchable: true,
+          listType: MultiSelectListType.CHIP,
+          onConfirm: (results) {
+            setState(() {
+              selectedDepartments = List<String>.from(results);
+            });
+          },
+          chipDisplay: MultiSelectChipDisplay(
+            onTap: (item) {
+              setState(() {
+                selectedDepartments.remove(item);
+              });
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        ElevatedButton(
+          onPressed: toggleSelection,
+          child: Text(allSelected ? "Deselect All" : "Select All"),
+        ),
 
-                onSelectionChanged: (results) {
-                setState(() {
-                  if (results.contains('All Departments')) {
-            selectedDepartments = List.from(departments);
-                  } else {
-                    selectedDepartments = results
-                    .where((item) => item != 'All Departments')
-                    .map((item) => item as String) // Türü açıkça belirt
-                    .toList();
-                  }
-                });
-              },
-                ),
-                const SizedBox(height: 10),
+
 
                 // Şart Dropdown
                 const Text('Condition', style: TextStyle(color: Colors.black)),
@@ -508,18 +394,21 @@ class _UploadItemPageState extends State<UploadItemPage> {
                       children: [
                         const Text('Price* (₺)', style: TextStyle(color: Colors.black)),
                         TextFormField(
-                          controller: priceController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            border: const OutlineInputBorder(),
-                            prefixText: '₺ ',
-                            prefixStyle: const TextStyle(color: Colors.black),
-                            hintText: 'Enter price',
-                            hintStyle: TextStyle(color: Colors.grey[600]),
-                          ),
-                          enabled: !isPriceFieldDisabled(), // Disable when category is 'Donate' or 'Exchange'
-                          validator: priceValidator,
+                        controller: itemController.priceController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          prefixText: '₺ ',
+                          prefixStyle: const TextStyle(color: Colors.black),
+                          hintText: 'Enter price',
+                          hintStyle: TextStyle(color: Colors.grey[600]),
                         ),
+                        enabled: !isPriceFieldDisabled(), // Disable when category is 'Donate' or 'Exchange'
+                        
+                        // Hata: TextEditingController yerine doğru validator fonksiyonunu kullanıyoruz.
+                        validator: (value) => itemController.validatePrice(value, category),
+                      ),
+
                       ],
                     ),
                   ),
@@ -562,67 +451,24 @@ class _UploadItemPageState extends State<UploadItemPage> {
                 ],
               ),
 
-                if (_isPriceEmpty)
-                  const Text(
-                    'Please fill in the price',
-                    style: TextStyle(color: Colors.red, fontSize: 12),
-                  ),
-                if (_isPriceInvalid)
-                  const Text(
-                    'Price must be greater than 0',
-                    style: TextStyle(color: Colors.red, fontSize: 12),
-                  ),
-                const SizedBox(height: 20),
-
-                // Yükleme Butonu
+                const SizedBox(height: 20), // Add space between Price fields and the Upload button
+                
                 SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green, // Buton arka plan rengi
-                      foregroundColor: Colors.white, // Buton yazı rengi
-                    ),
-                    onPressed: () async {
-                      setState(() {
-                        _isTitleEmpty = titleController.text.isEmpty;
-                        _isPriceEmpty = priceController.text.isEmpty;
-                        _isPriceInvalid = !_isPriceEmpty &&
-                        (double.tryParse(priceController.text) == null ||
-                        (double.parse(priceController.text) <= 0 && category != 'Donate' && category != 'Exchange'));
-                         _isCoverPhotoMissing = _imageCover == null;
-
-                        // Default to all departments if none are selected
-                        if (selectedDepartments.isEmpty) {
-                          selectedDepartments = List<String>.from(departments);
-                        }
-
-                        if (!_isTitleEmpty && !_isPriceEmpty && !_isPriceInvalid && !_isCoverPhotoMissing) {
-                              uploadItemToFirestore( // burda aslında await olmalı ama bi türlü çalışmadığı için çıkarttım
-                          titleController.text,
-                          descriptionController.text,
-                          category,
-                          condition,
-                          itemType,
-                          selectedDepartments,
-                          double.parse(priceController.text),
-                          _imageCover,
-                          category == 'Rent' ? paymentPlan : null, // Rent değilse null gönderiliyor
-                           _additionalImages,
-                        );
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => UploadSuccessPage()),
-                          );
-                        }
-                      });
-                    },
-                    child: const Text('Upload Item'),
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green, // Buton arka plan rengi
+                    foregroundColor: Colors.white, // Buton yazı rengi
                   ),
+                  onPressed: _uploadItem,  // Fonksiyonu buraya eklemen gerekiyor
+                  child: const Text('Upload Item'),
                 ),
+              ),
+
               ],
             ),
+          ),
           ),
         ),
       );
