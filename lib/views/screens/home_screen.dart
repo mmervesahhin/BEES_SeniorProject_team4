@@ -99,7 +99,7 @@ Widget build(BuildContext context) {
 
               final items = snapshot.data!.docs.where((doc) {
                 var title = (doc['title'] ?? '').toString().toLowerCase();
-                var price = doc['price'] ?? 0;
+                double price = doc['price']?.toDouble() ?? 0.0;
                 var condition = doc['condition'] ?? 'Unknown';
                 var category = doc['category'] ?? 'Unknown';
                 var itemType = doc['itemType'] ?? 'Unknown';
