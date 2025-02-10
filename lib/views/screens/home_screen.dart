@@ -1,4 +1,5 @@
 import 'package:bees/views/screens/item_upload.dart';
+import 'package:bees/views/screens/userProfile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -335,6 +336,7 @@ Widget build(BuildContext context) {
           BottomNavigationBarItem(
             icon: Icon(Icons.account_circle),
             label: 'Profile',
+            
           ),
         ],
         onTap: (index) {
@@ -346,6 +348,9 @@ Widget build(BuildContext context) {
             case 2:
               break;
             case 3:
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => UserProfileScreen(),
+              ));
               break;
           }
         },
