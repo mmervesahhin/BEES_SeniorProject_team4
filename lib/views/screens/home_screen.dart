@@ -1,4 +1,6 @@
+import 'package:bees/views/screens/favorites_screen.dart';
 import 'package:bees/views/screens/item_upload.dart';
+import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/userProfile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +40,7 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
       backgroundColor: const Color.fromARGB(255, 59, 137, 62),
+      automaticallyImplyLeading: false, // Geri butonunu kaldırır
       title: Text(
         'BEES',
         style: TextStyle(
@@ -342,10 +345,19 @@ Widget build(BuildContext context) {
         onTap: (index) {
           switch (index) {
             case 0:
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => HomeScreen(),
+              ));
               break;
             case 1:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => RequestsScreen(),
+              ));
               break;
             case 2:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => FavoritesScreen(),
+              ));
               break;
             case 3:
             Navigator.of(context).push(MaterialPageRoute(
