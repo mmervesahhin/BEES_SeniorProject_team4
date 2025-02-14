@@ -1,7 +1,7 @@
 import 'package:bees/views/screens/favorites_screen.dart';
-import 'package:bees/views/screens/item_upload.dart';
+import 'package:bees/views/screens/item_upload_screen.dart';
 import 'package:bees/views/screens/requests_screen.dart';
-import 'package:bees/views/screens/userProfile_screen.dart';
+import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';

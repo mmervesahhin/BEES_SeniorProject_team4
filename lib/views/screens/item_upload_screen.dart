@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
-import '/views/screens/item_upload_success.dart';
+import 'item_upload_success_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart'; // InputFormatter için gerekli
 import 'package:cloud_firestore/cloud_firestore.dart';

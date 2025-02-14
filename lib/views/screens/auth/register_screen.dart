@@ -1,7 +1,7 @@
 import 'package:bees/views/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bees/controllers/register_controller.dart';
+import 'package:bees/controllers/auth/register_controller.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
