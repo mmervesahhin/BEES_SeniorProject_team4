@@ -5,7 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/item_model.dart';
-import '/views/screens/item_upload_success.dart';
+import '../views/screens/item_upload_success_screen.dart';
 
 class ItemController {
   // Firestore ve Firebase Storage referansları

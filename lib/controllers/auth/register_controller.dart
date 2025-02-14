@@ -1,10 +1,10 @@
-import 'package:bees/models/user.dart';
+import 'package:bees/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:bees/views/screens/auth/login_screen.dart';
 import 'package:bcrypt/bcrypt.dart'; // Importing bcrypt package
-import 'package:bees/models/user.dart' as bees;
+import 'package:bees/models/user_model.dart' as bees;
 
 class RegisterController {
   final GlobalKey<FormState> formKey;
