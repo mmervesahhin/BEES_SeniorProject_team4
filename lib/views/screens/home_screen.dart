@@ -1,4 +1,7 @@
+import 'package:bees/views/screens/favorites_screen.dart';
 import 'package:bees/views/screens/item_upload.dart';
+import 'package:bees/views/screens/requests_screen.dart';
+import 'package:bees/views/screens/userProfile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -37,6 +40,7 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
       backgroundColor: const Color.fromARGB(255, 59, 137, 62),
+      automaticallyImplyLeading: false, // Geri butonunu kaldırır
       title: Text(
         'BEES',
         style: TextStyle(
@@ -106,7 +110,7 @@ Widget build(BuildContext context) {
                 var departments = doc['departments'] ?? [];
 
                 bool matchesSearch = title.contains(_searchQuery);
-                bool matchesFilters = _applyFilters(price, condition, category, itemType, departments);
+                bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
 
                 return matchesSearch && matchesFilters;
               }).toList();
@@ -335,17 +339,30 @@ Widget build(BuildContext context) {
           BottomNavigationBarItem(
             icon: Icon(Icons.account_circle),
             label: 'Profile',
+            
           ),
         ],
         onTap: (index) {
           switch (index) {
             case 0:
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => HomeScreen(),
+              ));
               break;
             case 1:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => RequestsScreen(),
+              ));
               break;
             case 2:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => FavoritesScreen(),
+              ));
               break;
             case 3:
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => UserProfileScreen(),
+              ));
               break;
           }
         },
@@ -620,34 +637,5 @@ void _showFiltersDialog() {
       );
     },
   );
-}
-
-bool _applyFilters(
-  double price, 
-  String condition, 
-  String category, 
-  String itemType, 
-  List<dynamic> selectedDepartments // The departments parameter should be a list of selected departments
-) {
-  bool priceValid = true;
-
-  // Only apply price filter if minPrice and maxPrice are not null
-  if (_filters['minPrice'] != null && _filters['maxPrice'] != null) {
-    priceValid = price >= _filters['minPrice']! && price <= _filters['maxPrice']!;
-  }
-
-  // Apply filters for condition, category, item type, and departments
-  bool departmentValid = true;
-  if (_filters['departments'] != null && _filters['departments'].isNotEmpty) {
-    // Check if any of the selected departments match the departments filter
-    departmentValid = selectedDepartments.any((dept) => _filters['departments']!.contains(dept)) || _filters['departments']!.contains('All Departments');
-  }
-
-  // Return true if all filters are valid
-  return priceValid &&
-      (condition == _filters['condition'] || _filters['condition'] == 'All') &&
-      (category == _filters['category'] || _filters['category'] == 'All') &&
-      (itemType == _filters['itemType'] || _filters['itemType'] == 'All') &&
-      departmentValid;
 }
 }

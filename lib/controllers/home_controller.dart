@@ -38,34 +38,49 @@ class HomeController {
     return query.snapshots();
   }
 
-  // This function returns the URL of the first image in the 'photos' field
   String getImageUrl(String photo) {
-    // If 'photos' list is not empty, return the first image URL
     return photo;
   }
 
-  // This function returns the category of the item (could be extended for more complex logic)
   String getCategory(String category) {
-    // In the real app, you might want to process or map the category string
     return category;
   }
 
-  // This function takes a list of departments and returns the same list as a list of strings
   List<String> getDepartments(List<dynamic> departments) {
-    // Simply return the departments list as a list of strings
     return List<String>.from(departments);
   }
 
-
-  // This method is used to update the favorite count for an item
   Future<void> updateFavoriteCount(String itemId, bool isFavorited) async {
-    // Logic to update the favorite count in the Firestore document
     DocumentReference<Map<String, dynamic>> itemDoc =
         _itemsCollection.doc(itemId);
 
-    // Increment or decrement the favorite count based on the isFavorited value
     await itemDoc.update({
       'favoriteCount': FieldValue.increment(isFavorited ? 1 : -1),
     });
+  }
+  
+  bool applyFilters(
+    double price,
+    String condition,
+    String category,
+    String itemType,
+    List<dynamic> selectedDepartments,
+    Map<String, dynamic> filters,
+  ) {
+    bool priceValid = true;
+    if (filters['minPrice'] != null && filters['maxPrice'] != null) {
+      priceValid = price >= filters['minPrice']! && price <= filters['maxPrice']!;
+    }
+
+    bool departmentValid = true;
+    if (filters['departments'] != null && filters['departments'].isNotEmpty) {
+      departmentValid = selectedDepartments.any((dept) => filters['departments']!.contains(dept)) || filters['departments']!.contains('All Departments');
+    }
+
+    return priceValid &&
+        (condition == filters['condition'] || filters['condition'] == 'All') &&
+        (category == filters['category'] || filters['category'] == 'All') &&
+        (itemType == filters['itemType'] || filters['itemType'] == 'All') &&
+        departmentValid;
   }
 }
