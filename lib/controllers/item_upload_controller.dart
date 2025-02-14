@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/item_model.dart';
 import '../views/screens/item_upload_success_screen.dart';
 
@@ -55,6 +55,12 @@ class ItemController {
   // Yeni Ürün Yükleme
   Future<void> uploadItem(Item item, File? imageFileCover, List<File> additionalImages) async {
     try {
+      // Kullanıcının UID'sini al
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        print('Error: User is not logged in.');
+        return;
+      }
       // 1. Ana Resmi Firebase Storage'a Yükleme
       String? imageUrlCover;
       if (imageFileCover != null) {
@@ -75,9 +81,9 @@ class ItemController {
         'additionalPhotos': additionalImageUrls,
       });
 
-      print('✅ Item successfully uploaded!');
+      print('Item successfully uploaded!');
     } catch (e) {
-      print('❌ Upload failed: \$e');
+      print('Upload failed: \$e');
     }
   }
 
@@ -89,21 +95,33 @@ class ItemController {
     required List<String> selectedDepartments,
     required BuildContext context,
   }) async {
+
+       // Kullanıcı UID'sini al
+     String? userId = FirebaseAuth.instance.currentUser?.uid;
+     if (userId == null) {
+       print('Error: User is not logged in.');
+       return;
+     }
     String? titleError = validateTitle(titleController.text);
     String? priceError = validatePrice(priceController.text, category);
     bool isCoverPhotoMissing = !validateCoverPhoto(coverImage);
 
     if (titleError == null && priceError == null && !isCoverPhotoMissing) {
       Item newItem = Item(
-        title: titleController.text,
-        description: descriptionController.text,
-        category: category,
-        condition: condition,
-        itemType: '', 
-        departments: selectedDepartments,
-        price: double.parse(priceController.text),
-        // paymentPlan: category == 'Rent' ? 'Per Day' : null,
-      );   
+      itemOwnerId: userId , // Sahip ID'si atanmalı
+      title: titleController.text,
+      description: descriptionController.text,
+      category: category,
+      condition: condition,
+      itemType: '', // Eksik olan itemType burada belirtilmeli
+      departments: selectedDepartments,
+      price: double.parse(priceController.text),
+      paymentPlan: category == 'Rent' ? 'Per Day' : null, // Kira seçeneği için eklendi
+      photoUrl: null, // Varsayılan olarak boş bırakıldı, eklenecekse ayarlanmalı
+      additionalPhotos: [], // Varsayılan olarak boş liste
+      favoriteCount: 0, // Yeni oluşturulan öğe için favori sayısı sıfır olarak ayarlandı
+      itemStatus: true, 
+    );
 
       // Show loading indicator
       showDialog(
