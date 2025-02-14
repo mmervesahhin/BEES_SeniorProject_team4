@@ -75,12 +75,27 @@ class ItemController {
       }
 
       // 3. Firestore'a Ürün Verisi Ekleme
-      await _firestore.collection('items').add({
-        ...item.toJson(),
-        'photo': imageUrlCover,
-        'additionalPhotos': additionalImageUrls,
-      });
+      // DocumentReference docRef = await _firestore.collection('items').add({
+      //   ...item.toJson(),
+      //   'photo': imageUrlCover,
+      //   'additionalPhotos': additionalImageUrls,
+      //   'itemOwnerId': userId, 
+      // });
 
+          String itemId = _firestore.collection('items').doc().id;
+
+
+          // **Firestore'a `itemId` ile ekleme (add() yerine set() kullanıyoruz)**
+          await _firestore.collection('items').doc(itemId).set({
+            ...item.toJson(),
+            'itemId': itemId, // **Firestore'un oluşturduğu ID `itemId` olarak kaydedildi**
+            'itemOwnerId': userId, // Kullanıcı ID
+            'photo': imageUrlCover,
+            'additionalPhotos': additionalImageUrls,
+          });
+
+
+      //String itemId = docRef.id; // Firestore'un oluşturduğu belge ID
       print('Item successfully uploaded!');
     } catch (e) {
       print('Upload failed: \$e');
@@ -102,13 +117,16 @@ class ItemController {
        print('Error: User is not logged in.');
        return;
      }
+     
+      String itemId = FirebaseFirestore.instance.collection('items').doc().id;
     String? titleError = validateTitle(titleController.text);
     String? priceError = validatePrice(priceController.text, category);
     bool isCoverPhotoMissing = !validateCoverPhoto(coverImage);
-
-    if (titleError == null && priceError == null && !isCoverPhotoMissing) {
+// && !isCoverPhotoMissing
+    if (titleError == null && priceError == null  && !isCoverPhotoMissing ) {
       Item newItem = Item(
       itemOwnerId: userId , // Sahip ID'si atanmalı
+      itemId: itemId,
       title: titleController.text,
       description: descriptionController.text,
       category: category,
@@ -120,7 +138,7 @@ class ItemController {
       photoUrl: null, // Varsayılan olarak boş bırakıldı, eklenecekse ayarlanmalı
       additionalPhotos: [], // Varsayılan olarak boş liste
       favoriteCount: 0, // Yeni oluşturulan öğe için favori sayısı sıfır olarak ayarlandı
-      itemStatus: true, 
+      itemStatus: "Active", 
     );
 
       // Show loading indicator

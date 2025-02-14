@@ -14,7 +14,7 @@ class Item {
   String? photoUrl;
   List<String>? additionalPhotos;
   int favoriteCount;
-  bool itemStatus;
+  String itemStatus;
 
   Item({
     this.itemId,
