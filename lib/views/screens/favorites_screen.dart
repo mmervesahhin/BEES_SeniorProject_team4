@@ -84,14 +84,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : favoriteItems.isEmpty
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.favorite_border, size: 80, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text('No favorite items found',
-                        style: TextStyle(fontSize: 18, color: Colors.grey)),
-                  ],
+              ? const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min, // İçeriğin minimum alan kaplamasını sağlar
+                    children: [
+                      Icon(Icons.favorite_border, size: 80, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'No favorite items found',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                        textAlign: TextAlign.center, // Ortalanmış metin
+                      ),
+                    ],
+                  ),
                 )
               : Padding(
                   padding: const EdgeInsets.all(8.0),

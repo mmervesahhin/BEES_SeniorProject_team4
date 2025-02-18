@@ -26,7 +26,7 @@ abstract class Actor {
       'firstName': firstName,
       'lastName': lastName,
       'emailAddress': emailAddress,
-      'hashedPassword': password,
+      'password': password,
       'isAdmin': isAdmin,
       'accountStatus': accountStatus,
     };
