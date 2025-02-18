@@ -47,16 +47,16 @@ class User extends Actor {
 
   // Check if any required field is missing
   if (!map.containsKey('userID') || map['userID'] == null) {
-    throw Exception("❌ Firestore data missing 'userID' field");
+    throw Exception("Firestore data missing 'userID' field");
   }
   if (!map.containsKey('firstName') || map['firstName'] == null) {
-    throw Exception("❌ Firestore data missing 'firstName' field");
+    throw Exception("Firestore data missing 'firstName' field");
   }
   if (!map.containsKey('lastName') || map['lastName'] == null) {
-    throw Exception("❌ Firestore data missing 'lastName' field");
+    throw Exception("Firestore data missing 'lastName' field");
   }
   if (!map.containsKey('emailAddress') || map['emailAddress'] == null) {
-    throw Exception("❌ Firestore data missing 'emailAddress' field");
+    throw Exception("Firestore data missing 'emailAddress' field");
   }
 
   return User(
