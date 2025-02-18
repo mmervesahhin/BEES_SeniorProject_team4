@@ -20,7 +20,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   if (_formKey.currentState!.validate()) {
     final newRequest = Request(
       requestID: "", // Firestore’un ID’yi üretmesini sağlamak için boş bırakıyoruz
-      requestOwnerID: "exampleUserID", 
+      requestOwnerID: "", 
       requestContent: _descriptionController.text,
       requestStatus: "Pending",
       creationDate: DateTime.now(),

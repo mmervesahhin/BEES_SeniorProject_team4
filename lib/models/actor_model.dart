@@ -5,7 +5,7 @@ abstract class Actor {
   String firstName;
   String lastName;
   String emailAddress;
-  String password;
+  String hashedPassword;
   bool isAdmin;
   String accountStatus;
 
@@ -14,7 +14,7 @@ abstract class Actor {
     required this.firstName,
     required this.lastName,
     required this.emailAddress,
-    required this.password,
+    required this.hashedPassword,
     required this.isAdmin,
     required this.accountStatus,
   });
@@ -26,7 +26,7 @@ abstract class Actor {
       'firstName': firstName,
       'lastName': lastName,
       'emailAddress': emailAddress,
-      'hashedPassword': password,
+      'hashedPassword': hashedPassword,
       'isAdmin': isAdmin,
       'accountStatus': accountStatus,
     };
