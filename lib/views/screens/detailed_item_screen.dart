@@ -1,4 +1,7 @@
+import 'package:bees/controllers/reported_item_controller.dart';
+import 'package:bees/models/reported_item_model.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/controllers/detailed_item_controller.dart';
 import 'package:bees/controllers/home_controller.dart';
@@ -15,6 +18,9 @@ class DetailedItemScreen extends StatefulWidget {
 }
 
 class _DetailedItemScreenState extends State<DetailedItemScreen> {
+  String? selectedReportReason = "Inappropriate for BEES"; // Başlangıçta bir değer
+  TextEditingController complaintController = TextEditingController();
+
   final DetailedItemController _controller = DetailedItemController();
   final HomeController _homeController = HomeController();
 
@@ -43,6 +49,188 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
       isFavorited = status;
     });
   }
+
+  // Report Dialog fonksiyonu
+  Future<void> _showReportDialog(BuildContext context) async {
+    String? dialogSelectedReason = selectedReportReason; // Dialog için geçici bir değişken
+
+    final userId = 'userID'; // Firestore'dan almanız gereken gerçek kullanıcı ID'si
+    final userIDD = FirebaseAuth.instance.currentUser?.uid ?? "defaultUserId"; 
+
+
+    // Report işlemi öncesinde kontrol et
+    bool hasReported = await ReportedItemController().hasUserReportedItem(widget.itemId, userIDD);
+
+    if (hasReported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("You have already reported this item.")),
+      );
+      return; // Kullanıcıya rapor işlemini yapma fırsatı vermiyoruz
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: Text(
+                "Report Item",
+                style: TextStyle(color: Color.fromARGB(255, 17, 39, 18)), // Başlık için yeşil
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Please select a reason:",
+                    style: TextStyle(color: Color.fromARGB(255, 29, 31, 29)), // Yazı rengi için yeşil
+                  ),
+                  RadioListTile<String>(
+                    title: Text(
+                      "Inappropriate for BEES",
+                      style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)), // Yazı rengi yeşil
+                    ),
+                    value: "Inappropriate for BEES",
+                    groupValue: dialogSelectedReason,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        dialogSelectedReason = value;
+                      });
+                      print("Selected reason: $dialogSelectedReason");
+                    },
+                    activeColor: Color.fromARGB(255, 18, 73, 20), // Seçili olan radio buton halkası rengi
+                  ),
+                  RadioListTile<String>(
+                    title: Text(
+                      "Illegal item",
+                      style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)), // Yazı rengi yeşil
+                    ),
+                    value: "Illegal item",
+                    groupValue: dialogSelectedReason,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        dialogSelectedReason = value;
+                      });
+                      print("Selected reason: $dialogSelectedReason");
+                    },
+                    activeColor: Color.fromARGB(255, 18, 73, 20), // Seçili olan radio buton halkası rengi
+                  ),
+                  RadioListTile<String>(
+                    title: Text(
+                      "Duplicate item",
+                      style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)), // Yazı rengi yeşil
+                    ),
+                    value: "Duplicate item",
+                    groupValue: dialogSelectedReason,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        dialogSelectedReason = value;
+                      });
+                      print("Selected reason: $dialogSelectedReason");
+                    },
+                    activeColor: Color.fromARGB(255, 18, 73, 20), // Seçili olan radio buton halkası rengi
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "Explain your report (optional):",
+                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)), // Yazı rengi yeşil
+                  ),
+                  TextField(
+                    controller: complaintController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: "Enter your explanation here...",
+                      border: OutlineInputBorder(),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color.fromARGB(255, 18, 73, 20)), // Focused border rengi
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Dialog'u kapatma
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)), // Buton rengi yeşil
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // Yeni seçilen değeri global'e aktaralım
+                    setState(() {
+                      selectedReportReason = dialogSelectedReason;
+                    });
+
+                    if (selectedReportReason != null) {
+                      await _sendReport(
+                        selectedReportReason!,
+                        complaintController.text,
+                        context,
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Please select a report reason")),
+                      );
+                    }
+                    Navigator.of(context).pop(); // Dialog'u kapatma
+                  },
+                  child: Text(
+                    "Send the Report",
+                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)), // Buton rengi yeşil
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Report işlemini Firestore'a kaydetme fonksiyonu
+  Future<void> _sendReport(String reportReason, String complaintDetails, BuildContext context) async {
+  ReportedItemController controller = ReportedItemController();
+  final userIDD = FirebaseAuth.instance.currentUser?.uid ?? "defaultUserId"; 
+
+  // Dinamik userId ve itemId'yi alıyoruz
+  final itemId = widget.itemId; // Sayfadan veya widget'tan gelen item ID'si
+
+  bool alreadyReported = await controller.checkIfAlreadyReported(userIDD, itemId);
+  if (alreadyReported) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("You have already reported this item.")),
+    );
+    return; // Aynı item için rapor yapılmaz
+  }
+
+  ReportedItem reportedItem = ReportedItem(
+    complaintID: DateTime.now().millisecondsSinceEpoch, // Benzersiz bir ID oluşturuluyor
+    complaintDetails: complaintDetails,
+    reportReason: reportReason,
+    reportedObjectType: "item", // Bu raporun bir item'a ait olduğunu belirtiyoruz
+    reportedBy: userIDD, // Dinamik kullanıcı ID'si
+    itemId: itemId, // Dinamik item ID'si
+  );
+
+  try {
+    await controller.reportItem(reportedItem); // ReportItem'ı Firestore'a kaydediyoruz
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Item has been reported successfully!")),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error reporting item: $e")),
+    );
+  }
+
+  
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -125,14 +313,14 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                         SizedBox(height: 10),
                         Text(itemDetails!["title"], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                         SizedBox(height: 10),
-                        if (itemDetails!["price"] != 0) ...[
+                        if (itemDetails!["price"] != 0) ...[ 
                           Row(
                             children: [
                               Text(
                                 '₺${itemDetails!["price"]}',
                                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
                               ),
-                              if (itemDetails!["paymentPlan"] != null) ...[
+                              if (itemDetails!["paymentPlan"] != null) ...[ 
                                 SizedBox(width: 10),
                                 Text(
                                   itemDetails!["paymentPlan"],
@@ -145,7 +333,6 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                         ],
                         Text(itemDetails!["description"] ?? "No description available"),
                         SizedBox(height: 10),
-                        // Departments kısmı burada
                         if (itemDetails!["departments"] != null && (itemDetails!["departments"] as List).isNotEmpty)
                           Wrap(
                             spacing: 8.0,
@@ -199,7 +386,9 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                         SizedBox(height: 20),
                         Center(
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              _showReportDialog(context); // Report butonuna basıldığında pop-up gösterilir
+                            },
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                             child: Text("Report Item", style: TextStyle(color: Colors.white)),
                           ),
