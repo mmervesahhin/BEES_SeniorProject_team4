@@ -6,6 +6,8 @@ class HomeController {
   final CollectionReference<Map<String, dynamic>> _itemsCollection =
       FirebaseFirestore.instance.collection('items');
 
+  get itemsCollection => null;
+
   // This method returns a Stream of QuerySnapshots, filtered by the provided parameters
   Stream<QuerySnapshot<Map<String, dynamic>>> getItems({
     double? minPrice,
@@ -57,6 +59,14 @@ class HomeController {
     await itemDoc.update({
       'favoriteCount': FieldValue.increment(isFavorited ? 1 : -1),
     });
+  }
+
+   Future<bool> fetchFavoriteStatus(String itemId) async {
+    var itemDoc = await _itemsCollection.doc(itemId).get();
+    if (itemDoc.exists) {
+      return (itemDoc['favoriteCount'] ?? 0) > 0;
+    }
+    return false;
   }
   
   bool applyFilters(
