@@ -6,6 +6,8 @@
   import 'package:bees/views/screens/create_request_screen.dart';
   import 'package:bees/models/request_model.dart';
   import 'package:bees/controllers/request_controller.dart';
+  import 'package:bees/views/screens/message_screen.dart';
+
 import 'package:bees/models/user_model.dart' as bees;
 
   class RequestsScreen extends StatefulWidget {
@@ -88,6 +90,11 @@ import 'package:bees/models/user_model.dart' as bees;
                         ),
                         prefixIcon: Icon(Icons.search),
                       ),
+                      onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value; // Arama terimi değiştiğinde güncelle
+                      });
+                    },
                     ),
                   ),               
                 ],
@@ -134,44 +141,60 @@ import 'package:bees/models/user_model.dart' as bees;
       
     }
 
-    Widget _buildRequestList() {
-    return StreamBuilder<List<Request>>(
-      stream: _requestController.getRequests(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("No requests found"));
-        }
+Widget _buildRequestList() {
+  return StreamBuilder<List<Request>>(
+    stream: _requestController.getRequests(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return const Center(child: Text("No requests found"));
+      }
 
-        final requests = snapshot.data!
-            .where((req) => req.requestContent.toLowerCase().contains(_searchQuery))
-            .toList();
+      String searchQueryLower = _searchQuery.toLowerCase(); // Küçük harfe çevir
 
-        return ListView.builder(
-          itemCount: requests.length,
-          itemBuilder: (context, index) {
-            return _buildRequestCard(requests[index]);
-          },
-        );
-      },
-    );
-  }
+      List<Request> filteredRequests = snapshot.data!.where((req) {
+        String contentLower = req.requestContent.toLowerCase();
+        return contentLower.contains(searchQueryLower); // Kısmi eşleşme
+      }).toList();
 
-  Widget _buildRequestCard(Request request) {
+      // Sonuçları alaka düzeyine göre sırala (daha yakın eşleşmeler önce gelir)
+      filteredRequests.sort((a, b) {
+        int relevanceA = _calculateRelevance(a.requestContent, searchQueryLower);
+        int relevanceB = _calculateRelevance(b.requestContent, searchQueryLower);
+        return relevanceB.compareTo(relevanceA); // Büyükten küçüğe sıralama
+      });
+
+      return ListView.builder(
+        itemCount: filteredRequests.length,
+        itemBuilder: (context, index) {
+          return _buildRequestCard(filteredRequests[index]);
+        },
+      );
+    },
+  );
+}
+int _calculateRelevance(String text, String query) {
+  text = text.toLowerCase();
+  if (text.startsWith(query)) return 3; // En alakalı (başlangıçta eşleşme)
+  if (text.contains(query)) return 2; // Kısmi eşleşme
+  return 1; // Daha az alakalı
+}
+
+
+Widget _buildRequestCard(Request request) {
   return FutureBuilder<bees.User?>(
     future: _requestController.getUserByRequestID(request.requestID),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
-        return _loadingRequestCard(request); // Show a loading placeholder
+        return _loadingRequestCard(request); 
       }
 
       if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-        return _errorRequestCard(request); // Show error UI
+        return _errorRequestCard(request); 
       }
 
-      // User data retrieved successfully
       bees.User user = snapshot.data!;
 
       return Card(
@@ -187,7 +210,7 @@ import 'package:bees/models/user_model.dart' as bees;
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: Color(0xFF3B893E),
+                    backgroundColor: const Color(0xFF3B893E),
                     backgroundImage: user.profilePicture.isNotEmpty
                         ? NetworkImage(user.profilePicture)
                         : null,
@@ -196,9 +219,23 @@ import 'package:bees/models/user_model.dart' as bees;
                         : null,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    "User: ${user.firstName} ${user.lastName}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  Expanded(
+                    child: Text(
+                      "${user.firstName} ${user.lastName}",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.message, color: Colors.black),
+                    onPressed: () {
+                      _navigateToMessageScreen(request);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.more_vert, color: Colors.black),
+                    onPressed: () {
+                      _showReportOptions(context, request);
+                    },
                   ),
                 ],
               ),
@@ -233,6 +270,54 @@ import 'package:bees/models/user_model.dart' as bees;
     },
   );
 }
+
+// Kullanıcıya rapor seçeneklerini gösteren fonksiyon
+void _showReportOptions(BuildContext context, Request request) {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) {
+      return SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.report),
+              title: const Text("Inappropriate for BEES"),
+              onTap: () {
+                _reportRequest(request, "Inappropriate for BEES");
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.gavel),
+              title: const Text("Illegal request"),
+              onTap: () {
+                _reportRequest(request, "Illegal request");
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+// Raporlama işlemini yöneten fonksiyon
+void _reportRequest(Request request, String reason) {
+  // Burada raporlama işlemi backend'e gönderilebilir.
+  print("Request ${request.requestID} reported for: $reason");
+}
+
+
+// Mesaj ekranına yönlendirme fonksiyonu
+void _navigateToMessageScreen(Request request) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => MessageScreen(request: request),
+    ),
+  );
+}
+
 Widget _loadingRequestCard(Request request) {
   return Card(
     margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
