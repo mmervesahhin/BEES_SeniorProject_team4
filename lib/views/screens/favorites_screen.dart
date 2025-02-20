@@ -1,3 +1,4 @@
+import 'package:bees/views/screens/detailed_item_screen.dart';
 import 'package:bees/views/screens/home_screen.dart';
 import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
@@ -83,8 +84,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     itemCount: favoriteItems.length,
                     itemBuilder: (context, index) {
                       var item = favoriteItems[index];
-                      
-                      return Card(
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DetailedItemScreen(itemId: item['itemId']),
+                            ),
+                          );
+                        },
+                      child: Card(
                         elevation: 3,
                         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         shape: RoundedRectangleBorder(
@@ -139,7 +148,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             },
                           ),
                         ),
-                      );
+                      ));
                     },
                   ),
                 ),

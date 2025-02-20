@@ -2,6 +2,7 @@ import 'package:bees/views/screens/favorites_screen.dart';
 import 'package:bees/views/screens/item_upload_screen.dart';
 import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
+import 'package:bees/views/screens/detailed_item_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -144,7 +145,17 @@ Widget build(BuildContext context) {
 
                   bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
 
-                  return Card(
+                return   GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailedItemScreen(itemId: item['itemId']),
+                      ),
+                    );
+                  },
+                  
+                 child: Card(
                     elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -302,7 +313,7 @@ Widget build(BuildContext context) {
                         ),
                       ],
                     ),
-                  );
+                  ));
                 },
               );
             },

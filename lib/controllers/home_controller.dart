@@ -6,10 +6,12 @@ class HomeController {
   // The reference to the 'items' collection in Firestore
   final CollectionReference<Map<String, dynamic>> _itemsCollection =
       FirebaseFirestore.instance.collection('items');
-  
-  // The reference to the 'users' collection in Firestore (eklenmiş)
+
+   // The reference to the 'users' collection in Firestore (eklenmiş)
   final CollectionReference<Map<String, dynamic>> _usersCollection =
       FirebaseFirestore.instance.collection('users'); // Kullanıcı koleksiyonu
+
+  get itemsCollection => null;
 
   // This method returns a Stream of QuerySnapshots, filtered by the provided parameters
   Stream<QuerySnapshot<Map<String, dynamic>>> getItems({
@@ -77,6 +79,14 @@ class HomeController {
     await batch.commit(); // Tüm işlemleri aynı anda çalıştır
   }
 
+   Future<bool> fetchFavoriteStatus(String itemId) async {
+    var itemDoc = await _itemsCollection.doc(itemId).get();
+    if (itemDoc.exists) {
+      return (itemDoc['favoriteCount'] ?? 0) > 0;
+    }
+    return false;
+  }
+  
   bool applyFilters(
     double price,
     String condition,
