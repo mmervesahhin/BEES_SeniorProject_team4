@@ -86,14 +86,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           : favoriteItems.isEmpty
               ? const Center(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min, // İçeriğin minimum alan kaplamasını sağlar
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.favorite_border, size: 80, color: Colors.grey),
                       SizedBox(height: 16),
                       Text(
                         'No favorite items found',
                         style: TextStyle(fontSize: 18, color: Colors.grey),
-                        textAlign: TextAlign.center, // Ortalanmış metin
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
@@ -104,34 +104,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     itemCount: favoriteItems.length,
                     itemBuilder: (context, index) {
                       var item = favoriteItems[index];
-                      List<Widget> tags = [];
-
-                      // Category Tag
-                      tags.add(Chip(
-                        label: Text(item['category']),
-                        backgroundColor: Colors.blue.shade200,
-                      ));
-
-                      // Condition Tag
-                      tags.add(Chip(
-                        label: Text(item['condition']),
-                        backgroundColor: Colors.orange.shade200,
-                      ));
-
-                      // Departments Tag
-                      tags.add(Chip(
-                        label: Text(item['departments'].join(", ")),
-                        backgroundColor: Colors.green.shade200,
-                      ));
-
-                      // Payment Plan Tag (only if the category is 'rent')
-                      if (item['category'] == 'rent') {
-                        tags.add(Chip(
-                          label: Text('Payment Plan: ${item['paymentPlan']}'),
-                          backgroundColor: Colors.red.shade200,
-                        ));
-                      }
-
+                      
                       return Card(
                         elevation: 3,
                         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -144,8 +117,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
                               item['photo'],
-                              width: 60,
-                              height: 60,
+                              width: 80,
+                              height: 80,
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -156,14 +129,27 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '₺${item['price']}',
-                                style: const TextStyle(color: Colors.green, fontSize: 16),
+                              Row(
+                                children: [
+                                  Text(
+                                    '₺${item['price']}',
+                                    style: TextStyle(fontSize: 20), 
+                                  ),
+                                  if (item['category'] == 'Rent') 
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 8.0), // Boşluk ekledik
+                                      child: Text(
+                                        item['paymentPlan'],
+                                      ),
+                                    ),
+                                ],
                               ),
-                              Wrap(
-                                spacing: 8.0, // spacing between tags
-                                runSpacing: 4.0, // spacing between rows of tags
-                                children: tags,
+                              Row(
+                                children: [
+                                  _buildTag(item['category'], Colors.green),
+                                  _buildTag(item['condition'], Colors.yellow),
+                                  _buildDepartmentsTag(item['departments']),
+                                ],
                               ),
                             ],
                           ),
@@ -193,6 +179,38 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      margin: EdgeInsets.only(right: 4),
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildDepartmentsTag(List<dynamic> departments) {
+    if (departments.isEmpty) return Container();
+    
+    // List<dynamic>'i List<String>'e dönüştürme
+    List<String> visibleDepartments = departments.map((e) => e.toString()).take(1).toList();
+    
+    if (departments.length > 1) {
+      visibleDepartments.add('...');
+    }
+    
+    return Row(
+      children: visibleDepartments.map((department) {
+        return _buildTag(department, Colors.orange);
+      }).toList(),
+    );
+  }
+
   void _onItemTapped(int index) {
     if (index == _selectedIndex) return;
     switch (index) {
@@ -201,8 +219,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         break;
       case 1:
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => RequestsScreen()));
-        break;
-      case 2:
         break;
       case 3:
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => UserProfileScreen()));
