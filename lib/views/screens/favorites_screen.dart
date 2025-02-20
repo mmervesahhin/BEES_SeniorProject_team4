@@ -19,45 +19,24 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   List<DocumentSnapshot> favoriteItems = [];
   bool isLoading = true;
 
+  final HomeController _controller = HomeController();
+
   @override
   void initState() {
     super.initState();
-    _fetchFavorites();
+    fetchFavorites();
   }
 
-  void _fetchFavorites() async {
-    setState(() => isLoading = true);
-    try {
-      String userId = FirebaseAuth.instance.currentUser!.uid;
-      var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-      var favoriteItemIds = List<String>.from(userDoc['favoriteItems'] ?? []);
-
-      if (favoriteItemIds.isNotEmpty) {
-        var snapshot = await FirebaseFirestore.instance
-            .collection('items')
-            .where('itemId', whereIn: favoriteItemIds)
-            .get();
-
-        setState(() {
-          favoriteItems = snapshot.docs;
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          favoriteItems = [];
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Favorileri çekerken hata oluştu: $e');
+  void fetchFavorites() async {
+      setState(() => isLoading = true);
+      favoriteItems = await _controller.fetchFavorites();
       setState(() => isLoading = false);
     }
-  }
 
   void _toggleFavorite(String itemId, bool isFavorited) async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
-    await HomeController().updateFavoriteCount(itemId, isFavorited, userId);
-    _fetchFavorites();
+    await _controller.updateFavoriteCount(itemId, isFavorited, userId);
+    fetchFavorites();
   }
 
   @override

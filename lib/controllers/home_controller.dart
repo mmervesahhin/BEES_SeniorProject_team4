@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class HomeController {
@@ -99,5 +100,27 @@ class HomeController {
         (category == filters['category'] || filters['category'] == 'All') &&
         (itemType == filters['itemType'] || filters['itemType'] == 'All') &&
         departmentValid;
+  }
+
+  //this is only used in favorites screen for now
+   Future<List<DocumentSnapshot>> fetchFavorites() async {
+    try {
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+      var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      var favoriteItemIds = List<String>.from(userDoc['favoriteItems'] ?? []);
+
+      if (favoriteItemIds.isNotEmpty) {
+        var snapshot = await FirebaseFirestore.instance
+            .collection('items')
+            .where('itemId', whereIn: favoriteItemIds)
+            .get();
+        return snapshot.docs;
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Favorileri çekerken hata oluştu: $e');
+      return [];
+    }
   }
 }
