@@ -96,7 +96,7 @@ class RegisterController {
           firstName: firstNameController.text,
           lastName: lastNameController.text,
           emailAddress: emailController.text,
-          password: password,
+          hashedPassword: password,
           profilePicture: '',  // Default or empty, could be updated later
           userRating: 0.0,      // Default rating, can be updated later
           accountStatus: 'active',  // Default status
