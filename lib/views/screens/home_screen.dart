@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/home_controller.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     List<String> selectedDepartments = [];
                   
+  String? userId = FirebaseAuth.instance.currentUser?.uid;
   final HomeController _controller = HomeController();
   final TextEditingController _searchController = TextEditingController();
   Map<String, bool> _favorites = {};
@@ -304,7 +306,7 @@ Widget build(BuildContext context) {
                                   _favorites[itemId] = !isFavorited;
                                 });
 
-                                _controller.updateFavoriteCount(itemId, !isFavorited);
+                                _controller.updateFavoriteCount(itemId, !isFavorited, userId!);
                               },
                             ),
                           ),

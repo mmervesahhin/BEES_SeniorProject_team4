@@ -1,5 +1,8 @@
 import 'package:bees/controllers/reported_item_controller.dart';
 import 'package:bees/models/reported_item_model.dart';
+import 'package:bees/views/screens/favorites_screen.dart';
+import 'package:bees/views/screens/home_screen.dart';
+import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -299,7 +302,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                                     setState(() {
                                       isFavorited = !isFavorited;
                                     });
-                                    _homeController.updateFavoriteCount(widget.itemId, isFavorited);
+                                    _homeController.updateFavoriteCount(widget.itemId, isFavorited, FirebaseAuth.instance.currentUser!.uid);
                                   },
                                 ),
                               ),
@@ -395,26 +398,40 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                 ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color.fromARGB(255, 59, 137, 62),
+        selectedItemColor: const Color.fromARGB(255, 59, 137, 62),
+        onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: FaIcon(FontAwesomeIcons.shop),
-            label: 'Items',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
-            label: 'Requests',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favorites',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle),
-            label: 'Profile',
-          ),
+          BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
+          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
+          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
         ],
       ),
     );
+  }
+
+  void _onItemTapped(int index) {
+    switch (index) {
+      case 0:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+        break;
+      case 1:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => RequestsScreen()),
+        );
+        break;
+      case 2:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => FavoritesScreen()),
+        );
+        break;
+      case 3:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => UserProfileScreen()),
+        );
+        break;
+    }
   }
 }
