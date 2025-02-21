@@ -132,15 +132,11 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                     activeColor: Color.fromARGB(255, 18, 73, 20), // Seçili olan radio buton halkası rengi
                   ),
                   SizedBox(height: 10),
-                  Text(
-                    "Explain your report (optional):",
-                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)), // Yazı rengi yeşil
-                  ),
                   TextField(
                     controller: complaintController,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      hintText: "Enter your explanation here...",
+                      hintText: "Enter your reasoning here...",
                       border: OutlineInputBorder(),
                       focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Color.fromARGB(255, 18, 73, 20)), // Focused border rengi
