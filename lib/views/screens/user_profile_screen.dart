@@ -1,17 +1,23 @@
+import 'package:bees/views/screens/auth/login_screen.dart';
+import 'package:bees/views/screens/favorites_screen.dart';
+import 'package:bees/views/screens/home_screen.dart';
+import 'package:bees/views/screens/requests_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:bees/models/item_model.dart';
 import 'package:bees/models/request_model.dart';
-import 'package:firebase_database/firebase_database.dart';
 
 class UserProfileScreen extends StatefulWidget {
   @override
   _UserProfileScreenState createState() => _UserProfileScreenState();
 }
+
+
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   final ImagePicker _picker = ImagePicker();
@@ -23,7 +29,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   TextEditingController _firstNameController = TextEditingController();
   TextEditingController _lastNameController = TextEditingController();
   String? _currentProfilePictureUrl;
-
+  var _selectedIndex=3;
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -163,7 +169,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       stream: FirebaseFirestore.instance
           .collection('items')
           .where('itemOwnerId', isEqualTo: userId)
-          .where('itemStatus', isEqualTo: 'Active')
+          .where('itemStatus', isEqualTo: 'active')
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -438,78 +444,180 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildRequestsList(String userID) {
-    return StreamBuilder<DatabaseEvent>(
-      stream: FirebaseDatabase.instance
-          .ref()
-          .child('requests')
-          .orderByChild('requestOwnerID')
-          .equalTo(userID)
-          .onValue,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('requests')
+        .where('requestOwnerID', isEqualTo: userID)
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+       return Center(child: CircularProgressIndicator());
+      }
 
-        if (!snapshot.hasData || snapshot.data?.snapshot.value == null) {
-          return Padding(
-            padding: EdgeInsets.all(16),
-            child: Text("No requests found"),
-          );
-        }
-
-        Map<dynamic, dynamic> requestsMap = snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
-        List<Request> requests = requestsMap.entries.map((entry) {
-          return Request.fromJson(Map<String, dynamic>.from(entry.value)..['requestID'] = entry.key);
-        }).toList();
-
-        if (requests.isEmpty) {
-          return Padding(
-            padding: EdgeInsets.all(16),
-            child: Text("No requests found"),
-          );
-        }
-
-        return Column(
-          children: requests.map((request) {
-            return Card(
-              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: ListTile(
-                title: Text(request.requestContent),
-                subtitle: Text(request.requestStatus),
-                trailing: Text(request.creationDate.toString().split(' ')[0]),
-                onTap: () => _showRequestDetails(context, request),
-              ),
-            );
-          }).toList(),
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        return Padding(
+          padding: EdgeInsets.all(16),
+          child: Text("No requests found"),
         );
-      },
-    );
-  }
+      }
 
-  void _showRequestDetails(BuildContext context, Request request) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Request Details'),
-        content: Column(
+      List<Request> requests = snapshot.data!.docs.map((doc) {
+        return Request.fromJson(
+          Map<String, dynamic>.from(doc.data() as Map<String, dynamic>)
+            ..['requestID'] = doc.id
+        );
+      }).toList();
+
+      return Column(
+        children: requests.map((request) {
+          return Card(
+            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ListTile(
+              title: Text(request.requestContent),
+              subtitle: Text(request.requestStatus),
+              trailing: Text(request.creationDate.toString().split(' ')[0]),
+              onTap: () => _showRequestDetails(context, request),
+            ),
+          );
+        }).toList(),
+      );
+    },
+  );
+}
+
+Future<void> _showDeleteRequestConfirmation(BuildContext context, Request request) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Delete Request'),
+      content: Text('Are you sure you want to delete this request?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          child: Text('Delete'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    try {
+      await FirebaseFirestore.instance
+          .collection('requests')
+          .doc(request.requestID)
+          .delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Request deleted successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting request')),
+      );
+    }
+  }
+}
+
+Future<void> _showEditRequestDialog(BuildContext context, Request request) async {
+  final TextEditingController contentController = TextEditingController(text: request.requestContent);
+  final formKey = GlobalKey<FormState>();
+
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Edit Request'),
+      content: Form(
+        key: formKey,
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Request ID: ${request.requestID}'),
-            Text('Content: ${request.requestContent}'),
-            Text('Status: ${request.requestStatus}'),
-            Text('Creation Date: ${request.creationDate.toString()}'),
+            TextFormField(
+              controller: contentController,
+              decoration: InputDecoration(labelText: 'Request Content'),
+              maxLines: 3,
+              validator: (value) => value?.isEmpty ?? true ? 'Content is required' : null,
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Close'),
-          ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () async {
+            if (formKey.currentState?.validate() ?? false) {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('requests')
+                    .doc(request.requestID)
+                    .update({
+                  'requestContent': contentController.text,
+                  'lastModifiedDate': DateTime.now(),
+                });
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Request updated successfully')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error updating request')),
+                );
+              }
+            }
+          },
+          child: Text('Save'),
+        ),
+      ],
+    ),
+  );
+}
+
+// Update the _showRequestDetails method to include edit and delete buttons
+void _showRequestDetails(BuildContext context, Request request) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Request Details'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Request ID: ${request.requestID}'),
+          Text('Content: ${request.requestContent}'),
+          Text('Status: ${request.requestStatus}'),
+          Text('Creation Date: ${request.creationDate.toString()}'),
         ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _showEditRequestDialog(context, request);
+          },
+          child: Text('Edit'),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _showDeleteRequestConfirmation(context, request);
+          },
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          child: Text('Delete'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Close'),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -518,11 +626,41 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return Scaffold(body: Center(child: Text("User not found.")));
     }
 
+    
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Profile", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Color.fromARGB(255, 59, 137, 62),
-        elevation: 0,
+        backgroundColor: const Color.fromARGB(255, 59, 137, 62),
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'BEES',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.yellow,
+          ),
+        ),
+        actions: [
+          IconButton(
+  icon: const Icon(Icons.exit_to_app, color: Colors.black),
+  onPressed: () async {
+    try {
+      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+
+      // Navigate to the login screen and prevent going back
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error logging out: ${e.toString()}")),
+      );
+    }
+  },
+),
+
+        ],
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).get(),
@@ -643,7 +781,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 Row(
                                   children: [
                                     Text(
-                                      (userData['activeItems']?.length ?? 0).toString(),
+                                      (userData['activeItems']?.length ?? "").toString(),
                                       style: TextStyle(fontSize: 16),
                                     ),
                                     SizedBox(width: 4),
@@ -740,7 +878,36 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           );
         },
       ),
-    );
+       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color.fromARGB(255, 59, 137, 62),
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
+          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
+          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
+        ],
+      ),
+  );
+}
+
+void _onItemTapped(int index) {
+    if (index == _selectedIndex) return;
+    switch (index) {
+      case 0:
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => HomeScreen()));
+        break;
+      case 1:
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => RequestsScreen()));
+        break;
+      case 2:
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => FavoritesScreen()));
+        break;
+    }
+  }
+    
   }
 
   Widget _buildInfoTile(String title, String value) {
@@ -754,5 +921,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ],
       ),
     );
+    
   }
-}
+
