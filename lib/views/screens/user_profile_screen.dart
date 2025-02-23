@@ -756,4 +756,3 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 }
-
