@@ -1,0 +1,56 @@
+import 'package:flutter/material.dart';
+
+class AdminHomeScreen extends StatelessWidget {
+  const AdminHomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Panel'),
+        centerTitle: true,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+              child: Text(
+                'Admin Menu',
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('User Management'),
+              onTap: () {
+                Navigator.pushNamed(context, '/userManagement');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.report),
+              title: const Text('Content Management'),
+              onTap: () {
+                Navigator.pushNamed(context, '/contentManagement');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart),
+              title: const Text('Data Analysis Reports'),
+              onTap: () {
+                Navigator.pushNamed(context, '/dataReports');
+              },
+            ),
+          ],
+        ),
+      ),
+      body: const Center(
+        child: Text(
+          'Welcome to the Admin Panel',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+}

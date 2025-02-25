@@ -1,3 +1,5 @@
+import 'package:bees/views/screens/admin_home_screen';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/views/screens/home_screen.dart';
@@ -20,9 +22,19 @@ class LoginController {
         );
 
         if (userCredential.user != null) {
+          // Firestore'dan kullanıcının isAdmin olup olmadığını al
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .get();
+
+          bool isAdmin = userDoc.exists ? (userDoc.get('isAdmin') ?? false) : false;
+
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            MaterialPageRoute(
+              builder: (context) => isAdmin ?  AdminHomeScreen() : HomeScreen(),
+            ),
           );
         } else {
           _showError(context, 'Login failed. Please try again.');
@@ -40,6 +52,7 @@ class LoginController {
       }
     }
   }
+
 
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
