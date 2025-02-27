@@ -167,11 +167,14 @@ Widget build(BuildContext context) {
                             if (imageUrl.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
-                                child: Image.network(
-                                  imageUrl,
-                                  height: 120,
-                                  width: 150,
-                                  fit: BoxFit.cover,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12), // Border radius ekledik
+                                  child: Image.network(
+                                    imageUrl,
+                                    height: 120,
+                                    width: 150,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                             SizedBox(height: 8),
@@ -217,7 +220,7 @@ Widget build(BuildContext context) {
                                     ),
                                     child: Text(
                                       category,
-                                      style: TextStyle(color: Colors.white),
+                                      style: TextStyle(color: Colors.black),
                                     ),
                                   ),
                                   SizedBox(width: 2),
@@ -229,9 +232,10 @@ Widget build(BuildContext context) {
                                     ),
                                     child: Text(
                                       condition,
-                                      style: TextStyle(color: Colors.white),
+                                      style: TextStyle(color: Colors.black),
                                     ),
                                   ),
+                                  
                                 ],
                               ),
                             ),
@@ -251,7 +255,7 @@ Widget build(BuildContext context) {
                                       ),
                                       child: Text(
                                         departments[0],
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(color: Colors.black),
                                       ),
                                     ),
                                     // Additional orange box if there are more than one department
@@ -266,7 +270,7 @@ Widget build(BuildContext context) {
                                         child: Text(
                                           '...',
                                           style: TextStyle(
-                                            color: Colors.white,
+                                            color: Colors.black,
                                             fontWeight: FontWeight.bold, // This makes the text bold
                                           ),
                                         ),
