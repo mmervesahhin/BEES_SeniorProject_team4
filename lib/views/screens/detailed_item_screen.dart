@@ -1,9 +1,12 @@
 import 'package:bees/controllers/reported_item_controller.dart';
+import 'package:bees/models/item_model.dart';
 import 'package:bees/models/reported_item_model.dart';
 import 'package:bees/views/screens/favorites_screen.dart';
 import 'package:bees/views/screens/home_screen.dart';
 import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
+import 'package:bees/views/screens/others_user_profile_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/controllers/detailed_item_controller.dart';
@@ -26,7 +29,8 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
 
   final DetailedItemController _controller = DetailedItemController();
   final HomeController _homeController = HomeController();
-
+  
+  Item? item;
   Map<String, dynamic>? itemDetails;
   bool isLoading = true;
   bool isFavorited = false;
@@ -40,10 +44,14 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
 
   Future<void> _fetchData() async {
     Map<String, dynamic>? details = await _controller.fetchItemDetails(widget.itemId);
+    
     setState(() {
       itemDetails = details;
       isLoading = false;
+      item = Item.fromJson(itemDetails!, widget.itemId); 
     });
+    print(item.toString()); //item doğru oluşmuş diye bakmak için koydum ve içi dolu bir şekilde oluşmuş görünüyor. Siz de burdan check edebilirsiniz. Kolay gelsin.
+   
   }
 
   Future<void> _fetchFavoriteStatus() async {
@@ -331,57 +339,88 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                           SizedBox(height: 10),
                         ],
                         Text(itemDetails!["description"] ?? "No description available"),
-                        SizedBox(height: 10),
-                        if (itemDetails!["departments"] != null && (itemDetails!["departments"] as List).isNotEmpty)
-                          Wrap(
-                            spacing: 8.0,
-                            runSpacing: 4.0,
-                            children: List.generate(itemDetails!["departments"].length, (index) {
-                              return Chip(label: Text(itemDetails!["departments"][index]));
-                            }),
-                          ),
-                        Row(
-                          children: [
-                            Chip(label: Text(itemDetails!["category"])),
-                            SizedBox(width: 8),
-                            Chip(label: Text(itemDetails!["condition"])),
-                          ],
-                        ),
-                        SizedBox(height: 10),
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => UserProfileScreen()),
+                          // Departman başlığı ve departman chipleri
+                          if (itemDetails!["departments"] != null && (itemDetails!["departments"] as List).isNotEmpty) ...[
+                            Text("Department(s):", style: TextStyle(fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Wrap(
+                              spacing: 8.0,
+                              runSpacing: 4.0,
+                              children: List.generate(itemDetails!["departments"].length, (index) {
+                                return Chip(
+                                  label: Text(itemDetails!["departments"][index]),
+                                  backgroundColor: Colors.green.shade100, // Pastel yeşil tonu
                                 );
-                              },
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundImage: itemDetails!["ownerProfilePicture"] != null &&
-                                            itemDetails!["ownerProfilePicture"].isNotEmpty
-                                        ? NetworkImage(itemDetails!["ownerProfilePicture"])
-                                        : null,
-                                    radius: 20,
-                                    child: itemDetails!["ownerProfilePicture"] == null ||
-                                            itemDetails!["ownerProfilePicture"].isEmpty
-                                        ? Icon(Icons.person)
-                                        : null,
-                                  ),
-                                  SizedBox(width: 10),
-                                  Text(itemDetails!["ownerFullName"], style: TextStyle(fontWeight: FontWeight.bold)),
-                                  SizedBox(width: 10),
-                                  IconButton(
-                                    onPressed: () {},
-                                    icon: Icon(Icons.message, color: Color.fromARGB(255, 59, 137, 62), size: 30),
-                                  ),
-                                ],
-                              ),
+                              }),
                             ),
                           ],
-                        ),
+
+                          SizedBox(height: 10),
+
+                          // Category başlığı ve category chipi
+                          Text("Category:", style: TextStyle(fontWeight: FontWeight.bold)),
+                          SizedBox(height: 4),
+                          Chip(
+                            label: Text(itemDetails!["category"]),
+                            backgroundColor: const Color.fromARGB(255, 248, 248, 248), // Pastel yeşil tonu
+                          ),
+
+                          SizedBox(height: 10),
+
+                          // Condition başlığı ve condition chipi
+                          Text("Condition:", style: TextStyle(fontWeight: FontWeight.bold)),
+                          SizedBox(height: 4),
+                          Chip(
+                            label: Text(itemDetails!["condition"]),
+                            backgroundColor: Colors.green.shade100, // Pastel yeşil tonu
+                          ),
+
+                          SizedBox(height: 10),
+                        Row(
+  children: [
+    GestureDetector(
+      onTap: () {
+        if (itemDetails!["itemOwnerId"] != null) {
+          // Kullanıcı profiline yönlendirme
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OthersUserProfileScreen(userId: itemDetails!["itemOwnerId"]),
+            ),
+          );
+        }
+      },
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundImage: itemDetails!["ownerProfilePicture"] != null &&
+                    itemDetails!["ownerProfilePicture"].isNotEmpty
+                ? NetworkImage(itemDetails!["ownerProfilePicture"])
+                : null,
+            radius: 20,
+            child: itemDetails!["ownerProfilePicture"] == null ||
+                    itemDetails!["ownerProfilePicture"].isEmpty
+                ? Icon(Icons.person)
+                : null,
+          ),
+          SizedBox(width: 10),
+          Text(
+            itemDetails!["ownerFullName"] != null && itemDetails!["ownerFullName"].isNotEmpty
+                ? itemDetails!["ownerFullName"]
+                : "No Name", // Varsayılan bir değer eklenebilir
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(width: 10),
+          IconButton(
+            onPressed: () {},
+            icon: Icon(Icons.message, color: Color.fromARGB(255, 59, 137, 62), size: 30),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
+
                         SizedBox(height: 20),
                         Center(
                           child: ElevatedButton(
