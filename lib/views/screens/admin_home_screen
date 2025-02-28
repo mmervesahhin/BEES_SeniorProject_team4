@@ -1,4 +1,5 @@
 import 'package:bees/views/screens/favorites_screen.dart';
+import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/item_upload_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:bees/views/screens/detailed_item_screen.dart';
@@ -42,12 +43,25 @@ Widget build(BuildContext context) {
     appBar: AppBar(
       backgroundColor: const Color.fromARGB(255, 59, 137, 62),
       automaticallyImplyLeading: false, // Geri butonunu kaldırır
-      title: Text(
-        'BEES admin',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.yellow,
+      title: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: 'BEES ',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.yellow,
+              ),
+            ),
+            TextSpan(
+              text: 'admin',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.yellow,
+              ),
+            ),
+          ],
         ),
       ),
     ),
@@ -314,7 +328,7 @@ Widget build(BuildContext context) {
               break;
             case 1:
                 Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => AdminRequestsScreen(),
+                builder: (context) => RequestsScreen(),
               ));
               break;
             case 2:
