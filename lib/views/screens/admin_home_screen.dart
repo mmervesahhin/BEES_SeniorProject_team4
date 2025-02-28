@@ -1,6 +1,7 @@
+import 'package:bees/views/screens/admin_profile_screen.dart';
+import 'package:bees/views/screens/admin_reports_screen.dart';
+import 'package:bees/views/screens/admin_requests_screen.dart';
 import 'package:bees/views/screens/favorites_screen.dart';
-import 'package:bees/views/screens/requests_screen.dart';
-import 'package:bees/views/screens/item_upload_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:bees/views/screens/detailed_item_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -310,8 +311,8 @@ Widget build(BuildContext context) {
             label: 'Requests',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favorites',
+            icon: Icon(Icons.report),
+            label: 'Reports',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.account_circle),
@@ -328,17 +329,17 @@ Widget build(BuildContext context) {
               break;
             case 1:
                 Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => RequestsScreen(),
+                builder: (context) => AdminRequestsScreen(),
               ));
               break;
             case 2:
               Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => FavoritesScreen(),
+                builder: (context) => AdminReportsScreen(),
               ));
               break;
             case 3:
             Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => UserProfileScreen(),
+                builder: (context) => AdminProfileScreen(),
               ));
               break;
           }

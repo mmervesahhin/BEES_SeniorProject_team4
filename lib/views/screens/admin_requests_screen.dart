@@ -1,3 +1,5 @@
+import 'package:bees/views/screens/admin_profile_screen.dart';
+import 'package:bees/views/screens/admin_reports_screen.dart';
 import 'package:bees/views/screens/favorites_screen.dart';
 import 'package:bees/views/screens/admin_home_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
@@ -27,28 +29,25 @@ import 'package:bees/models/user_model.dart' as bees;
       switch (index) {
         case 0:
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => HomeScreen()),
+            MaterialPageRoute(builder: (context) => AdminHomeScreen()),
           );
           break;
         case 1:
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminRequestsScreen()),
+          );
           break;
         case 2:
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => FavoritesScreen()),
+            MaterialPageRoute(builder: (context) => AdminReportsScreen()),
           );
           break;
         case 3:
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => UserProfileScreen()),
+            MaterialPageRoute(builder: (context) => AdminProfileScreen()),
           );
           break;
       }
-    }
-
-    void _navigateToCreateRequest() {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const CreateRequestScreen()),
-      );
     }
 
     @override
@@ -56,13 +55,26 @@ import 'package:bees/models/user_model.dart' as bees;
       return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color.fromARGB(255, 59, 137, 62),
-          automaticallyImplyLeading: false,
-          title: Text(
-            'BEES',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.yellow,
+          automaticallyImplyLeading: false, // Geri butonunu kaldırır
+          title: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'BEES ',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.yellow,
+                  ),
+                ),
+                TextSpan(
+                  text: 'admin',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.yellow,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -96,11 +108,6 @@ import 'package:bees/models/user_model.dart' as bees;
           
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _navigateToCreateRequest,
-          backgroundColor: const Color.fromARGB(255, 59, 137, 62),
-          child: Icon(Icons.add, color: Colors.white),
-        ),
         bottomNavigationBar: Padding(
           padding: const EdgeInsets.only(bottom: 0),
           child: BottomNavigationBar(
@@ -118,8 +125,8 @@ import 'package:bees/models/user_model.dart' as bees;
                 label: 'Requests',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.favorite),
-                label: 'Favorites',
+                icon: Icon(Icons.report),
+                label: 'Reports',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.account_circle),
