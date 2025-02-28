@@ -107,7 +107,7 @@ import 'package:bees/models/user_model.dart' as bees;
         floatingActionButton: FloatingActionButton(
           onPressed: _navigateToCreateRequest,
           backgroundColor: const Color.fromARGB(255, 59, 137, 62),
-          child: Icon(Icons.add, color: Colors.white),
+          child: Icon(Icons.edit, color: Colors.white),
         ),
         bottomNavigationBar: Padding(
           padding: const EdgeInsets.only(bottom: 0),

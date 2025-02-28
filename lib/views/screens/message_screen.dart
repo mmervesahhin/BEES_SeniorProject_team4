@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bees/models/request_model.dart';
 
+
 class MessageScreen extends StatelessWidget {
   final Request request;
 
@@ -19,8 +20,22 @@ class MessageScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Request from: ${request.requestContent}",
+              "Request from:",
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () {
+                // Bağlantıya tıklandığında yapılacak işlem (örn. detay sayfasına gitme)
+              },
+              child: Text(
+                request.requestContent,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             Expanded(

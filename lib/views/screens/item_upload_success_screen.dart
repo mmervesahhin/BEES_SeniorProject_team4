@@ -27,15 +27,8 @@ class UploadSuccessPage extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black,
-        // Geri tuşu için leading ekleniyor
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            // Geri dönme işlemi
-            Navigator.pop(context);
-          },
-          color: Colors.black, // İkon rengi
-        ),
+        leading: Container(), // Geri tuşunu kaldırır
+
       ),
       body: Stack(
         children: [

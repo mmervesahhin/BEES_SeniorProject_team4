@@ -37,7 +37,10 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Create Request"),
-        backgroundColor: const Color.fromARGB(255, 59, 137, 62),
+        centerTitle: true,
+        backgroundColor: Colors.green, // AppBar'ın arka plan rengi
+        foregroundColor: Colors.white,
+        //backgroundColor: const Color.fromARGB(255, 59, 137, 62),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

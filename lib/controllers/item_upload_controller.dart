@@ -105,8 +105,8 @@ class ItemController {
     String? titleError = validateTitle(titleController.text);
     String? priceError = validatePrice(priceController.text, category);
     bool isCoverPhotoMissing = !validateCoverPhoto(coverImage);
-
-    if (titleError == null && priceError == null && !isCoverPhotoMissing) {
+// && !isCoverPhotoMissing
+    if (titleError == null && priceError == null) {
       Item newItem = Item(
       itemOwnerId: userId , // Sahip ID'si atanmalı
       title: titleController.text,
