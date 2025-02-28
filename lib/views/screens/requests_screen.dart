@@ -228,7 +228,7 @@ Widget _buildRequestCard(Request request) {
                   IconButton(
                     icon: const Icon(Icons.message, color: Colors.black),
                     onPressed: () {
-                      _navigateToMessageScreen(request);
+                      _navigateToMessageScreen(request, "Request");
                     },
                   ),
                   IconButton(
@@ -310,13 +310,14 @@ void _reportRequest(Request request, String reason) {
 
 
 // Mesaj ekranına yönlendirme fonksiyonu
-void _navigateToMessageScreen(Request request) {
+void _navigateToMessageScreen(dynamic entity, String entityType) {
   Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (context) => MessageScreen(request: request),
+      builder: (context) => MessageScreen(entity: entity, entityType: entityType),
     ),
   );
 }
+
 
 Widget _loadingRequestCard(Request request) {
   return Card(

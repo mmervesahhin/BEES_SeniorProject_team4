@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:bees/models/request_model.dart';
-
 
 class MessageScreen extends StatelessWidget {
-  final Request request;
+  final dynamic entity;
+  final String entityType;
 
-  const MessageScreen({super.key, required this.request});
+  const MessageScreen({super.key, required this.entity, required this.entityType});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Message"),
+        title: Text("Message - $entityType"),
         backgroundColor: const Color.fromARGB(255, 59, 137, 62),
       ),
       body: Padding(
@@ -20,16 +19,16 @@ class MessageScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Request from:",
+              "Message regarding:",
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             InkWell(
               onTap: () {
-                // Bağlantıya tıklandığında yapılacak işlem (örn. detay sayfasına gitme)
+                // Detay sayfasına yönlendirme
               },
               child: Text(
-                request.requestContent,
+                entity.toString(),
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.blue,

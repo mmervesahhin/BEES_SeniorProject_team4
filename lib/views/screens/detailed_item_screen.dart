@@ -1,6 +1,7 @@
 import 'package:bees/controllers/reported_item_controller.dart';
 import 'package:bees/models/reported_item_model.dart';
 import 'package:bees/views/screens/favorites_screen.dart';
+import 'package:bees/views/screens/message_screen.dart';
 import 'package:bees/views/screens/home_screen.dart';
 import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
@@ -378,9 +379,11 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                                   Text(itemDetails!["ownerFullName"], style: TextStyle(fontWeight: FontWeight.bold)),
                                   SizedBox(width: 10),
                                   IconButton(
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      _navigateToMessageScreen(itemDetails, "Item");
+                                    },
                                     icon: Icon(Icons.message, color: Color.fromARGB(255, 59, 137, 62), size: 30),
-                                  ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -413,6 +416,15 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
       ),
     );
   }
+  
+  void _navigateToMessageScreen(dynamic entity, String entityType) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => MessageScreen(entity: entity, entityType: entityType),
+    ),
+  );
+}
+
 
   void _onItemTapped(int index) {
     switch (index) {
