@@ -1,23 +1,12 @@
-import 'package:bees/views/screens/home_screen.dart';
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false, // Debug yazısını kaldırır
-      home: UploadSuccessPage(),
-    );
-  }
-}
+import 'package:bees/views/screens/home_screen.dart';
+import 'package:bees/views/screens/detailed_item_screen.dart'; // Import the detailed item screen
 
 class UploadSuccessPage extends StatelessWidget {
+  final String itemId; // Add itemId
+
+  const UploadSuccessPage({Key? key, required this.itemId}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,15 +16,13 @@ class UploadSuccessPage extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black,
-        leading: Container(), // Geri tuşunu kaldırır
-
+        leading: Container(), // Removes the back button
       ),
       body: Stack(
         children: [
-          // Arka plan için arılar
           Positioned.fill(
             child: Image.asset(
-              'images/bee_pattern.jpg', // Arka plan için resim
+              'images/bee_pattern.jpg',
               repeat: ImageRepeat.repeat,
               fit: BoxFit.cover,
             ),
@@ -44,7 +31,6 @@ class UploadSuccessPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Sarı kutu
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -66,15 +52,15 @@ class UploadSuccessPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 40),
-                // Alt butonlar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton.icon(
                       onPressed: () {
-                        Navigator.push(
+                        Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(builder: (context) => const HomeScreen()),
+                          (route) => false, // Clear navigation stack
                         );
                       },
                       icon: const Icon(Icons.home),
@@ -86,7 +72,13 @@ class UploadSuccessPage extends StatelessWidget {
                     ),
                     ElevatedButton.icon(
                       onPressed: () {
-                        //view item
+                        // Navigate to DetailedItemScreen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DetailedItemScreen(itemId: itemId),
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.remove_red_eye),
                       label: const Text('View the Item'),

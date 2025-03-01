@@ -157,6 +157,11 @@ Widget addMorePhotosPlaceholder() {
   
   // Selected departments
   List<String> selectedDepartments = [];
+ @override
+  void initState() {
+    super.initState();
+    selectedDepartments = List<String>.from(departments); // Varsayılan olarak tüm departmanları seç
+  }
 
   // Payment plan options
   String paymentPlan = 'Per Hour';
@@ -167,16 +172,16 @@ Widget addMorePhotosPlaceholder() {
   }
 
   bool get allSelected => selectedDepartments.length == departments.length;
-  // Function to handle "All Departments" selection
-   void toggleSelection() {
-    setState(() {
-      if (allSelected) {
-        selectedDepartments = []; // Hepsini kaldır
-      } else {
-        selectedDepartments = List<String>.from(departments); // Hepsini seç
-      }
-    });
-  }
+  void toggleSelection() {
+  setState(() {
+    if (allSelected) {
+      selectedDepartments = []; // Hepsini kaldır
+    } else {
+      selectedDepartments = List<String>.from(departments); // Hepsini seç
+    }
+  });
+}
+
     @override
     Widget build(BuildContext context) {
       return Scaffold(

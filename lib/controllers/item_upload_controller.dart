@@ -123,7 +123,7 @@ class ItemController {
     String? priceError = validatePrice(priceController.text, category);
     bool isCoverPhotoMissing = !validateCoverPhoto(coverImage);
 // && !isCoverPhotoMissing
-    if (titleError == null && priceError == null  && !isCoverPhotoMissing ) {
+    if (titleError == null && priceError == null  ) {
       Item newItem = Item(
       itemOwnerId: userId , // Sahip ID'si atanmalı
       itemId: itemId,
@@ -153,9 +153,14 @@ class ItemController {
       await uploadItem(newItem, coverImage, additionalImages);
 
       Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => UploadSuccessPage()),
-      );
+      context,
+      MaterialPageRoute(builder: (context) => UploadSuccessPage(itemId: itemId)), // Pass itemId
+    );
+      Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => UploadSuccessPage(itemId: itemId)),
+    );
+
 
     } 
   }
