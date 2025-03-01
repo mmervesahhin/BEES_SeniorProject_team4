@@ -40,17 +40,20 @@ class ItemController {
       return 'Please enter the price';
     }
     final price = double.tryParse(value);
-    if ((category == 'Sale' || category == 'Rent') && (price == null || price <= 0)) {
-      return 'Price must be greater than 0';
+    
+    if (price == null) {
+      return 'Price must be a numeric value';
     }
+
+    if ((category == 'Sale' || category == 'Rent') && price <= 0) {
+    return 'Price must be greater than 0';
+  }
     return null;
   }
 
   bool validateCoverPhoto(File? imageFileCover) {
     return imageFileCover != null;
   }
-
-
 
   // Yeni Ürün Yükleme
   Future<void> uploadItem(Item item, File? imageFileCover, List<File> additionalImages) async {
@@ -62,17 +65,38 @@ class ItemController {
         return;
       }
       // 1. Ana Resmi Firebase Storage'a Yükleme
-      String? imageUrlCover;
-      if (imageFileCover != null) {
-        imageUrlCover = await _uploadImageToStorage(imageFileCover, "cover_\${DateTime.now().millisecondsSinceEpoch}.jpg");
-      }
-
+      // String? imageUrlCover;
+      // if (imageFileCover != null) {
+      //   imageUrlCover = await _uploadImageToStorage(imageFileCover, "cover_\${DateTime.now().millisecondsSinceEpoch}.jpg");
+      // }
       // 2. Ek Resimleri Yükleme
-      List<String> additionalImageUrls = [];
-      for (File image in additionalImages) {
-        String imageUrl = await _uploadImageToStorage(image, "additional_\${DateTime.now().millisecondsSinceEpoch}.jpg");
-        additionalImageUrls.add(imageUrl);
-      }
+      // List<String> additionalImageUrls = [];
+      // for (File image in additionalImages) {
+      //   String imageUrl = await _uploadImageToStorage(image, "additional_\${DateTime.now().millisecondsSinceEpoch}.jpg");
+      //   additionalImageUrls.add(imageUrl);
+      // }
+
+    if (userId == null) {
+      print("Error: User is not logged in.");
+      return;
+    }
+
+    // `itemId` burada tanımlanmalı
+    String itemId = FirebaseFirestore.instance.collection('items').doc().id;
+
+    // Cover Image Yükleme
+    String? imageUrlCover;
+    if (imageFileCover != null) {
+      imageUrlCover = await _uploadImageToStorage(imageFileCover, userId, itemId, "cover.jpg");
+    }
+
+    // Ek Resimleri Yükleme
+    List<String> additionalImageUrls = [];
+    for (int i = 0; i < additionalImages.length; i++) {
+      String imageUrl = await _uploadImageToStorage(additionalImages[i], userId, itemId, "additional_$i.jpg");
+      additionalImageUrls.add(imageUrl);
+    }
+
 
       // 3. Firestore'a Ürün Verisi Ekleme
       // DocumentReference docRef = await _firestore.collection('items').add({
@@ -82,17 +106,16 @@ class ItemController {
       //   'itemOwnerId': userId, 
       // });
 
-          String itemId = _firestore.collection('items').doc().id;
 
 
-          // **Firestore'a `itemId` ile ekleme (add() yerine set() kullanıyoruz)**
-          await _firestore.collection('items').doc(itemId).set({
-            ...item.toJson(),
-            'itemId': itemId, // **Firestore'un oluşturduğu ID `itemId` olarak kaydedildi**
-            'itemOwnerId': userId, // Kullanıcı ID
-            'photo': imageUrlCover,
-            'additionalPhotos': additionalImageUrls,
-          });
+      // **Firestore'a `itemId` ile ekleme (add() yerine set() kullanıyoruz)**
+      await _firestore.collection('items').doc(itemId).set({
+        ...item.toJson(),
+        'itemId': itemId, // **Firestore'un oluşturduğu ID `itemId` olarak kaydedildi**
+        'itemOwnerId': userId, // Kullanıcı ID
+        'photo': imageUrlCover,
+        'additionalPhotos': additionalImageUrls,
+      });
 
 
       //String itemId = docRef.id; // Firestore'un oluşturduğu belge ID
@@ -118,10 +141,12 @@ class ItemController {
        return;
      }
      
-      String itemId = FirebaseFirestore.instance.collection('items').doc().id;
+    String itemId = FirebaseFirestore.instance.collection('items').doc().id;
     String? titleError = validateTitle(titleController.text);
     String? priceError = validatePrice(priceController.text, category);
     bool isCoverPhotoMissing = !validateCoverPhoto(coverImage);
+   
+
 // && !isCoverPhotoMissing
     if (titleError == null && priceError == null  ) {
       Item newItem = Item(
@@ -200,12 +225,19 @@ class ItemController {
     return fileSize <= maxSizeInBytes;
   }
 
-  // Firebase Storage'a Resim Yükleme ve URL Alma
-  Future<String> _uploadImageToStorage(File image, String fileName) async {
-    final ref = _storage.ref().child('item_images').child(fileName);
-    await ref.putFile(image);
-    return await ref.getDownloadURL();
-  }
+  // // Firebase Storage'a Resim Yükleme ve URL Alma
+  // Future<String> _uploadImageToStorage(File image, String fileName) async {
+  //   final ref = _storage.ref().child('item_images').child(fileName);
+  //   await ref.putFile(image);
+  //   return await ref.getDownloadURL();
+  // }
+
+Future<String> _uploadImageToStorage(File image, String userId, String itemId, String fileName) async {
+  final ref = _storage.ref().child('item_images').child(userId).child(itemId).child(fileName);
+  await ref.putFile(image);
+  return await ref.getDownloadURL();
+}
+
 
   // Bellek sızıntısını önlemek için controller'ları serbest bırak
   void dispose() {

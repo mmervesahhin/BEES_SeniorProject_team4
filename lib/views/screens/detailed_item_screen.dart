@@ -40,11 +40,22 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   }
 
   Future<void> _fetchData() async {
+    print("Fetching details for itemId: ${widget.itemId}");
+
     Map<String, dynamic>? details = await _controller.fetchItemDetails(widget.itemId);
-    setState(() {
-      itemDetails = details;
-      isLoading = false;
-    });
+
+    if (details == null) {
+      print("Item not found in Firestore!");
+    } else {
+      print("Fetched details: $details");
+    }
+
+    if (mounted) { // Ensure widget is still active
+      setState(() {
+        itemDetails = details;
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> _fetchFavoriteStatus() async {
