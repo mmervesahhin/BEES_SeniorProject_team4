@@ -1,11 +1,10 @@
+import 'package:bees/controllers/admin_controller.dart';
+import 'package:bees/views/screens/admin_data_analysis_screen.dart';
 import 'package:bees/views/screens/admin_profile_screen.dart';
 import 'package:bees/views/screens/admin_reports_screen.dart';
-import 'package:bees/views/screens/favorites_screen.dart';
 import 'package:bees/views/screens/admin_home_screen.dart';
-import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:bees/views/screens/create_request_screen.dart';
 import 'package:bees/models/request_model.dart';
 import 'package:bees/controllers/request_controller.dart';
 
@@ -23,6 +22,7 @@ import 'package:bees/models/user_model.dart' as bees;
     TextEditingController _searchController = TextEditingController();
     final RequestController _requestController = RequestController();
   String _searchQuery = '';
+   final AdminController _controller = AdminController();
 
     void _onItemTapped(int index) {
       if (index == _selectedIndex) return;
@@ -43,10 +43,15 @@ import 'package:bees/models/user_model.dart' as bees;
           );
           break;
         case 3:
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => AdminProfileScreen()),
-          );
-          break;
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminDataAnalysisScreen(),
+              ));
+              break;
+          case 4:
+          Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => AdminProfileScreen(),
+            ));
+            break;
       }
     }
 
@@ -127,6 +132,10 @@ import 'package:bees/models/user_model.dart' as bees;
               BottomNavigationBarItem(
                 icon: Icon(Icons.report),
                 label: 'Reports',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.bar_chart),
+                label: 'Analysis',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.account_circle),
@@ -227,7 +236,7 @@ Widget _buildRequestCard(Request request) {
                   IconButton(
                     icon: const Icon(Icons.more_vert, color: Colors.black),
                     onPressed: () {
-                      _showReportOptions(context, request);
+                      _controller.showRemoveOptions(context, request);
                     },
                   ),
                 ],
@@ -242,15 +251,6 @@ Widget _buildRequestCard(Request request) {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Status: ${request.requestStatus}",
-                    style: TextStyle(
-                      color: request.requestStatus == "Pending"
-                          ? Colors.orange
-                          : Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
                     _formatDate(request.creationDate),
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
@@ -262,43 +262,6 @@ Widget _buildRequestCard(Request request) {
       );
     },
   );
-}
-
-// Kullanıcıya rapor seçeneklerini gösteren fonksiyon
-void _showReportOptions(BuildContext context, Request request) {
-  showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.report),
-              title: const Text("Inappropriate for BEES"),
-              onTap: () {
-                _reportRequest(request, "Inappropriate for BEES");
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.gavel),
-              title: const Text("Illegal request"),
-              onTap: () {
-                _reportRequest(request, "Illegal request");
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-// Raporlama işlemini yöneten fonksiyon
-void _reportRequest(Request request, String reason) {
-  // Burada raporlama işlemi backend'e gönderilebilir.
-  print("Request ${request.requestID} reported for: $reason");
 }
 
 Widget _loadingRequestCard(Request request) {

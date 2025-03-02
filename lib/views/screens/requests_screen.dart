@@ -249,15 +249,6 @@ Widget _buildRequestCard(Request request) {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Status: ${request.requestStatus}",
-                    style: TextStyle(
-                      color: request.requestStatus == "Pending"
-                          ? Colors.orange
-                          : Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
                     _formatDate(request.creationDate),
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),

@@ -1,9 +1,9 @@
+import 'package:bees/views/screens/admin_data_analysis_screen.dart';
 import 'package:bees/views/screens/admin_home_screen.dart';
 import 'package:bees/views/screens/admin_profile_screen.dart';
 import 'package:bees/views/screens/admin_requests_screen.dart';
 import 'package:bees/views/screens/item_reports_screen.dart';
 import 'package:bees/views/screens/request_reports_screen.dart';
-import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:bees/views/screens/user_reports_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -95,6 +95,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
           BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
           BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
           BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Reports'),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analysis'),
           BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
         ],
       ),
@@ -141,6 +142,9 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminReportsScreen()));
         break;
       case 3:
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminDataAnalysisScreen()));
+        break;
+      case 4:
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminProfileScreen()));
         break;
     }

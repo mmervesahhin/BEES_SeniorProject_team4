@@ -1,3 +1,4 @@
+import 'package:bees/views/screens/admin_data_analysis_screen.dart';
 import 'package:bees/views/screens/admin_profile_screen.dart';
 import 'package:bees/views/screens/admin_reports_screen.dart';
 import 'package:bees/views/screens/admin_requests_screen.dart';
@@ -315,6 +316,10 @@ Widget build(BuildContext context) {
             label: 'Reports',
           ),
           BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Analysis',
+            ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.account_circle),
             label: 'Profile',
             
@@ -338,6 +343,11 @@ Widget build(BuildContext context) {
               ));
               break;
             case 3:
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminDataAnalysisScreen(),
+              ));
+              break;
+            case 4:
             Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => AdminProfileScreen(),
               ));

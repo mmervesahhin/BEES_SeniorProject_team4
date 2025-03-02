@@ -52,13 +52,18 @@ final String usersCollectionPath = "users";
 
    // 🔥 Firestore'dan canlı veri almak için güncellenmiş metod:
   Stream<List<Request>> getRequests() {
-    return _firestore.collection(collectionPath).snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return Request.fromJson(data);
-      }).toList();
-    });
+    return _firestore
+        .collection(collectionPath)
+        .where('requestStatus', isEqualTo: 'active') // Firestore sorgusu ile filtreleme
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return Request.fromJson(data);
+          }).toList();
+        });
   }
+
   // Belirli bir isteği getirme
   Future<Request?> getRequestById(String requestID) async {
     try {

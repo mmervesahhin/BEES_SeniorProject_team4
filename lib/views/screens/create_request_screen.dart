@@ -22,7 +22,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       requestID: "", // Firestore’un ID’yi üretmesini sağlamak için boş bırakıyoruz
       requestOwnerID: "", 
       requestContent: _descriptionController.text,
-      requestStatus: "Pending",
+      requestStatus: "active",
       creationDate: DateTime.now(),
     );
 
