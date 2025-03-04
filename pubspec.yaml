@@ -73,7 +73,8 @@ flutter:
   assets:
     - images/bee_pattern.jpg
     - images/bee.jpg
-  #   - images/a_dot_ham.jpeg
+    - images/anon_avatar.jpg
+  # 
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
