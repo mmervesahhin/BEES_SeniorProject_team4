@@ -41,9 +41,8 @@ class RegisterController {
     if (value.length < 8 || value.length > 16) {
       return 'Password must be between 8 and 16 characters';
     }
-    if (!RegExp(r"(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$%^&*])").hasMatch(value)) {
-      return 'Password must contain at least one uppercase letter, one digit, and one special character';
-    }
+    if (!RegExp("^(?=.*[A-Z])(?=.*\\d)(?=.*[!\"#\$%&'()*+,-./:;<=>?@[\\]^_`{|}~]).{8,}\$").hasMatch(value)) {
+      return 'Password must be at least 8 characters long and contain at least one uppercase letter, one digit, and one special character';}
     return null;
   }
 
@@ -97,7 +96,7 @@ class RegisterController {
           firstName: firstNameController.text,
           lastName: lastNameController.text,
           emailAddress: emailController.text,
-          password: password,
+          hashedPassword: password,
           profilePicture: '',  // Default or empty, could be updated later
           userRating: 0.0,      // Default rating, can be updated later
           accountStatus: 'active',  // Default status

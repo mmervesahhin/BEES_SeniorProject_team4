@@ -1,7 +1,8 @@
 import 'dart:io';
 
 class Item {
-  String? id;
+  String? itemId;
+  String itemOwnerId;
   String title;
   String description;
   String category;
@@ -13,9 +14,11 @@ class Item {
   String? photoUrl;
   List<String>? additionalPhotos;
   int favoriteCount;
+  String itemStatus;
 
   Item({
-    this.id,
+    this.itemId,
+    required this.itemOwnerId,
     required this.title,
     required this.description,
     required this.category,
@@ -27,12 +30,14 @@ class Item {
     this.photoUrl,
     this.additionalPhotos,
     this.favoriteCount = 0,
+    required this.itemStatus,
   });
 
   // Convert Item object to JSON for Firestore
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'itemId': itemId,
+      'itemOwnerId': itemOwnerId,
       'title': title,
       'description': description,
       'category': category,
@@ -44,13 +49,15 @@ class Item {
       'photo': photoUrl,
       'additionalPhotos': additionalPhotos,
       'favoriteCount': favoriteCount,
+      'itemStatus': itemStatus,
     };
   }
 
   // Convert Firestore document to Item object
   factory Item.fromJson(Map<String, dynamic> json, String documentId) {
     return Item(
-      id: documentId,
+      itemId: documentId,
+      itemOwnerId: json['itemOwnerId'],
       title: json['title'],
       description: json['description'],
       category: json['category'],
@@ -64,6 +71,7 @@ class Item {
           ? List<String>.from(json['additionalPhotos'])
           : [],
       favoriteCount: json['favoriteCount'] ?? 0,
+      itemStatus: json['itemStatus'] ?? 'available',
     );
   }
 }
