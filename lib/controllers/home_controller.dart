@@ -23,6 +23,7 @@ class HomeController {
   }) {
     // Start with the basic collection reference
     Query<Map<String, dynamic>> query = _itemsCollection;
+    query = query.where('itemStatus', isEqualTo: 'active');
 
     // Apply filters conditionally, ensuring that null values are handled
     if (minPrice != null) {

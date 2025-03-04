@@ -1,9 +1,9 @@
+import 'package:bees/controllers/admin_controller.dart';
+import 'package:bees/models/item_model.dart';
 import 'package:bees/views/screens/admin_data_analysis_screen.dart';
 import 'package:bees/views/screens/admin_profile_screen.dart';
 import 'package:bees/views/screens/admin_reports_screen.dart';
 import 'package:bees/views/screens/admin_requests_screen.dart';
-import 'package:bees/views/screens/favorites_screen.dart';
-import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:bees/views/screens/detailed_item_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +29,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   
   String? userId = FirebaseAuth.instance.currentUser?.uid;
   final HomeController _controller = HomeController();
+  final AdminController _controller1 = AdminController();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   Map<String, dynamic> _filters = {
@@ -287,6 +288,16 @@ Widget build(BuildContext context) {
                             SizedBox(height: 10),
                           ],
                         ),
+                        Positioned(
+                        top: 2,
+                        right: -12,
+                        child: IconButton(
+                          icon: Icon(Icons.more_vert, color: Colors.black),
+                          onPressed: () {
+                            _controller1.showItemRemoveOptions(context, Item.fromJson(item, itemId));
+                          },
+                        ),
+                      ),
                       ],
                     ),
                   ));

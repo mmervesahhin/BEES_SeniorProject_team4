@@ -236,7 +236,7 @@ Widget _buildRequestCard(Request request) {
                   IconButton(
                     icon: const Icon(Icons.more_vert, color: Colors.black),
                     onPressed: () {
-                      _controller.showRemoveOptions(context, request);
+                      _controller.showRequestRemoveOptions(context, request);
                     },
                   ),
                 ],

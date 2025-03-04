@@ -142,7 +142,7 @@ class _AdminDataAnalysisScreenState extends State<AdminDataAnalysisScreen> {
             SizedBox(height: 20),
             // Create Report Button
             ElevatedButton(
-              onPressed: _controller.canCreateReport() ? _controller.createReport : null,
+              onPressed: _controller.canCreateReport(selectedItemTypes, selectedCategories) ? _controller.createReport : null,
               child: isLoading
                   ? CircularProgressIndicator(
                       color: const Color.fromARGB(255, 255, 255, 255),

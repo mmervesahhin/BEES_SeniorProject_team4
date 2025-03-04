@@ -6,12 +6,6 @@ class DataAnalysisController extends ChangeNotifier {
   DateTime? startDate;
   DateTime? endDate;
 
-  List<String> itemTypes = ['Books', 'Notes', 'Stationery', 'Electronics', 'Others'];
-  List<String> categories = ['Sale', 'Rent', 'Exchange', 'Donation'];
-
-  List<String> selectedItemTypes = [];
-  List<String> selectedCategories = [];
-
 Future<DateTime?> selectStartDate(BuildContext context) async {
   DateTime? picked = await showDatePicker(
     context: context,
@@ -34,7 +28,7 @@ Future<DateTime?> selectEndDate(BuildContext context) async {
 }
 
   // Check if the report can be created
-  bool canCreateReport() {
+  bool canCreateReport(List<String> selectedItemTypes, List<String> selectedCategories) {
     return selectedItemTypes.isNotEmpty &&
         selectedCategories.isNotEmpty &&
         startDate != null &&
@@ -45,26 +39,7 @@ Future<DateTime?> selectEndDate(BuildContext context) async {
   Future<void> createReport() async {
     
   }
-
-  // Filter chip selection
-  void toggleSelectedItemType(String itemType) {
-    if (selectedItemTypes.contains(itemType)) {
-      selectedItemTypes.remove(itemType);
-    } else {
-      selectedItemTypes.add(itemType);
-    }
-    notifyListeners();
-  }
-
-  void toggleSelectedCategory(String category) {
-    if (selectedCategories.contains(category)) {
-      selectedCategories.remove(category);
-    } else {
-      selectedCategories.add(category);
-    }
-    notifyListeners();
-  }
-
+  
   // Date formatting helper
   String formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
