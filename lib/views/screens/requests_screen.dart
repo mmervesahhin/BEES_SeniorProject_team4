@@ -7,6 +7,7 @@
   import 'package:bees/models/request_model.dart';
   import 'package:bees/controllers/request_controller.dart';
   import 'package:bees/views/screens/message_screen.dart';
+  import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:bees/models/user_model.dart' as bees;
 
@@ -311,9 +312,28 @@ void _reportRequest(Request request, String reason) {
 
 // Mesaj ekranına yönlendirme fonksiyonu
 void _navigateToMessageScreen(dynamic entity, String entityType) {
+  User? currentUser = FirebaseAuth.instance.currentUser;
+  if (currentUser == null) {
+    // Kullanıcı giriş yapmamışsa, bir hata mesajı gösterebilirsiniz
+    print("User is not logged in");
+    return;
+  }
+  String senderId = "";
+  String receiverId = currentUser.uid;
+
+  if (entityType == "Item") {
+    senderId = entity.itemOwnerId;
+  } else if (entityType == "Request") {
+    senderId = entity.requestOwnerID;
+  }
   Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (context) => MessageScreen(entity: entity, entityType: entityType),
+      builder: (context) => MessageScreen(
+        entity: entity,
+        entityType: entityType,
+        senderId: senderId,
+        receiverId: receiverId,
+      ),
     ),
   );
 }

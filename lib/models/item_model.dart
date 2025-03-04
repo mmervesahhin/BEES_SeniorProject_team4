@@ -74,4 +74,8 @@ class Item {
       itemStatus: json['itemStatus'] ?? 'available',
     );
   }
+
+  String toString() {
+    return 'Item{itemId: $itemId, itemOwnerId: $itemOwnerId, title: $title, ...}';
+  }
 }
