@@ -87,13 +87,13 @@ class ItemController {
     // Cover Image Yükleme
     String? imageUrlCover;
     if (imageFileCover != null) {
-      imageUrlCover = await _uploadImageToStorage(imageFileCover, userId, itemId, "cover.jpg");
+      imageUrlCover = await _uploadImageToStorage(imageFileCover, userId, itemId, "cover_${DateTime.now().millisecondsSinceEpoch}.jpg");
     }
 
     // Ek Resimleri Yükleme
     List<String> additionalImageUrls = [];
     for (int i = 0; i < additionalImages.length; i++) {
-      String imageUrl = await _uploadImageToStorage(additionalImages[i], userId, itemId, "additional_$i.jpg");
+      String imageUrl = await _uploadImageToStorage(additionalImages[i], userId, itemId, "additional_${DateTime.now().millisecondsSinceEpoch}.jpg");
       additionalImageUrls.add(imageUrl);
     }
 
@@ -128,6 +128,7 @@ class ItemController {
   Future<void> validateAndUploadItem({
     required String category,
     required String condition,
+    required String itemType,
     required File? coverImage,
     required List<File> additionalImages,
     required List<String> selectedDepartments,
@@ -156,7 +157,7 @@ class ItemController {
       description: descriptionController.text,
       category: category,
       condition: condition,
-      itemType: '', // Eksik olan itemType burada belirtilmeli
+      itemType: itemType, // Eksik olan itemType burada belirtilmeli
       departments: selectedDepartments,
       price: double.parse(priceController.text),
       paymentPlan: category == 'Rent' ? 'Per Day' : null, // Kira seçeneği için eklendi
