@@ -155,6 +155,100 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       onTap: onTap,
     );
   }
+  Future<void> _showEditRequestDialog(BuildContext context, Request request) async {
+  final TextEditingController contentController = TextEditingController(text: request.requestContent);
+  final formKey = GlobalKey<FormState>();
+
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(
+        'Edit Request',
+        style: TextStyle(
+          color: primaryColor,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      content: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: contentController,
+              decoration: InputDecoration(
+                labelText: 'Request Content',
+                labelStyle: TextStyle(color: Colors.grey.shade700),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: primaryColor, width: 2),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: errorColor, width: 1),
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+              maxLines: 3,
+              validator: (value) => value?.isEmpty ?? true ? 'Content is required' : null,
+              style: TextStyle(color: textColor),
+            ),
+          ],
+        ),
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            if (formKey.currentState?.validate() ?? false) {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('requests')
+                    .doc(request.requestID)
+                    .update({
+                  'requestContent': contentController.text,
+                  'lastModifiedDate': DateTime.now(),
+                });
+                Navigator.of(context).pop();
+                _showSnackBar('Request updated successfully');
+              } catch (e) {
+                _showSnackBar('Error updating request', isError: true);
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text('Save'),
+        ),
+      ],
+    ),
+  );
+}
 
   Future<void> _showImagePickerOptions() async {
     showModalBottomSheet(
@@ -1107,228 +1201,60 @@ Widget _buildRequestsList(String userID) {
     },
   );
 }
-
-void _showRequestDetails(BuildContext context, Request request) {
-  showDialog(
+Future<void> _showDeleteRequestConfirmation(BuildContext context, Request request) async {
+  final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(
-        'Request Details',
+        'Delete Request',
         style: TextStyle(
-          color: primaryColor,
+          color: errorColor,
           fontWeight: FontWeight.bold,
         ),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Content:',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            request.requestContent,
-            style: TextStyle(color: textColor),
-          ),
-          SizedBox(height: 12),
-          Text(
-            'Status:',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            request.requestStatus,
-            style: TextStyle(
-              color: Colors.orange,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+      content: Text(
+        'Are you sure you want to delete this request? This action cannot be undone.',
+        style: TextStyle(color: textColor),
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
       actions: [
         TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            _showEditRequestDialog(context, request);
-          },
+          onPressed: () => Navigator.of(context).pop(false),
           child: Text(
-            'Edit',
-            style: TextStyle(color: primaryColor),
+            'Cancel',
+            style: TextStyle(color: Colors.grey.shade700),
           ),
         ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            _markRequestAsSolved(request);
-          },
-          style: TextButton.styleFrom(foregroundColor: primaryColor),
-          child: Text('Mark as Solved'),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            _showDeleteRequestConfirmation(context, request);
-          },
-          style: TextButton.styleFrom(foregroundColor: errorColor),
-          child: Text('Delete'),
-        ),
         ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(true),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey.shade200,
-            foregroundColor: textColor,
+            backgroundColor: errorColor,
+            foregroundColor: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: Text('Close'),
+          child: Text('Delete'),
         ),
       ],
     ),
   );
-}
 
-  Future<void> _showDeleteRequestConfirmation(BuildContext context, Request request) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Delete Request',
-          style: TextStyle(
-            color: errorColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to delete this request? This action cannot be undone.',
-          style: TextStyle(color: textColor),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: errorColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await FirebaseFirestore.instance
-            .collection('requests')
-            .doc(request.requestID)
-            .delete();
-        _showSnackBar('Request deleted successfully');
-      } catch (e) {
-        _showSnackBar('Error deleting request', isError: true);
-      }
+  if (confirmed == true) {
+    try {
+      await FirebaseFirestore.instance
+          .collection('requests')
+          .doc(request.requestID)
+          .delete();
+      _showSnackBar('Request deleted successfully');
+    } catch (e) {
+      _showSnackBar('Error deleting request', isError: true);
     }
   }
-
-  Future<void> _showEditRequestDialog(BuildContext context, Request request) async {
-    final TextEditingController contentController = TextEditingController(text: request.requestContent);
-    final formKey = GlobalKey<FormState>();
-
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Edit Request',
-          style: TextStyle(
-            color: primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildFormField(
-                initialValue: request.requestContent,
-                labelText: 'Request Content',
-                maxLines: 3,
-                validator: (value) => value?.isEmpty ?? true ? 'Content is required' : null,
-                onChanged: (value) => contentController.text = value,
-              ),
-            ],
-          ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState?.validate() ?? false) {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('requests')
-                      .doc(request.requestID)
-                      .update({
-                    'requestContent': contentController.text,
-                    'lastModifiedDate': DateTime.now(),
-                  });
-                  Navigator.of(context).pop();
-                  _showSnackBar('Request updated successfully');
-                } catch (e) {
-                  _showSnackBar('Error updating request', isError: true);
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  
+}
   // Implementation for Req 10.4.7.1
   Future<void> _showChangePasswordDialog() async {
     _currentPasswordController.clear();
@@ -1493,239 +1419,6 @@ void _showRequestDetails(BuildContext context, Request request) {
         ],
       ),
     );
-  }
-
-  // Implementation for Req 10.4.7.1
-  Future<void> _changePassword() async {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    try {
-      // Create a credential
-      AuthCredential credential = EmailAuthProvider.credential(
-        email: user.email!,
-        password: _currentPasswordController.text,
-      );
-
-      // Reauthenticate
-      await user.reauthenticateWithCredential(credential);
-      
-      // Change password
-      await user.updatePassword(_newPasswordController.text);
-      
-      // Send email notification (Req 10.4.7.1.2)
-      // Note: Firebase doesn't have a direct API for this, you would typically use a Cloud Function
-      // or your own backend service to send the email
-      
-      _showSnackBar('Password changed successfully. A confirmation email has been sent.');
-    } catch (e) {
-      _showSnackBar('Error changing password: ${e.toString()}', isError: true);
-    }
-  }
-
-  // Implementation for Req 10.4.7.4
-  Future<void> _showChangeEmailDialog() async {
-    _newEmailController.clear();
-
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Change Email Address',
-          style: TextStyle(
-            color: primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Form(
-          key: _emailFormKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _newEmailController,
-                decoration: InputDecoration(
-                  labelText: 'New Email Address',
-                  labelStyle: TextStyle(color: Colors.grey.shade700),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: errorColor, width: 1),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Email is required';
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                    return 'Please enter a valid email address';
-                  }
-                  return null;
-                },
-                style: TextStyle(color: textColor),
-              ),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'A verification email will be sent to the new address. Your current email will remain active until verification is complete.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (_emailFormKey.currentState?.validate() ?? false) {
-                await _changeEmail();
-                Navigator.of(context).pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('Save Changes'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Implementation for Req 10.4.7.4
-  Future<void> _changeEmail() async {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    try {
-      // Send verification email to the new address
-      await user.verifyBeforeUpdateEmail(_newEmailController.text);
-      
-      // Store the pending email change in Firestore for reference
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({
-        'pendingEmail': _newEmailController.text,
-      });
-      
-      // Note: Firebase will handle the email verification process
-      // When the user clicks the verification link, the email will be updated automatically
-      
-      _showSnackBar('Verification email sent to ${_newEmailController.text}. Please check your inbox.');
-    } catch (e) {
-      _showSnackBar('Error changing email: ${e.toString()}', isError: true);
-    }
-  }
-
-  // Implementation for Req 10.4.7.2
-  Future<void> _logout() async {
-    bool confirmLogout = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            "Log Out",
-            style: TextStyle(
-              color: errorColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            "Are you sure you want to log out?",
-            style: TextStyle(color: textColor),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text(
-                "Cancel",
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-            ),
-            ElevatedButton(
-              child: Text("Log Out"),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: errorColor,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmLogout == true) {
-      try {
-        await FirebaseAuth.instance.signOut();
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
-        );
-      } catch (e) {
-        _showSnackBar("Error logging out: ${e.toString()}", isError: true);
-      }
-    }
   }
 
   @override
@@ -2033,7 +1726,7 @@ void _showRequestDetails(BuildContext context, Request request) {
                         ),
                         SizedBox(height: 24),
                         _buildInfoCard("Email", userData['emailAddress'] ?? 'Unknown', Icons.email_outlined),
-                        SizedBox(height: 12,),
+                        SizedBox(height: 12, width:10000),
                         _buildInfoCard("Rating", (userData['userRating'] ?? 0).toString(), Icons.star_outline),
                         
                         SizedBox(height: 24),
@@ -2096,7 +1789,8 @@ void _showRequestDetails(BuildContext context, Request request) {
                   ),
                 ),
                 
-                // Active Items Section
+                // Active Items Section - Only show when not in edit mode
+                if (!_isEditing)
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
@@ -2189,7 +1883,8 @@ void _showRequestDetails(BuildContext context, Request request) {
                   ),
                 ),
                 
-                // Requests Section
+                // Requests Section - Only show when not in edit mode
+                if (!_isEditing)
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
@@ -2356,6 +2051,8 @@ void _showRequestDetails(BuildContext context, Request request) {
   }
   
   Widget _buildInfoCard(String title, String value, IconData icon) {
+  // Special handling for email to make it swipable
+  if (title == "Email") {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2364,6 +2061,7 @@ void _showRequestDetails(BuildContext context, Request request) {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.all(8),
@@ -2378,7 +2076,74 @@ void _showRequestDetails(BuildContext context, Request request) {
             ),
           ),
           SizedBox(width: 16),
-          Column(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: lightTextColor,
+                  ),
+                ),
+                SizedBox(height: 4),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                      // Add a small indicator to show it's swipable
+                      if (value.length > 20) // Only show indicator if email is long
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Regular info card for other fields
+  return Container(
+    padding: EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.grey.shade50,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade200),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: primaryColor,
+            size: 20,
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -2398,6 +2163,407 @@ void _showRequestDetails(BuildContext context, Request request) {
                 ),
               ),
             ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+  
+  // Implementation for Req 10.4.7.1
+  Future<void> _changePassword() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      // Create a credential
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: _currentPasswordController.text,
+      );
+
+      // Reauthenticate
+      await user.reauthenticateWithCredential(credential);
+      
+      // Change password
+      await user.updatePassword(_newPasswordController.text);
+      
+      // Send email notification (Req 10.4.7.1.2)
+      // Note: Firebase doesn't have a direct API for this, you would typically use a Cloud Function
+      // or your own backend service to send the email
+      
+      _showSnackBar('Password changed successfully. A confirmation email has been sent.');
+    } catch (e) {
+      _showSnackBar('Error changing password: ${e.toString()}', isError: true);
+    }
+  }
+
+  // Implementation for Req 10.4.7.4
+  Future<void> _showChangeEmailDialog() async {
+  _newEmailController.clear();
+  _currentPasswordController.clear(); // Reuse the password controller
+
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(
+        'Change Email Address',
+        style: TextStyle(
+          color: primaryColor,
+          fontWeight: FontWeight.bold,
+          fontSize:12,
+        ),
+      ),
+      content: Form(
+        key: _emailFormKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _currentPasswordController,
+              decoration: InputDecoration(
+                labelText: 'Current Password',
+                labelStyle: TextStyle(color: Colors.grey.shade700,fontSize: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: primaryColor, width: 2),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: errorColor, width: 1),
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
+              ),
+              obscureText: true,
+              validator: (value) => value?.isEmpty ?? true ? 'Password is required for verification' : null,
+              style: TextStyle(color: textColor),
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _newEmailController,
+              decoration: InputDecoration(
+                labelText: 'New Email Address',
+                labelStyle: TextStyle(color: Colors.grey.shade700,fontSize:12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: primaryColor, width: 2),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: errorColor, width: 1),
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
+              ),
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Email is required';
+                }
+                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                  return 'Please enter a valid email address';
+                }
+                return null;
+              },
+              style: TextStyle(color: textColor),
+            ),
+            SizedBox(height: 2),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'A verification email will be sent to the new address. Your current email will remain active until verification is complete. Please check your spam folder if you don\'t see the email.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            if (_emailFormKey.currentState?.validate() ?? false) {
+              await _changeEmail();
+              Navigator.of(context).pop();
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text('Save Changes'),
+        ),
+      ],
+    ),
+  );
+}
+
+  // Implementation for Req 10.4.7.4
+  Future<void> _changeEmail() async {
+  final User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  try {
+    // Step 1: Re-authenticate the user
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: _currentPasswordController.text,
+    );
+    await user.reauthenticateWithCredential(credential);
+
+    // Step 2: Update the email address
+    await user.verifyBeforeUpdateEmail(_newEmailController.text);
+
+    // Step 3: Store the pending email in Firestore for reference
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .update({
+      'pendingEmail': _newEmailController.text,
+    });
+
+    // Step 4: Show success message
+    _showSnackBar('Verification email sent to ${_newEmailController.text}. Please check your inbox and spam folder.');
+
+    // Step 5: Listen for email verification
+    _listenForEmailVerification(user.uid, _newEmailController.text);
+  } catch (e) {
+    // Handle errors
+    String errorMessage = 'Error changing email: ';
+    
+    if (e.toString().contains('requires-recent-login')) {
+      errorMessage += 'Please log out and log back in before trying again.';
+    } else if (e.toString().contains('invalid-email')) {
+      errorMessage += 'The email address is not valid.';
+    } else if (e.toString().contains('email-already-in-use')) {
+      errorMessage += 'This email is already in use by another account.';
+    } else {
+      errorMessage += e.toString();
+    }
+    
+    _showSnackBar(errorMessage, isError: true);
+    print('Detailed error: $e');
+  }
+}
+void _listenForEmailVerification(String userId, String newEmail) {
+  FirebaseAuth.instance.authStateChanges().listen((User? user) async {
+    if (user != null && user.emailVerified) {
+      // Step 1: Update the emailAddress field in Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .update({
+        'emailAddress': newEmail,
+        'pendingEmail': FieldValue.delete(), // Remove the pendingEmail field
+      });
+
+      // Step 2: Show success message
+      _showSnackBar('Email successfully updated to $newEmail.');
+
+      // Step 3: Stop listening (optional)
+      // You can stop listening here if you no longer need to track changes.
+    }
+  });
+}
+
+  // Implementation for Req 10.4.7.2
+  Future<void> _logout() async {
+    bool confirmLogout = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            "Log Out",
+            style: TextStyle(
+              color: errorColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            "Are you sure you want to log out?",
+            style: TextStyle(color: textColor),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(
+                "Cancel",
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            ElevatedButton(
+              child: Text("Log Out"),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: errorColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmLogout == true) {
+      try {
+        await FirebaseAuth.instance.signOut();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+      } catch (e) {
+        _showSnackBar("Error logging out: ${e.toString()}", isError: true);
+      }
+    }
+  }
+  
+  void _showRequestDetails(BuildContext context, Request request) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Request Details',
+          style: TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Content:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              request.requestContent,
+              style: TextStyle(color: textColor),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Status:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              request.requestStatus,
+              style: TextStyle(
+                color: Colors.orange,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showEditRequestDialog(context, request);
+            },
+            child: Text(
+              'Edit',
+              style: TextStyle(color: primaryColor),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _markRequestAsSolved(request);
+            },
+            style: TextButton.styleFrom(foregroundColor: primaryColor),
+            child: Text('Mark as Solved'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showDeleteRequestConfirmation(context, request);
+            },
+            style: TextButton.styleFrom(foregroundColor: errorColor),
+            child: Text('Delete'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade200,
+              foregroundColor: textColor,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text('Close'),
           ),
         ],
       ),

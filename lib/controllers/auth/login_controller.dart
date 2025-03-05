@@ -28,7 +28,7 @@ class LoginController {
           _showError(context, 'Login failed. Please try again.');
         }
       } on FirebaseAuthException catch (e) {
-        String errorMessage = 'Wrong email or invalid address.';
+        String errorMessage = 'Wrong password or invalid address.';
         if (e.code == 'user-not-found') {
           errorMessage = 'No user found for that email.';
         } else if (e.code == 'wrong-password') {
