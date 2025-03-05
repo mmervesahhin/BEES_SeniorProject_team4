@@ -156,7 +156,14 @@ Widget _buildRequestList() {
 
       List<Request> filteredRequests = snapshot.data!.where((req) {
         String contentLower = req.requestContent.toLowerCase();
-        return contentLower.contains(searchQueryLower); // Kısmi eşleşme
+        
+        // Kullanıcı adı bilgisi için kullanıcıyı getir
+        bees.User? user = _requestController.cachedUsers[req.requestOwnerID];
+
+        // Kullanıcı adı ve soyadı üzerinden arama yap
+        String userNameLower = user != null ? "${user.firstName} ${user.lastName}".toLowerCase() : "";
+
+        return contentLower.contains(searchQueryLower) || userNameLower.contains(searchQueryLower); 
       }).toList();
 
       // Sonuçları alaka düzeyine göre sırala (daha yakın eşleşmeler önce gelir)
