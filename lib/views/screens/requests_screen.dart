@@ -1,6 +1,8 @@
   import 'package:bees/views/screens/favorites_screen.dart';
   import 'package:bees/views/screens/home_screen.dart';
+import 'package:bees/views/screens/others_user_profile_screen.dart';
   import 'package:bees/views/screens/user_profile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
   import 'package:flutter/material.dart';
   import 'package:font_awesome_flutter/font_awesome_flutter.dart';
   import 'package:bees/views/screens/create_request_screen.dart';
@@ -22,6 +24,8 @@ import 'package:bees/models/user_model.dart' as bees;
     TextEditingController _searchController = TextEditingController();
     final RequestController _requestController = RequestController();
   String _searchQuery = '';
+  String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";//block için ihtiyacım vardı
+
 
     void _onItemTapped(int index) {
       if (index == _selectedIndex) return;
@@ -51,6 +55,22 @@ import 'package:bees/models/user_model.dart' as bees;
         MaterialPageRoute(builder: (context) => const CreateRequestScreen()),
       );
     }
+
+    void _navigateToProfile(String userId, BuildContext context) {  //kullanıcı isminden ya da profilinden o kişinin profiline yönlendirmeyi burda yapıyorum.
+  if (userId == FirebaseAuth.instance.currentUser!.uid) {
+    // Eğer kullanıcı kendi profiline bakıyorsa
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => UserProfileScreen()),
+    );
+  } else {
+    // Eğer başka birinin profiline bakıyorsa
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => OthersUserProfileScreen(userId: userId)),
+    );
+  }
+}
 
     @override
     Widget build(BuildContext context) {
@@ -143,7 +163,7 @@ import 'package:bees/models/user_model.dart' as bees;
 
 Widget _buildRequestList() {
   return StreamBuilder<List<Request>>(
-    stream: _requestController.getRequests(),
+    stream: _requestController.getRequests(currentUserId),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const Center(child: CircularProgressIndicator());
@@ -209,20 +229,30 @@ Widget _buildRequestCard(Request request) {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: const Color(0xFF3B893E),
-                    backgroundImage: user.profilePicture.isNotEmpty
-                        ? NetworkImage(user.profilePicture)
-                        : null,
-                    child: user.profilePicture.isEmpty
-                        ? const Icon(Icons.person, color: Colors.white)
-                        : null,
+                  GestureDetector(  //profile yönlendirmek için bu kısmı aşağıdaki gibi güncelledim
+                    onTap: () {
+                      _navigateToProfile(user.userID, context);
+                    },
+                    child: CircleAvatar(
+                      backgroundColor: const Color(0xFF3B893E),
+                      backgroundImage: user.profilePicture.isNotEmpty
+                          ? NetworkImage(user.profilePicture)
+                          : null,
+                      child: user.profilePicture.isEmpty
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      "${user.firstName} ${user.lastName}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    child: GestureDetector(
+                      onTap: () {
+                        _navigateToProfile(user.userID, context);
+                      },
+                      child: Text(
+                        "${user.firstName} ${user.lastName}",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                   IconButton(

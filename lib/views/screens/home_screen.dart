@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     List<String> selectedDepartments = [];
                   
   String? userId = FirebaseAuth.instance.currentUser?.uid;
+  
   final HomeController _controller = HomeController();
   final TextEditingController _searchController = TextEditingController();
   Map<String, bool> _favorites = {};
@@ -90,235 +91,236 @@ Widget build(BuildContext context) {
           ),
         ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: _controller.getItems(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text('An error occurred: ${snapshot.error}'));
-              }
+  child: StreamBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
+    stream: _controller.getItems(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(child: CircularProgressIndicator());
+      }
+      if (snapshot.hasError) {
+        return Center(child: Text('An error occurred: ${snapshot.error}'));
+      }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Center(child: Text('No items found.'));
-              }
+      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return Center(child: Text('No items found.'));
+      }
 
-              final items = snapshot.data!.docs.where((doc) {
-                var title = (doc['title'] ?? '').toString().toLowerCase();
-                var price = doc['price'] ?? 0;
-                var condition = doc['condition'] ?? 'Unknown';
-                var category = doc['category'] ?? 'Unknown';
-                var itemType = doc['itemType'] ?? 'Unknown';
-                var departments = doc['departments'] ?? [];
+      final items = snapshot.data!.where((doc) {
+        var data = doc.data() as Map<String, dynamic>? ?? {};
+        var title = (data['title'] ?? '').toString().toLowerCase();
+        var price = data['price'] ?? 0;
+        var condition = data['condition'] ?? 'Unknown';
+        var category = data['category'] ?? 'Unknown';
+        var itemType = data['itemType'] ?? 'Unknown';
+        var departments = data['departments'] ?? [];
 
-                bool matchesSearch = title.contains(_searchQuery);
-                bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
+        bool matchesSearch = title.contains(_searchQuery);
+        bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
 
-                return matchesSearch && matchesFilters;
-              }).toList();
+        return matchesSearch && matchesFilters;
+      }).toList();
 
-              items.sort((a, b) {
-                var titleA = (a['title'] ?? '').toString().toLowerCase();
-                var titleB = (b['title'] ?? '').toString().toLowerCase();
-                return titleA.indexOf(_searchQuery).compareTo(titleB.indexOf(_searchQuery));
-              });
+      items.sort((a, b) {
+        var dataA = a.data() as Map<String, dynamic>? ?? {};
+        var dataB = b.data() as Map<String, dynamic>? ?? {};
+        var titleA = (dataA['title'] ?? '').toString().toLowerCase();
+        var titleB = (dataB['title'] ?? '').toString().toLowerCase();
+        return titleA.indexOf(_searchQuery).compareTo(titleB.indexOf(_searchQuery));
+      });
 
-              return GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 0.7,
+      return GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: 0.7,
+        ),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          var data = items[index].data() as Map<String, dynamic>;
+          String itemId = items[index].id;
+
+          bool isFavorited = _favorites[itemId] ?? false;
+
+          String imageUrl = _controller.getImageUrl(data['photo']);
+          String category = _controller.getCategory(data['category']);
+          List<String> departments = _controller.getDepartments(data['departments']);
+          String condition = data['condition'] ?? 'Unknown';
+
+          bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
+
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailedItemScreen(itemId: data['itemId']),
                 ),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  var item = items[index].data() as Map<String, dynamic>;
-                  String itemId = items[index].id;
-
-                  bool isFavorited = _favorites[itemId] ?? false;
-
-                  String imageUrl = _controller.getImageUrl(item['photo']);
-                  String category = _controller.getCategory(item['category']);
-                  List<String> departments = _controller.getDepartments(item['departments']);
-                  String condition = item['condition'] ?? 'Unknown';
-
-                  bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
-
-                return   GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetailedItemScreen(itemId: item['itemId']),
-                      ),
-                    );
-                  },
-                  
-                 child: Card(
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Stack(
-                      children: [
-                        Column(
-                          children: [
-                            if (imageUrl.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Image.network(
-                                  imageUrl,
-                                  height: 120,
-                                  width: 150,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            SizedBox(height: 8),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item['title'],
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                    ),
-                                    SizedBox(height: 5),
-                                    if (!hidePrice)
-                                      Row(
-                                        children: [
-                                          Text('₺${item['price']}'),
-                                          SizedBox(width: 5),
-                                          if (item['paymentPlan'] != null)
-                                          Text(
-                                            item['paymentPlan'],
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ],
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Color.fromARGB(255, 59, 137, 62), // Green container for category
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      category,
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                  SizedBox(width: 2),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromARGB(255, 240, 217, 11), // Yellow for condition
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      condition,
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            // Orange container for departments
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.orange,
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        departments[0],
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                    // Additional orange box if there are more than one department
-                                    if (departments.length > 1) ...[
-                                      SizedBox(width: 4),
-                                      Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange,
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Text(
-                                          '...',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold, // This makes the text bold
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                          ],
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 5,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                isFavorited ? Icons.favorite : Icons.favorite_border,
-                                color: isFavorited ? Colors.red : Colors.grey,
-                              ),
-                              onPressed: () async {
-                                setState(() {
-                                  _favorites[itemId] = !isFavorited;
-                                });
-
-                                _controller.updateFavoriteCount(itemId, !isFavorited, userId!);
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ));
-                },
               );
             },
-          ),
-        ),
+            child: Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Stack(
+                children: [
+                  Column(
+                    children: [
+                      if (imageUrl.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Image.network(
+                            imageUrl,
+                            height: 120,
+                            width: 150,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data['title'],
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              SizedBox(height: 5),
+                              if (!hidePrice)
+                                Row(
+                                  children: [
+                                    Text('₺${data['price']}'),
+                                    SizedBox(width: 5),
+                                    if (data['paymentPlan'] != null)
+                                      Text(
+                                        data['paymentPlan'],
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Color.fromARGB(255, 59, 137, 62),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                category,
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            SizedBox(width: 2),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 240, 217, 11),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                condition,
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  departments.isNotEmpty ? departments[0] : '',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              if (departments.length > 1) ...[
+                                SizedBox(width: 4),
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '...',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                    ],
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 5,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          isFavorited ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorited ? Colors.red : Colors.grey,
+                        ),
+                        onPressed: () async {
+                          setState(() {
+                            _favorites[itemId] = !isFavorited;
+                          });
+
+                          _controller.updateFavoriteCount(itemId, !isFavorited, userId!);
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  ),
+),
       ],
     ),
     floatingActionButton: FloatingActionButton(

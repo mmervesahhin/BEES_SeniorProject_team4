@@ -50,7 +50,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
       isLoading = false;
       item = Item.fromJson(itemDetails!, widget.itemId); 
     });
-    print(item.toString()); //item doğru oluşmuş diye bakmak için koydum ve içi dolu bir şekilde oluşmuş görünüyor. Siz de burdan check edebilirsiniz. Kolay gelsin.
+    //print(item.toString()); //item doğru oluşmuş diye bakmak için koydum ve içi dolu bir şekilde oluşmuş görünüyor. Siz de burdan check edebilirsiniz. Kolay gelsin.
    
   }
 
@@ -65,9 +65,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   Future<void> _showReportDialog(BuildContext context) async {
     String? dialogSelectedReason = selectedReportReason; // Dialog için geçici bir değişken
 
-    final userId = 'userID'; // Firestore'dan almanız gereken gerçek kullanıcı ID'si
     final userIDD = FirebaseAuth.instance.currentUser?.uid ?? "defaultUserId"; 
-
 
     // Report işlemi öncesinde kontrol et
     bool hasReported = await ReportedItemController().hasUserReportedItem(widget.itemId, userIDD);
@@ -234,8 +232,6 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
       SnackBar(content: Text("Error reporting item: $e")),
     );
   }
-
-  
 }
 
 
@@ -340,7 +336,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                         ],
                         Text(itemDetails!["description"] ?? "No description available"),
                           // Departman başlığı ve departman chipleri
-                          if (itemDetails!["departments"] != null && (itemDetails!["departments"] as List).isNotEmpty) ...[
+                          if (item!.departments != null && (item!.departments as List).isNotEmpty) ...[
                             Text("Department(s):", style: TextStyle(fontWeight: FontWeight.bold)),
                             SizedBox(height: 4),
                             Wrap(
@@ -377,50 +373,60 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
 
                           SizedBox(height: 10),
                         Row(
-  children: [
-    GestureDetector(
-      onTap: () {
-        if (itemDetails!["itemOwnerId"] != null) {
-          // Kullanıcı profiline yönlendirme
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OthersUserProfileScreen(userId: itemDetails!["itemOwnerId"]),
-            ),
-          );
-        }
-      },
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundImage: itemDetails!["ownerProfilePicture"] != null &&
-                    itemDetails!["ownerProfilePicture"].isNotEmpty
-                ? NetworkImage(itemDetails!["ownerProfilePicture"])
-                : null,
-            radius: 20,
-            child: itemDetails!["ownerProfilePicture"] == null ||
-                    itemDetails!["ownerProfilePicture"].isEmpty
-                ? Icon(Icons.person)
-                : null,
-          ),
-          SizedBox(width: 10),
-          Text(
-            itemDetails!["ownerFullName"] != null && itemDetails!["ownerFullName"].isNotEmpty
-                ? itemDetails!["ownerFullName"]
-                : "No Name", // Varsayılan bir değer eklenebilir
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          SizedBox(width: 10),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.message, color: Color.fromARGB(255, 59, 137, 62), size: 30),
-          ),
-        ],
-      ),
-    ),
-  ],
-),
-
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                if (itemDetails!["itemOwnerId"] != null) {
+                                  // Kullanıcı ID'si ve item sahibi ID'si eşit mi kontrol et
+                                  if (itemDetails!["itemOwnerId"] == FirebaseAuth.instance.currentUser!.uid) {
+                                    // Eğer eşitse, kendi profil sayfasına yönlendir
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => UserProfileScreen(), // Kendi profil sayfası
+                                      ),
+                                    );
+                                  } else {
+                                    // Eğer eşit değilse, başkasının profil sayfasına yönlendir
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => OthersUserProfileScreen(userId: itemDetails!["itemOwnerId"]),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundImage: itemDetails!["ownerProfilePicture"] != null &&
+                                            itemDetails!["ownerProfilePicture"].isNotEmpty
+                                        ? NetworkImage(itemDetails!["ownerProfilePicture"])
+                                        : null,
+                                    radius: 20,
+                                    child: itemDetails!["ownerProfilePicture"] == null ||
+                                            itemDetails!["ownerProfilePicture"].isEmpty
+                                        ? Icon(Icons.person)
+                                        : null,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    itemDetails!["ownerFullName"] != null && itemDetails!["ownerFullName"].isNotEmpty
+                                        ? itemDetails!["ownerFullName"]
+                                        : "No Name", // Varsayılan bir değer eklenebilir
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(width: 10),
+                                  IconButton(
+                                    onPressed: () {},
+                                    icon: Icon(Icons.message, color: Color.fromARGB(255, 59, 137, 62), size: 30),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                         SizedBox(height: 20),
                         Center(
                           child: ElevatedButton(

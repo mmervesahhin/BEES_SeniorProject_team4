@@ -1,3 +1,4 @@
+import 'package:bees/controllers/blocked_user_controller.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bees/models/request_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -51,14 +52,48 @@ final String usersCollectionPath = "users";
 
 
    // 🔥 Firestore'dan canlı veri almak için güncellenmiş metod:
-  Stream<List<Request>> getRequests() {
-    return _firestore.collection(collectionPath).snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return Request.fromJson(data);
-      }).toList();
-    });
-  }
+  // Stream<List<Request>> getRequests() {
+  //   return _firestore.collection(collectionPath).snapshots().map((snapshot) {
+  //     return snapshot.docs.map((doc) {
+  //       final data = doc.data() as Map<String, dynamic>;
+  //       return Request.fromJson(data);
+  //     }).toList();
+  //   });
+  // } kodun eski hali, olur da bir şeyleri bozmuşsam burdan eski haline getirelim.
+Stream<List<Request>> getRequests(String currentUserId) {
+  return _firestore.collection('requests').snapshots().asyncMap((snapshot) async {
+    List<Request> requests = [];
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final request = Request.fromJson(data);
+
+      // Engellenen kişinin requestlerini filtrelemek için Firestore'dan kontrol ediyoruz
+      DocumentSnapshot blockerDoc = await _firestore
+          .collection('blocked_users')
+          .doc(currentUserId) // Request sahibinin engellediği kişiler
+          .collection('blockers')
+          .doc(request.requestOwnerID) // Bu kullanıcıyı engelledi mi?
+          .get();
+
+
+          DocumentSnapshot blockerDoc2 = await _firestore
+                    .collection('blocked_users')
+                    .doc(request.requestOwnerID)
+                    .collection('blockers')
+                    .doc(currentUserId)
+                    .get();
+      // Eğer requestOwnerID, currentUserId tarafından engellenmişse ekleme
+      if (!blockerDoc.exists && !blockerDoc2.exists) {
+        requests.add(request);
+      }
+    }
+
+    return requests;
+  });
+}
+
+
   // Belirli bir isteği getirme
   Future<Request?> getRequestById(String requestID) async {
     try {
