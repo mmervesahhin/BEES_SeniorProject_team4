@@ -339,36 +339,56 @@ Widget addMorePhotosPlaceholder() {
                 const SizedBox(height: 10),
 
                 // Departman Dropdown (Multi-Select)
-const Text('Department', style: TextStyle(color: Colors.black)),
-        MultiSelectDialogField(
-          items: departments.map((dept) => MultiSelectItem(dept, dept)).toList(),
-          initialValue: selectedDepartments,
-          title: const Text("Departments"),
-          buttonText: const Text("Select Departments"),
-          searchable: true,
-          listType: MultiSelectListType.CHIP,
-          onConfirm: (results) {
-            setState(() {
-              selectedDepartments = List<String>.from(results);
-            });
-          },
-          chipDisplay: MultiSelectChipDisplay(
-            onTap: (item) {
-              setState(() {
-                selectedDepartments.remove(item);
-              });
-            },
-          ),
-        ),
-        const SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: toggleSelection,
-          child: Text(allSelected ? "Deselect All" : "Select All"),
-        ),
+                
+              const Text('Department', style: TextStyle(color: Colors.black)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MultiSelectDialogField(
+                    items: departments.map((dept) => MultiSelectItem(dept, dept)).toList(),
+                    initialValue: selectedDepartments,
+                    title: const Text("Departments"),
+                    buttonText: const Text("Select Departments"),
+                    searchable: true,
+                    chipDisplay: MultiSelectChipDisplay.none(), // Çift gösterimi engelle
+                    onConfirm: (results) {
+                      setState(() {
+                        selectedDepartments = List<String>.from(results); // Seçimleri güncelle
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8), // Boşluk ekliyoruz
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton(
+                      onPressed: toggleSelection,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white, // Buton arka planı beyaz
+                        foregroundColor: Colors.black, // Yazı rengi siyah
+                        elevation: 0, // Gölgeyi kaldırıyoruz
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8), // Köşeleri yuvarlıyoruz
+                          side: const BorderSide(color: Colors.grey), // Kenarlık ekliyoruz
+                        ),
+                      ),
+                      child: Text(allSelected ? "Deselect All" : "Select All"),
+                    ),
+                  ),
+                  const SizedBox(height: 8), // Boşluk ekliyoruz
+                  if (selectedDepartments.isNotEmpty) // Eğer seçim varsa chip'leri göster
+                    MultiSelectChipDisplay(
+                      items: selectedDepartments.map((dept) => MultiSelectItem(dept, dept)).toList(),
+                      onTap: (item) {
+                        setState(() {
+                          selectedDepartments.remove(item);
+                        });
+                      },
+                    ),
+                ],
+              ),
 
+        // Şart Dropdown
 
-
-                // Şart Dropdown
                 const Text('Condition', style: TextStyle(color: Colors.black)),
                 DropdownButton<String>(
                   value: condition,
