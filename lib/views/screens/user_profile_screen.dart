@@ -37,6 +37,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   String? _currentProfilePictureUrl;
   var _selectedIndex = 3;
   
+bool _currentPasswordVisible = false;
+bool _newPasswordVisible = false;
+bool _confirmPasswordVisible = false;
+
   // Define a consistent color scheme
   final Color primaryColor = Color.fromARGB(255, 59, 137, 62);
   final Color accentColor = Colors.yellow;
@@ -454,197 +458,234 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildActiveItemsList(String userId) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('items')
-          .where('itemOwnerId', isEqualTo: userId)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-            ),
-          );
-        }
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('items')
+        .where('itemOwnerId', isEqualTo: userId)
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+          ),
+        );
+      }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.inventory_2_outlined,
-                    size: 48,
-                    color: Colors.grey.shade400,
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        return Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 48,
+                  color: Colors.grey.shade400,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  "No active items found",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: lightTextColor,
+                    fontWeight: FontWeight.w500,
                   ),
-                  SizedBox(height: 16),
-                  Text(
-                    "No active items found",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: lightTextColor,
-                      fontWeight: FontWeight.w500,
-                    ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return Column(
+        children: snapshot.data!.docs.map((doc) {
+          final item = Item.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+          return Card(
+            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            elevation: 2,
+            shadowColor: Colors.black.withOpacity(0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.shade200, width: 1),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: item.photoUrl != null
+                            ? Image.network(
+                                item.photoUrl!,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              )
+                            : Container(
+                                width: 80,
+                                height: 80,
+                                color: Colors.grey[200],
+                                child: Icon(Icons.image, color: Colors.grey),
+                              ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    item.title,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                // Add favorite count indicator
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.red.withOpacity(0.2)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.favorite,
+                                        color: Colors.red,
+                                        size: 14,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        '${item.favoriteCount}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              item.description,
+                              style: TextStyle(
+                                color: lightTextColor,
+                                fontSize: 14,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 8),
+                            Wrap(
+                            spacing: 4, // Horizontal space between chips
+                            children: [
+                              _buildChip(item.category),
+                              _buildChip(item.condition),
+                            ],
+                          ),
+                            SizedBox(height: 4),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: item.itemStatus == 'active' 
+                                    ? primaryColor.withOpacity(0.1)
+                                    : Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Status: ${item.itemStatus}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: item.itemStatus == 'active' 
+                                      ? primaryColor
+                                      : Colors.orange,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Divider(height: 24, thickness: 1, color: Colors.grey.shade200),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '₺${item.price.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          // BEESED button - Req 2.8
+                          if (item.itemStatus == 'active')
+                            ElevatedButton(
+                              onPressed: () => _markItemAsBeesed(item),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(horizontal: 12),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                'BEESED',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          SizedBox(width: 8),
+                          _buildIconButton(
+                            icon: Icons.edit,
+                            color: primaryColor,
+                            onPressed: () => _showEditItemDialog(context, item),
+                          ),
+                          SizedBox(width: 4),
+                          _buildIconButton(
+                            icon: Icons.delete,
+                            color: errorColor,
+                            onPressed: () => _showDeleteConfirmation(context, item),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           );
-        }
-
-        return Column(
-          children: snapshot.data!.docs.map((doc) {
-            final item = Item.fromJson(doc.data() as Map<String, dynamic>, doc.id);
-            return Card(
-              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              elevation: 2,
-              shadowColor: Colors.black.withOpacity(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey.shade200, width: 1),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: item.photoUrl != null
-                              ? Image.network(
-                                  item.photoUrl!,
-                                  width: 80,
-                                  height: 80,
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(
-                                  width: 80,
-                                  height: 80,
-                                  color: Colors.grey[200],
-                                  child: Icon(Icons.image, color: Colors.grey),
-                                ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: textColor,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                item.description,
-                                style: TextStyle(
-                                  color: lightTextColor,
-                                  fontSize: 14,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  _buildChip(item.category),
-                                  SizedBox(width: 8),
-                                  _buildChip(item.condition),
-                                ],
-                              ),
-                              SizedBox(height: 4),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: item.itemStatus == 'active' 
-                                      ? primaryColor.withOpacity(0.1)
-                                      : Colors.orange.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'Status: ${item.itemStatus}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: item.itemStatus == 'active' 
-                                        ? primaryColor
-                                        : Colors.orange,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    Divider(height: 24, thickness: 1, color: Colors.grey.shade200),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '₺${item.price.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            // BEESED button - Req 2.8
-                            if (item.itemStatus == 'active')
-                              ElevatedButton(
-                                onPressed: () => _markItemAsBeesed(item),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  foregroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(horizontal: 12),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text(
-                                  'BEESED',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            SizedBox(width: 8),
-                            _buildIconButton(
-                              icon: Icons.edit,
-                              color: primaryColor,
-                              onPressed: () => _showEditItemDialog(context, item),
-                            ),
-                            SizedBox(width: 4),
-                            _buildIconButton(
-                              icon: Icons.delete,
-                              color: errorColor,
-                              onPressed: () => _showDeleteConfirmation(context, item),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
+        }).toList(),
+      );
+    },
+  );
+}
 
   Widget _buildIconButton({
     required IconData icon,
@@ -679,7 +720,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
         ),
         content: Text(
-          'Are you sure you want to mark this item as sold, rented, exchanged, or donated?',
+          'Are you sure you want to mark this item as BEESED?',
           style: TextStyle(color: textColor),
         ),
         shape: RoundedRectangleBorder(
@@ -1255,172 +1296,262 @@ Future<void> _showDeleteRequestConfirmation(BuildContext context, Request reques
     }
   }
 }
+
   // Implementation for Req 10.4.7.1
-  Future<void> _showChangePasswordDialog() async {
-    _currentPasswordController.clear();
-    _newPasswordController.clear();
-    _confirmPasswordController.clear();
+Future<void> _showChangePasswordDialog() async {
+  _currentPasswordController.clear();
+  _newPasswordController.clear();
+  _confirmPasswordController.clear();
+  
+  // Reset visibility states
+  setState(() {
+    _currentPasswordVisible = false;
+    _newPasswordVisible = false;
+    _confirmPasswordVisible = false;
+  });
 
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Change Password',
-          style: TextStyle(
-            color: primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Form(
-          key: _passwordFormKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _currentPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Current Password',
-                  labelStyle: TextStyle(color: Colors.grey.shade700),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: errorColor, width: 1),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
-                ),
-                obscureText: true,
-                validator: (value) => value?.isEmpty ?? true ? 'Current password is required' : null,
-                style: TextStyle(color: textColor),
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _newPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'New Password',
-                  labelStyle: TextStyle(color: Colors.grey.shade700),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: errorColor, width: 1),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: Icon(Icons.lock, color: Colors.grey.shade600),
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'New password is required';
-                  }
-                  if (value.length < 8) {
-                    return 'Password must be at least 8 characters';
-                  }
-                  // Add more password criteria as needed
-                  return null;
-                },
-                style: TextStyle(color: textColor),
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Confirm New Password',
-                  labelStyle: TextStyle(color: Colors.grey.shade700),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: errorColor, width: 1),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: Icon(Icons.lock, color: Colors.grey.shade600),
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
-                  }
-                  if (value != _newPasswordController.text) {
-                    return 'Passwords do not match';
-                  }
-                  return null;
-                },
-                style: TextStyle(color: textColor),
-              ),
-            ],
-          ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
+  await showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder( // Use StatefulBuilder to manage state within dialog
+      builder: (context, setDialogState) {
+        return AlertDialog(
+          title: Text(
+            'Change Password',
+            style: TextStyle(
+              color: primaryColor,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              if (_passwordFormKey.currentState?.validate() ?? false) {
-                await _changePassword();
-                Navigator.of(context).pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          content: Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6,
+            ),
+            child: SingleChildScrollView(
+              child: Form(
+                key: _passwordFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Current Password Field with visibility toggle
+                    TextFormField(
+                      controller: _currentPasswordController,
+                      decoration: InputDecoration(
+                        labelText: 'Current Password',
+                        labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: primaryColor, width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: errorColor, width: 1),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600, size: 18),
+                        // Add suffix icon for visibility toggle
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _currentPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.grey.shade600,
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            setDialogState(() {
+                              _currentPasswordVisible = !_currentPasswordVisible;
+                            });
+                          },
+                        ),
+                      ),
+                      obscureText: !_currentPasswordVisible, // Toggle visibility
+                      validator: (value) => value?.isEmpty ?? true ? 'Current password is required' : null,
+                      style: TextStyle(color: textColor, fontSize: 14),
+                    ),
+                    SizedBox(height: 12),
+                    
+                    // New Password Field with visibility toggle
+                    TextFormField(
+                      controller: _newPasswordController,
+                      decoration: InputDecoration(
+                        labelText: 'New Password',
+                        labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: primaryColor, width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: errorColor, width: 1),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        prefixIcon: Icon(Icons.lock, color: Colors.grey.shade600, size: 18),
+                        // Add suffix icon for visibility toggle
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _newPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.grey.shade600,
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            setDialogState(() {
+                              _newPasswordVisible = !_newPasswordVisible;
+                            });
+                          },
+                        ),
+                      ),
+                      obscureText: !_newPasswordVisible, // Toggle visibility
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'New password is required';
+                        }
+                        if (value.length < 8) {
+                          return 'Password must be at least 8 characters';
+                        }
+                        return null;
+                      },
+                      style: TextStyle(color: textColor, fontSize: 14),
+                    ),
+                    SizedBox(height: 12),
+                    
+                    // Confirm Password Field with visibility toggle
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm New Password',
+                        labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: primaryColor, width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: errorColor, width: 1),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        prefixIcon: Icon(Icons.lock, color: Colors.grey.shade600, size: 18),
+                        // Add suffix icon for visibility toggle
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _confirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.grey.shade600,
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            setDialogState(() {
+                              _confirmPasswordVisible = !_confirmPasswordVisible;
+                            });
+                          },
+                        ),
+                      ),
+                      obscureText: !_confirmPasswordVisible, // Toggle visibility
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != _newPasswordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                      style: TextStyle(color: textColor, fontSize: 14),
+                    ),
+                    SizedBox(height: 12),
+                    
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue.shade700, size: 16),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'A verification email will be sent to your email address. You must verify your email before the password change will take effect.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            child: Text('Save Changes'),
           ),
-        ],
-      ),
-    );
-  }
-
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_passwordFormKey.currentState?.validate() ?? false) {
+                  await _changePassword();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              child: Text('Verify & Change', style: TextStyle(fontSize: 13)),
+            ),
+          ],
+          contentPadding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+          actionsPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        );
+      },
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     final User? firebaseUser = FirebaseAuth.instance.currentUser;
@@ -2171,32 +2302,134 @@ Future<void> _showDeleteRequestConfirmation(BuildContext context, Request reques
 }
   
   // Implementation for Req 10.4.7.1
-  Future<void> _changePassword() async {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+ Future<void> _changePassword() async {
+  final User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
 
-    try {
-      // Create a credential
-      AuthCredential credential = EmailAuthProvider.credential(
-        email: user.email!,
-        password: _currentPasswordController.text,
-      );
+  try {
+    // Step 1: Re-authenticate the user with current password
+    AuthCredential credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: _currentPasswordController.text,
+    );
 
-      // Reauthenticate
-      await user.reauthenticateWithCredential(credential);
-      
-      // Change password
-      await user.updatePassword(_newPasswordController.text);
-      
-      // Send email notification (Req 10.4.7.1.2)
-      // Note: Firebase doesn't have a direct API for this, you would typically use a Cloud Function
-      // or your own backend service to send the email
-      
-      _showSnackBar('Password changed successfully. A confirmation email has been sent.');
-    } catch (e) {
-      _showSnackBar('Error changing password: ${e.toString()}', isError: true);
+    // Reauthenticate
+    await user.reauthenticateWithCredential(credential);
+    
+    // Step 2: Send password reset email
+    await FirebaseAuth.instance.sendPasswordResetEmail(email: user.email!);
+    
+    // Step 3: Show success message with instructions
+    _showSnackBar(
+      'A password reset link has been sent to ${user.email}. Please check your inbox and click the link. When prompted, enter the new password you specified.',
+      isError: false
+    );
+    
+    // Close the dialog
+    Navigator.of(context).pop();
+    
+  } catch (e) {
+    String errorMessage = 'Error initiating password change: ';
+    
+    if (e.toString().contains('wrong-password')) {
+      errorMessage += 'The current password is incorrect.';
+    } else if (e.toString().contains('requires-recent-login')) {
+      errorMessage += 'Please log out and log back in before trying again.';
+    } else {
+      errorMessage += e.toString();
     }
+    
+    _showSnackBar(errorMessage, isError: true);
+    print('Detailed error: $e'); // Log the detailed error for debugging
   }
+}
+
+void _setupPasswordChangeVerificationListener(String userId, String newPassword) {
+  // This listener will check for email verification
+  FirebaseAuth.instance.authStateChanges().listen((User? user) async {
+    if (user != null && user.emailVerified) {
+      try {
+        // Get the pending password change info
+        DocumentSnapshot doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+        
+        Map<String, dynamic> userData = doc.data() as Map<String, dynamic>;
+        
+        if (userData.containsKey('pendingPasswordChange') && 
+            userData['pendingPasswordChange'] == true) {
+          
+          // Extract the stored password (remove the secure_ prefix)
+          String storedPassword = userData['pendingPasswordHash'].toString().replaceFirst('secure_', '');
+          
+          // Verify it matches what we expect
+          if (storedPassword == newPassword) {
+            // Update the password
+            await user.updatePassword(newPassword);
+            
+            // Clean up the temporary data
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .update({
+              'pendingPasswordChange': FieldValue.delete(),
+              'pendingPasswordHash': FieldValue.delete(),
+              'passwordChangeRequestTime': FieldValue.delete(),
+            });
+            
+            _showSnackBar('Password changed successfully after verification.');
+          }
+        }
+      } catch (e) {
+        _showSnackBar('Error completing password change: ${e.toString()}', isError: true);
+      }
+    }
+  });
+}
+
+// Add this method to listen for email verification
+void _listenForPasswordChangeVerification(String userId) {
+  // Set up a listener to check for email verification
+  FirebaseAuth.instance.authStateChanges().listen((User? user) async {
+    if (user != null && user.emailVerified) {
+      try {
+        // Get the pending password from Firestore
+        DocumentSnapshot doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+        
+        Map<String, dynamic> userData = doc.data() as Map<String, dynamic>;
+        
+        if (userData.containsKey('pendingPasswordChange') && 
+            userData['pendingPasswordChange'] == true &&
+            userData.containsKey('pendingPasswordHash')) {
+          
+          // Extract the password (remove the temp_ prefix)
+          String newPassword = userData['pendingPasswordHash'].toString().replaceFirst('temp_', '');
+          
+          // Update the password
+          await user.updatePassword(newPassword);
+          
+          // Clean up the temporary data
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .update({
+            'pendingPasswordChange': FieldValue.delete(),
+            'pendingPasswordHash': FieldValue.delete(),
+            'passwordChangeRequestTime': FieldValue.delete(),
+          });
+          
+          _showSnackBar('Password changed successfully after verification.');
+        }
+      } catch (e) {
+        _showSnackBar('Error completing password change: ${e.toString()}', isError: true);
+      }
+    }
+  });
+}
 
   // Implementation for Req 10.4.7.4
   Future<void> _showChangeEmailDialog() async {
