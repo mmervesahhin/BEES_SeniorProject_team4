@@ -4,7 +4,7 @@ import 'package:bees/views/screens/admin_data_analysis_screen.dart';
 import 'package:bees/views/screens/admin_profile_screen.dart';
 import 'package:bees/views/screens/admin_reports_screen.dart';
 import 'package:bees/views/screens/admin_requests_screen.dart';
-import 'package:bees/views/screens/detailed_item_screen.dart';
+import 'package:bees/views/screens/admin_detailed_item_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -156,7 +156,7 @@ Widget build(BuildContext context) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetailedItemScreen(itemId: item['itemId']),
+                        builder: (context) => AdminDetailedItemScreen(itemId: item['itemId']),
                       ),
                     );
                   },

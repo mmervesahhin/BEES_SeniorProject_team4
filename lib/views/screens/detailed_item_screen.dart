@@ -239,7 +239,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Item Details", style: TextStyle(color: Colors.white)),
+        title: Text("Item Details", style: TextStyle(color: Colors.black)),
         backgroundColor: Color.fromARGB(255, 59, 137, 62),
       ),
       body: isLoading
