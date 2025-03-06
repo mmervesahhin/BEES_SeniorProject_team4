@@ -135,9 +135,14 @@ Widget addMorePhotosPlaceholder() {
       },
     );
   }
+bool showCoverError = false;
 
-  // Function to handle form submission
   void _uploadItem() async {
+
+      setState(() {
+    showCoverError = _imageCover == null; // Eğer cover photo yüklenmemişse hata mesajını göster
+  });
+
     if (_formKey.currentState?.validate() ?? false) {
       // If the form is valid, upload the item
       await itemController.validateAndUploadItem(
@@ -150,7 +155,22 @@ Widget addMorePhotosPlaceholder() {
         context: context,
       );
     }
+
+
+  if (_formKey.currentState?.validate() ?? false) {
+    // Proceed with upload only if form is valid
+    await itemController.validateAndUploadItem(
+      category: category,
+      condition: condition,
+      itemType: itemType,
+      coverImage: _imageCover,
+      additionalImages: _additionalImages,
+      selectedDepartments: selectedDepartments,
+      context: context,
+    );
   }
+}
+
 
 
   // Department list for multi-select dropdown
@@ -198,41 +218,69 @@ Widget addMorePhotosPlaceholder() {
             child: Form(
             key: _formKey,
             child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Fotoğraf Yükleme
+              // Fotoğraf Yükleme Alanı
+      
+      
 
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Fotoğraf Yükleme
-                const Text('Upload Photo* and Additional Photos', style: TextStyle(color: Colors.black)),
-              
-             Row(
-              children: [
-                _imageCover == null
-                    ? Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        child: uploadCoverImagePlaceholder(),
-                      )
-                    : Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.file(
-                            _imageCover!,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                const SizedBox(width: 16),
-                Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  child: addMorePhotosPlaceholder(),
+Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    const Text(
+      'Upload Photo* and Additional Photos',
+      style: TextStyle(color: Colors.black),
+    ),
+
+    Row(
+      children: [
+        _imageCover == null
+            ? Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: uploadCoverImagePlaceholder(),
+              )
+            : Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(
+                    _imageCover!,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ],
-            ),
+              ),
+        const SizedBox(width: 16),
+        Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: addMorePhotosPlaceholder(),
+        ),
+      ],
+    ),
+
+    // Hata mesajını buraya taşıdık (fotoğrafların altına)
+    Visibility(
+      visible: showCoverError,
+      child: const Padding(
+        padding: EdgeInsets.only(top: 8),
+        child: Text(
+          'Please upload a cover photo before submitting.',
+          style: TextStyle(color: Colors.red, fontSize: 14),
+        ),
+      ),
+    ),
+
+    const SizedBox(height: 20),
+  ],
+),
+
+const SizedBox(height: 20),
+
                 const SizedBox(height: 20),
 
                 // Display additional images
