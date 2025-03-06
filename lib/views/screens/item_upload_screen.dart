@@ -143,6 +143,7 @@ Widget addMorePhotosPlaceholder() {
       await itemController.validateAndUploadItem(
         category: category,
         condition: condition,
+        itemType: itemType,
         coverImage: _imageCover,
         additionalImages: _additionalImages,
         selectedDepartments: selectedDepartments,

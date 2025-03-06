@@ -11,6 +11,7 @@ import 'package:bees/controllers/detailed_item_controller.dart';
 import 'package:bees/controllers/home_controller.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:bees/models/item_model.dart';
 
 class DetailedItemScreen extends StatefulWidget {
   final String itemId;
@@ -27,6 +28,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
 
   final DetailedItemController _controller = DetailedItemController();
   final HomeController _homeController = HomeController();
+  Item? item;
 
   Map<String, dynamic>? itemDetails;
   bool isLoading = true;
@@ -54,7 +56,10 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
       setState(() {
         itemDetails = details;
         isLoading = false;
+        item = Item.fromJson(itemDetails!, widget.itemId);
       });
+
+      print(item);
     }
   }
 
@@ -391,7 +396,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                                   SizedBox(width: 10),
                                   IconButton(
                                     onPressed: () {
-                                      _navigateToMessageScreen(itemDetails, "Item");
+                                      _navigateToMessageScreen(item, "Item");
                                     },
                                     icon: Icon(Icons.message, color: Color.fromARGB(255, 59, 137, 62), size: 30),
                                     ),
@@ -429,13 +434,31 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   }
   
   void _navigateToMessageScreen(dynamic entity, String entityType) {
+  User? currentUser = FirebaseAuth.instance.currentUser;
+  if (currentUser == null) {
+    // Kullanıcı giriş yapmamışsa, bir hata mesajı gösterebilirsiniz
+    print("User is not logged in");
+    return;
+  }
+  String senderId = "";
+  String receiverId = currentUser.uid;
+
+  if (entityType == "Item") {
+    senderId = entity.itemOwnerId;
+  } else if (entityType == "Request") {
+    senderId = entity.requestOwnerID;
+  }
   Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (context) => MessageScreen(entity: entity, entityType: entityType),
+      builder: (context) => MessageScreen(
+        entity: entity,
+        entityType: entityType,
+        senderId: senderId,
+        receiverId: receiverId,
+      ),
     ),
   );
 }
-
 
   void _onItemTapped(int index) {
     switch (index) {
