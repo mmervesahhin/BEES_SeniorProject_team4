@@ -709,59 +709,249 @@ bool _confirmPasswordVisible = false;
 
   // Implementation for Req 2.8
   Future<void> _markItemAsBeesed(Item item) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Mark as BEESED',
-          style: TextStyle(
-            color: primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to mark this item as BEESED?',
-          style: TextStyle(color: textColor),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Row(
+        children: [
+          Text(
+            'Mark as BEESED',
+            style: TextStyle(
+              color: primaryColor,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('Confirm'),
+          SizedBox(width: 8),
+          IconButton(
+            icon: Icon(Icons.info_outline, size: 18, color: primaryColor),
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
+            splashRadius: 20,
+            onPressed: () {
+              // Show a custom info dialog
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Row(
+                      children: [
+                        Icon(Icons.info, color: primaryColor),
+                        SizedBox(width: 8),
+                        Text(
+                          'What is BEESED?',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+
+                        Text(
+                          'Marking an item as BEESED means it is no longer available because it has been sold, rented, exchanged, or donated.',
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: primaryColor,
+                        ),
+                        child: Text('Got it'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
-    );
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Are you sure you want to mark this item as BEESED?',
+            style: TextStyle(color: textColor),
+          ),
+          SizedBox(height: 12),
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.amber.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.amber.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.amber[700], size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'This item will be removed from active listings on the home screen and from your "My Items" section.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.amber[800],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text('Confirm'),
+        ),
+      ],
+    ),
+  );
 
-    if (confirmed == true) {
-      try {
-        await FirebaseFirestore.instance
-            .collection('items')
-            .doc(item.itemId)
-            .update({'itemStatus': 'beesed'});
-        _showSnackBar('Item marked as BEESED successfully');
-      } catch (e) {
-        _showSnackBar('Error updating item status', isError: true);
+  if (confirmed == true) {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+          ),
+        ),
+      );
+
+      // Get the current item data from Firestore
+      DocumentSnapshot itemDoc = await FirebaseFirestore.instance
+          .collection('items')
+          .doc(item.itemId)
+          .get();
+
+      if (!itemDoc.exists) {
+        Navigator.of(context).pop();
+        _showSnackBar('Error: Item not found', isError: true);
+        return;
       }
+
+      Map<String, dynamic> itemData = itemDoc.data() as Map<String, dynamic>;
+      itemData['itemStatus'] = 'beesed';
+      itemData['beesedDate'] = FieldValue.serverTimestamp();
+
+      // Move the item to the beesed_items collection
+      await FirebaseFirestore.instance
+          .collection('beesed_items')
+          .add(itemData);
+
+      // Delete the item from the items collection
+      await FirebaseFirestore.instance
+          .collection('items')
+          .doc(item.itemId)
+          .delete();
+
+      // Update the user's activeItems list
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({
+          'activeItems': FieldValue.arrayRemove([item.itemId]),
+          'beesedItems': FieldValue.arrayUnion([item.itemId]),
+        });
+      }
+
+      // Close loading indicator
+      Navigator.of(context).pop();
+
+      // Remove the item from the UI
+      setState(() {
+        _showActiveItems = true;
+        _showRequests = false;
+      });
+
+      _showSnackBar('Item marked as BEESED and removed succesfully');
+    } catch (e) {
+      Navigator.of(context, rootNavigator: true).pop();
+      _showSnackBar('Error updating item status: ${e.toString()}', isError: true);
     }
   }
+}
+
+void _refreshItemsList() {
+  // This will force a refresh of the StreamBuilder in _buildActiveItemsList
+  setState(() {});
+// Helper method to build each explanation item
+}
+Widget _buildBEESEDExplanationItem(String letter, String meaning) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.0),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: primaryColor,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              letter,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            meaning,
+            style: TextStyle(
+              fontSize: 16,
+              color: textColor,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildChip(String label) {
     return Container(
@@ -1982,14 +2172,7 @@ Future<void> _showChangePasswordDialog() async {
                                       color: primaryColor.withOpacity(0.0),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Text(
-                                      (userData['activeItems']?.length ?? "").toString(),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: primaryColor,
-                                      ),
-                                    ),
+                                    
                                   ),
                                   SizedBox(width: 8),
                                   Icon(

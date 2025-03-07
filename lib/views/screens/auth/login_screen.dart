@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/views/screens/auth/register_screen.dart';
 import 'package:bees/controllers/auth/login_controller.dart';
@@ -122,24 +123,35 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               const SizedBox(height: 16),
                               // Grouped Secondary Actions
                               Column(
-                                children: [
-                                  _buildSignUpLink(),
-                                  const SizedBox(height: 8),
-                                  TextButton(
-                                    onPressed: () {
-                                      _showForgotPasswordDialog(context);
-                                    },
-                                    child: Text(
-                                      "Forgot Password?",
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
+                                    children: [
+                                      _buildSignUpLink(),
+                                      const SizedBox(height: 8),
+                                      Center(
+                                        child: Container(
+                                          width: 150, // Adjust the width to make the divider shorter
+                                          child: const Divider(
+                                            color: Colors.white, // Customize the color
+                                            thickness: 1, // Adjust the thickness
+                                            height: 10, // Adjust the height
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(height: 8),
+                                      TextButton(
+                                        onPressed: () {
+                                          _showForgotPasswordDialog(context);
+                                        },
+                                        child: Text(
+                                          "Forgot Password?",
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(0.9),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
                             ],
                           ),
                         ),
@@ -254,90 +266,154 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   // Forgot Password Dialog
-  void _showForgotPasswordDialog(BuildContext context) {
-    final _forgotPasswordFormKey = GlobalKey<FormState>();
-    final _forgotPasswordEmailController = TextEditingController();
+void _showForgotPasswordDialog(BuildContext context) {
+  final _forgotPasswordFormKey = GlobalKey<FormState>();
+  final _forgotPasswordEmailController = TextEditingController();
+  bool _isLoading = false;
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            "Forgot Password?",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.green[700],
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text(
+              "Forgot Password?",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.green[700],
+              ),
             ),
-          ),
-          content: Form(
-            key: _forgotPasswordFormKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "Enter your email address to reset your password.",
+            content: Form(
+              key: _forgotPasswordFormKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Enter your email address to reset your password.",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _forgotPasswordEmailController,
+                    decoration: InputDecoration(
+                      hintText: "Email Address",
+                      prefixIcon: Icon(Icons.email, color: Colors.green[700]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    validator: _validateEmail,
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: _isLoading ? null : () => Navigator.pop(context),
+                child: Text(
+                  "Cancel",
                   style: TextStyle(
+                    color: Colors.grey[700],
                     fontSize: 16,
-                    color: Colors.black.withOpacity(0.7),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _forgotPasswordEmailController,
-                  decoration: InputDecoration(
-                    hintText: "Email Address",
-                    prefixIcon: Icon(Icons.email, color: Colors.green[700]),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+              ),
+              ElevatedButton(
+                onPressed: _isLoading
+                    ? null
+                    : () async {
+                        if (_forgotPasswordFormKey.currentState!.validate()) {
+                          setState(() {
+                            _isLoading = true;
+                          });
+                          
+                          try {
+                            // Send password reset email using Firebase
+                            await FirebaseAuth.instance.sendPasswordResetEmail(
+                              email: _forgotPasswordEmailController.text.trim(),
+                            );
+                            
+                            Navigator.pop(context);
+                            
+                            // Show success message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "Password reset link sent to ${_forgotPasswordEmailController.text}",
+                                ),
+                                backgroundColor: Colors.green[700],
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                margin: EdgeInsets.all(16),
+                                duration: Duration(seconds: 4),
+                              ),
+                            );
+                          } catch (e) {
+                            setState(() {
+                              _isLoading = false;
+                            });
+                            
+                            // Show error message
+                            String errorMessage = "Failed to send password reset email";
+                            
+                            if (e.toString().contains('user-not-found')) {
+                              errorMessage = "No user found with this email address";
+                            } else if (e.toString().contains('invalid-email')) {
+                              errorMessage = "Invalid email format";
+                            }
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(errorMessage),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                margin: EdgeInsets.all(16),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[700],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  validator: _validateEmail,
                 ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                "Cancel",
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontSize: 16,
-                ),
+                child: _isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        "Submit",
+                        style: TextStyle(fontSize: 16),
+                      ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (_forgotPasswordFormKey.currentState!.validate()) {
-                  // Add your password reset logic here
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Password reset link sent to your email."),
-                      backgroundColor: Colors.green[700],
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[700],
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text(
-                "Submit",
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
