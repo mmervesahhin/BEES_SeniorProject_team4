@@ -5,14 +5,18 @@ import 'package:bees/models/user_model.dart';  // User model import
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bees/controllers/message_controller.dart';
 import 'package:bees/models/message_model.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth_user;
 
 class MessageScreen extends StatelessWidget {
+  //final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final String? chatRoomId;
   final dynamic entity;
   final String entityType;
   final String senderId;
   final String receiverId;
 
-  const MessageScreen({super.key, required this.entity, required this.entityType,required this.senderId,
+  const MessageScreen({super.key, this.chatRoomId,
+    required this.entity, required this.entityType,required this.senderId,
     required this.receiverId,});
 
 
@@ -38,7 +42,7 @@ class MessageScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
+    final auth_user.User currentUser = auth_user.FirebaseAuth.instance.currentUser!;
     String id = "";
     String name = "";
     String userID = "";
@@ -55,6 +59,94 @@ class MessageScreen extends StatelessWidget {
     }
 
     TextEditingController _messageController = TextEditingController();
+
+    void sendMessage() async {
+      if(_messageController.text.isNotEmpty){
+        await MessageController().sendMessage(itemReqId: id, receiverId: userID, content: _messageController.text,entityType: entityType, entity: entity);
+        _messageController.clear();
+      }
+    }
+
+    
+
+    // Widget _buildMessageItem(DocumentSnapshot document){
+    //   Map<String, dynamic>? data = document.data() as Map<String, dynamic>?; // Null olursa hata vermez
+    //   if (data == null) return SizedBox.shrink(); // Boş bir widget döndür
+
+    //   auth_user.User firebaseUser = auth_user.FirebaseAuth.instance.currentUser!;
+    //   var alignment = (data['senderId'] == firebaseUser.uid) ? Alignment.centerRight : Alignment.centerLeft;
+
+    //   return Container(
+    //     alignment: alignment,
+    //     child: Column(
+    //       children: [
+    //         Text(data['senderId']),
+    //         Text(data['content'])
+    //       ],
+    //     )
+    //   );
+    // }
+    Widget _buildMessageItem(DocumentSnapshot document) {
+  Map<String, dynamic>? data = document.data() as Map<String, dynamic>?; // Null olursa hata vermez
+  if (data == null) return SizedBox.shrink(); // Boş bir widget döndür
+
+  auth_user.User firebaseUser = auth_user.FirebaseAuth.instance.currentUser!;
+  var alignment = (data['senderId'] == firebaseUser.uid) ? Alignment.centerRight : Alignment.centerLeft;
+
+  return FutureBuilder<User?>(
+    future: _getUserDetails(data['senderId']),  // Gönderenin bilgilerini getir
+    builder: (context, snapshot) {
+      String senderName = "Unknown";  // Varsayılan isim
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        senderName = "Loading...";  // Yükleniyor göster
+      } else if (snapshot.hasData && snapshot.data != null) {
+        senderName = "${snapshot.data!.firstName} ${snapshot.data!.lastName}";
+      }
+
+      return Container(
+        alignment: alignment,
+        padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        child: Column(
+          crossAxisAlignment: alignment == Alignment.centerRight 
+              ? CrossAxisAlignment.end 
+              : CrossAxisAlignment.start,
+          children: [
+            Text(senderName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Container(
+              padding: EdgeInsets.all(10),
+              margin: EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: alignment == Alignment.centerRight ? Colors.green[100] : Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(data['content'], style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
+    Widget _buildMessageList(){
+      auth_user.User firebaseUser = auth_user.FirebaseAuth.instance.currentUser!;
+      
+      return StreamBuilder(stream: MessageController().getMessages(
+        id, userID, firebaseUser.uid), builder: (context, snapshot){
+          if(snapshot.hasError){
+            return Text('Error${snapshot.error}');
+          }
+
+          if(snapshot.connectionState == ConnectionState.waiting){
+            return const Text('Loading...');
+          }
+
+          return ListView(
+            children: snapshot.data!.docs.map((document) => _buildMessageItem(document)).toList(),
+          );
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -159,42 +251,43 @@ class MessageScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 color: Colors.grey[200],
-                child: StreamBuilder<List<Message>>(
-                  stream: FirebaseFirestore.instance
-                    .collection('messages')
-                    .where('senderId', isEqualTo: senderId)
-                    .where('receiverId', isEqualTo: receiverId)
-                    //.orderBy('timestamp', descending: true) // Timestamp sıralaması
-                    .snapshots()
-                    .map((querySnapshot) {
-                      return querySnapshot.docs.map((doc) {
-                        return Message.fromFirestore(doc);
-                      }).toList();
-                  }),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-//|| snapshot.data!.isEmpty
-                    if (!snapshot.hasData ) {
-                      return const Center(child: Text("No messages yet"));
-                    }
+                child: _buildMessageList(),
+//                 child: StreamBuilder<List<Message>>(
+//                   stream: FirebaseFirestore.instance
+//                     .collection('messages')
+//                     .where('senderId', isEqualTo: senderId)
+//                     .where('receiverId', isEqualTo: receiverId)
+//                     //.orderBy('timestamp', descending: true) // Timestamp sıralaması
+//                     .snapshots()
+//                     .map((querySnapshot) {
+//                       return querySnapshot.docs.map((doc) {
+//                         return Message.fromFirestore(doc);
+//                       }).toList();
+//                   }),
+//                   builder: (context, snapshot) {
+//                     if (snapshot.connectionState == ConnectionState.waiting) {
+//                       return const Center(child: CircularProgressIndicator());
+//                     }
+// //|| snapshot.data!.isEmpty
+//                     if (!snapshot.hasData ) {
+//                       return const Center(child: Text("No messages yet"));
+//                     }
 
-                    final messages = snapshot.data!;
-                    return ListView.builder(
-                      reverse: true, // Mesajları tersten gösterme
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final message = messages[index];
-                        return ListTile(
-                          title: Text(message.content),
-                          subtitle: Text(message.senderId),
-                          trailing: Text(message.timestamp.toString()),
-                        );
-                      },
-                    );
-                  },
-                )
+//                     final messages = snapshot.data!;
+//                     return ListView.builder(
+//                       reverse: true, // Mesajları tersten gösterme
+//                       itemCount: messages.length,
+//                       itemBuilder: (context, index) {
+//                         final message = messages[index];
+//                         return ListTile(
+//                           title: Text(message.content),
+//                           subtitle: Text(message.senderId),
+//                           trailing: Text(message.timestamp.toString()),
+//                         );
+//                       },
+//                     );
+//                   },
+//                 )
               ),
             ),
             const SizedBox(height: 16),
@@ -203,6 +296,7 @@ class MessageScreen extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
+                    obscureText: false,
                     decoration: InputDecoration(
                       hintText: "Type a message...",
                       border: OutlineInputBorder(
@@ -213,17 +307,7 @@ class MessageScreen extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.send, color: Color.fromARGB(255, 59, 137, 62)),
-                  onPressed: () {
-                    final content = _messageController.text;
-                    if (content.isNotEmpty) {
-                      MessageController().sendMessage(
-                        senderId: senderId,
-                        receiverId: receiverId,
-                        content: content,
-                      );
-                      _messageController.clear();
-                    }
-                  },
+                  onPressed: sendMessage,
                 ),
               ],
             ),

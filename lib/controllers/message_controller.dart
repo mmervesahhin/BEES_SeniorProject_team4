@@ -1,53 +1,69 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bees/models/message_model.dart';  // User model import
+import 'package:bees/models/message_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bees/models/chat_room_model.dart';
 
 class MessageController {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Mesaj Gönderme
   Future<void> sendMessage({
-    required String senderId,
+    required String itemReqId,
     required String receiverId,
     required String content,
-    String? imageUrl,
+    required String entityType,
+    required dynamic entity,
+    //String? imageUrl,
   }) async {
-    final messageRef = _firestore.collection('messages').doc();
+    Map<String, dynamic> entityMap = entity.toMap();
+    final String currentUserID = _firebaseAuth.currentUser!.uid;
+    final Timestamp timestamp = Timestamp.now();
 
-    final messageData = {
-      'senderId': senderId,
-      'receiverId': receiverId,
-      'content': content,
-      'timestamp': FieldValue.serverTimestamp(),
-      'status': 'sending',  // İlk başta 'sending' olarak belirliyoruz
-      'imageUrl': imageUrl ?? '',  // Resim gönderilmediğinde boş string
-    };
+    Message newMessage = Message(senderId: currentUserID, receiverId: receiverId, content: content, timestamp: timestamp);
 
-    try {
-      await messageRef.set(messageData);
-      await messageRef.update({'status': 'sent'});
-      print("Message sent!");
-    } catch (e) {
-      print("Error sending message: $e");
+    List<String> ids = [currentUserID, receiverId];
+    ids.sort();
+    String chatRoomId = "${itemReqId}_${ids.join("_")}";
+    
+    DocumentReference chatRoomRef = _firestore.collection('chatRooms').doc(chatRoomId);
+    DocumentSnapshot chatRoomSnapshot = await chatRoomRef.get();
+
+    if (!chatRoomSnapshot.exists) {
+      // 🔸 Yeni ChatRoom oluştur
+      ChatRoom newChatRoom = ChatRoom(
+        chatRoomId: chatRoomId,
+        itemReqId: itemReqId,
+        userIds: ids,
+        lastMessage: content,
+        lastMessageTimestamp: timestamp,
+        entityType: entityType,
+        entity: entityMap,
+      );
+
+      await chatRoomRef.set(newChatRoom.toMap());
+    } else {
+      // 🔸 Var olan ChatRoom'un son mesajını güncelle
+      await chatRoomRef.update({
+        'lastMessage': content,
+        'lastMessageTimestamp': timestamp,
+      });
     }
+
+    await chatRoomRef.collection('messages').add(newMessage.toMap());
   }
 
   // Mesajları Getirme
-  Stream<List<Message>> getMessages(String userId, String otherUserId) {
-    return _firestore
-        .collection('messages')
-        .where('senderId', isEqualTo: userId)
-        .where('receiverId', isEqualTo: otherUserId)
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((querySnapshot) {
-          return querySnapshot.docs.map((doc) {
-            return Message.fromFirestore(doc);
-          }).toList();
-        });
+  Stream<QuerySnapshot> getMessages(String itemReqId,String userId, String otherUserId) {
+    List<String> ids = [userId, otherUserId];
+    ids.sort();
+    String chatRoomId = "${itemReqId}_${ids.join("_")}";
+    print("🟢 Mesajlar getiriliyor: ChatRoomId = $chatRoomId");
+    return _firestore.collection('chatRooms').doc(chatRoomId).collection('messages').orderBy('timestamp', descending: false).snapshots();
   }
 
   // Mesaj Durumunu Güncelleme
-  Future<void> updateMessageStatus(String messageId, String status) async {
+  /*Future<void> updateMessageStatus(String messageId, String status) async {
     final messageRef = _firestore.collection('messages').doc(messageId);
 
     try {
@@ -58,5 +74,5 @@ class MessageController {
     } catch (e) {
       print("Error updating message status: $e");
     }
-  }
+  }*/
 }

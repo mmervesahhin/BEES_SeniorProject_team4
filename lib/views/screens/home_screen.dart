@@ -9,7 +9,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/home_controller.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'message_list_screen.dart';  // MessageScreen import
+import 'message_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
     List<String> selectedDepartments = [];
                   
   String? userId = FirebaseAuth.instance.currentUser?.uid;
-  String userId2 = FirebaseAuth.instance.currentUser?.uid ?? '';
   final HomeController _controller = HomeController();
   final TextEditingController _searchController = TextEditingController();
   Map<String, bool> _favorites = {};
@@ -61,7 +60,7 @@ Widget build(BuildContext context) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => MessageListScreen(userId: userId2),  // userId'yi geçiriyoruz
+            builder: (context) => MessageListScreen(),
           ),
         );
       },

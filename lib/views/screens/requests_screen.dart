@@ -1,13 +1,14 @@
-  import 'package:bees/views/screens/favorites_screen.dart';
-  import 'package:bees/views/screens/home_screen.dart';
-  import 'package:bees/views/screens/user_profile_screen.dart';
-  import 'package:flutter/material.dart';
-  import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-  import 'package:bees/views/screens/create_request_screen.dart';
-  import 'package:bees/models/request_model.dart';
-  import 'package:bees/controllers/request_controller.dart';
-  import 'package:bees/views/screens/message_screen.dart';
-  import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bees/views/screens/favorites_screen.dart';
+import 'package:bees/views/screens/home_screen.dart';
+import 'package:bees/views/screens/user_profile_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:bees/views/screens/create_request_screen.dart';
+import 'package:bees/models/request_model.dart';
+import 'package:bees/controllers/request_controller.dart';
+import 'package:bees/views/screens/message_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'message_list_screen.dart';
 
 import 'package:bees/models/user_model.dart' as bees;
 
@@ -68,12 +69,19 @@ import 'package:bees/models/user_model.dart' as bees;
             ),
           ),
           actions: [
-            IconButton(
-              icon: Icon(Icons.message),
-              onPressed: () {},
-              color: Colors.black,
-            ),
-          ],
+        IconButton(
+          icon: Icon(Icons.message),
+          onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MessageListScreen(),
+          ),
+        );
+      },
+          color: Colors.black,
+        ),
+      ],
         ),
         body: Column(
           children: [
@@ -332,6 +340,13 @@ void _navigateToMessageScreen(dynamic entity, String entityType) {
     senderId = entity.itemOwnerId;
   } else if (entityType == "Request") {
     senderId = entity.requestOwnerID;
+  }
+  if (senderId == receiverId) {
+    // SnackBar ile hata mesajı göster
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("You cannot send a message to yourself!")),
+    );
+    return;
   }
   Navigator.of(context).push(
     MaterialPageRoute(
