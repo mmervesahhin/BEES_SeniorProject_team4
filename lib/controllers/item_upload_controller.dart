@@ -149,7 +149,7 @@ class ItemController {
    
 
 // && !isCoverPhotoMissing
-    if (titleError == null && priceError == null  ) {
+    if (titleError == null && priceError == null && !isCoverPhotoMissing ) {
       Item newItem = Item(
       itemOwnerId: userId , // Sahip ID'si atanmalı
       itemId: itemId,
