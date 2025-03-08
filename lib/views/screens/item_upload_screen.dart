@@ -182,7 +182,6 @@ Widget addMorePhotosPlaceholder() {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Upload Item'),
-          centerTitle: true,
           backgroundColor: Colors.green, // AppBar'ın arka plan rengi
           foregroundColor: Colors.white, // AppBar'daki yazı ve ikon renkleri
         ),

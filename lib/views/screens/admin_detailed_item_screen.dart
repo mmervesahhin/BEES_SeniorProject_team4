@@ -54,16 +54,13 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
           IconButton(
         icon: Icon(Icons.more_vert, color: Colors.black),
         onPressed: () async {
-          await _controller1.showItemRemoveOptions(
+         _controller1.showItemRemoveOptions(context, Item.fromJson(itemDetails!, widget.itemId), onSuccess: () {
+          Navigator.pushReplacement(
             context,
-            Item.fromJson(itemDetails!, widget.itemId),
-          );
-
-          // Bottom sheet tamamen kapandıktan sonra yönlendirilecek
-          Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => AdminHomeScreen()),
           );
-        },
+        });
+      },
           ),
         ],
       ),
