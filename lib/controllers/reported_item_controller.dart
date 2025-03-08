@@ -61,4 +61,23 @@ Future<bool> checkIfAlreadyReported(String userId, String itemId) async {
   }
 }
 
+// Kullanıcının yaptığı raporu iptal etme fonksiyonu - buna daha sonra bakacağım.
+Future<void> deleteReport(String itemId, String userId) async {
+  try {
+    // Kullanıcının yaptığı raporu Firestore'dan bul
+    QuerySnapshot querySnapshot = await _firestore
+        .collection('reported_items')
+        .where('itemID', isEqualTo: itemId)
+        .where('reportedBy', isEqualTo: userId)
+        .get();
+
+    // Eğer rapor bulunursa, sil
+    for (var doc in querySnapshot.docs) {
+      await _firestore.collection('reported_items').doc(doc.id).delete();
+    }
+  } catch (e) {
+    print("Error canceling report: $e");
+    throw e;
+  }
+}
 }

@@ -186,7 +186,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       ),
       child: Text(
         text,
-        style: TextStyle(color: Colors.white),
+        style: TextStyle(color: Colors.black),
       ),
     );
   }

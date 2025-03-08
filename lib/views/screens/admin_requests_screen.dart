@@ -1,107 +1,90 @@
-import 'package:bees/views/screens/favorites_screen.dart';
-import 'package:bees/views/screens/home_screen.dart';
-import 'package:bees/views/screens/user_profile_screen.dart';
+import 'package:bees/controllers/admin_controller.dart';
+import 'package:bees/views/screens/admin_data_analysis_screen.dart';
+import 'package:bees/views/screens/admin_profile_screen.dart';
+import 'package:bees/views/screens/admin_reports_screen.dart';
+import 'package:bees/views/screens/admin_home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:bees/views/screens/create_request_screen.dart';
 import 'package:bees/models/request_model.dart';
 import 'package:bees/controllers/request_controller.dart';
-import 'package:bees/views/screens/message_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'message_list_screen.dart';
-import 'package:bees/views/screens/others_user_profile_screen.dart';
-
 
 import 'package:bees/models/user_model.dart' as bees;
 
-  class RequestsScreen extends StatefulWidget {
-    const RequestsScreen({super.key});
+  class AdminRequestsScreen extends StatefulWidget {
+    const AdminRequestsScreen({super.key});
 
     @override
-    _RequestsScreenState createState() => _RequestsScreenState();
+    _AdminRequestsScreenState createState() => _AdminRequestsScreenState();
   }
 
-  class _RequestsScreenState extends State<RequestsScreen> {
+  class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
     int _selectedIndex = 1;
     TextEditingController _searchController = TextEditingController();
     final RequestController _requestController = RequestController();
+    final currentUser = FirebaseAuth.instance.currentUser;
+  
   String _searchQuery = '';
-  String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";//block için ihtiyacım vardı
-
+   final AdminController _controller = AdminController();
 
     void _onItemTapped(int index) {
       if (index == _selectedIndex) return;
       switch (index) {
         case 0:
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => HomeScreen()),
+            MaterialPageRoute(builder: (context) => AdminHomeScreen()),
           );
           break;
         case 1:
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminRequestsScreen()),
+          );
           break;
         case 2:
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => FavoritesScreen()),
+            MaterialPageRoute(builder: (context) => AdminReportsScreen()),
           );
           break;
         case 3:
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => UserProfileScreen()),
-          );
-          break;
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminDataAnalysisScreen(),
+              ));
+              break;
+          case 4:
+          Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => AdminProfileScreen(),
+            ));
+            break;
       }
     }
-
-    void _navigateToCreateRequest() {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const CreateRequestScreen()),
-      );
-    }
-
-    void _navigateToProfile(String userId, BuildContext context) {  //kullanıcı isminden ya da profilinden o kişinin profiline yönlendirmeyi burda yapıyorum.
-  if (userId == FirebaseAuth.instance.currentUser!.uid) {
-    // Eğer kullanıcı kendi profiline bakıyorsa
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => UserProfileScreen()),
-    );
-  } else {
-    // Eğer başka birinin profiline bakıyorsa
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => OthersUserProfileScreen(userId: userId)),
-    );
-  }
-}
 
     @override
     Widget build(BuildContext context) {
       return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color.fromARGB(255, 59, 137, 62),
-          automaticallyImplyLeading: false,
-          title: Text(
-            'BEES',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.yellow,
+          automaticallyImplyLeading: false, // Geri butonunu kaldırır
+          title: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'BEES ',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.yellow,
+                  ),
+                ),
+                TextSpan(
+                  text: 'admin',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.yellow,
+                  ),
+                ),
+              ],
             ),
           ),
-          actions: [
-        IconButton(
-          icon: Icon(Icons.message),
-          onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MessageListScreen(),
-          ),
-        );
-      },
-          color: Colors.black,
-        ),
-      ],
         ),
         body: Column(
           children: [
@@ -133,11 +116,6 @@ import 'package:bees/models/user_model.dart' as bees;
           
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _navigateToCreateRequest,
-          backgroundColor: const Color.fromARGB(255, 59, 137, 62),
-          child: Icon(Icons.edit, color: Colors.white),
-        ),
         bottomNavigationBar: Padding(
           padding: const EdgeInsets.only(bottom: 0),
           child: BottomNavigationBar(
@@ -155,8 +133,12 @@ import 'package:bees/models/user_model.dart' as bees;
                 label: 'Requests',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.favorite),
-                label: 'Favorites',
+                icon: Icon(Icons.report),
+                label: 'Reports',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.bar_chart),
+                label: 'Analysis',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.account_circle),
@@ -172,7 +154,7 @@ import 'package:bees/models/user_model.dart' as bees;
 
 Widget _buildRequestList() {
   return StreamBuilder<List<Request>>(
-    stream: _requestController.getRequests(currentUserId),
+    stream: _requestController.getRequests(currentUser!.uid),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const Center(child: CircularProgressIndicator());
@@ -185,14 +167,7 @@ Widget _buildRequestList() {
 
       List<Request> filteredRequests = snapshot.data!.where((req) {
         String contentLower = req.requestContent.toLowerCase();
-        
-        // Kullanıcı adı bilgisi için kullanıcıyı getir
-        bees.User? user = _requestController.cachedUsers[req.requestOwnerID];
-
-        // Kullanıcı adı ve soyadı üzerinden arama yap
-        String userNameLower = user != null ? "${user.firstName} ${user.lastName}".toLowerCase() : "";
-
-        return contentLower.contains(searchQueryLower) || userNameLower.contains(searchQueryLower); 
+        return contentLower.contains(searchQueryLower); // Kısmi eşleşme
       }).toList();
 
       // Sonuçları alaka düzeyine göre sırala (daha yakın eşleşmeler önce gelir)
@@ -245,42 +220,26 @@ Widget _buildRequestCard(Request request) {
             children: [
               Row(
                 children: [
-                  GestureDetector(  //profile yönlendirmek için bu kısmı aşağıdaki gibi güncelledim
-                    onTap: () {
-                      _navigateToProfile(user.userID, context);
-                    },
-                    child: CircleAvatar(
-                      backgroundColor: const Color(0xFF3B893E),
-                      backgroundImage: user.profilePicture.isNotEmpty
-                          ? NetworkImage(user.profilePicture)
-                          : null,
-                      child: user.profilePicture.isEmpty
-                          ? const Icon(Icons.person, color: Colors.white)
-                          : null,
-                    ),
+                  CircleAvatar(
+                    backgroundColor: const Color(0xFF3B893E),
+                    backgroundImage: user.profilePicture.isNotEmpty
+                        ? NetworkImage(user.profilePicture)
+                        : null,
+                    child: user.profilePicture.isEmpty
+                        ? const Icon(Icons.person, color: Colors.white)
+                        : null,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        _navigateToProfile(user.userID, context);
-                      },
-                      child: Text(
-                        "${user.firstName} ${user.lastName}",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                    child: Text(
+                      "${user.firstName} ${user.lastName}",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.message, color: Colors.black),
-                    onPressed: () {
-                      _navigateToMessageScreen(request, "Request");
-                    },
                   ),
                   IconButton(
                     icon: const Icon(Icons.more_vert, color: Colors.black),
                     onPressed: () {
-                      _showReportOptions(context, request);
+                      _controller.showRequestRemoveOptions(context, request);
                     },
                   ),
                 ],
@@ -307,80 +266,6 @@ Widget _buildRequestCard(Request request) {
     },
   );
 }
-
-// Kullanıcıya rapor seçeneklerini gösteren fonksiyon
-void _showReportOptions(BuildContext context, Request request) {
-  showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.report),
-              title: const Text("Inappropriate for BEES"),
-              onTap: () {
-                _reportRequest(request, "Inappropriate for BEES");
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.gavel),
-              title: const Text("Illegal request"),
-              onTap: () {
-                _reportRequest(request, "Illegal request");
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-// Raporlama işlemini yöneten fonksiyon
-void _reportRequest(Request request, String reason) {
-  // Burada raporlama işlemi backend'e gönderilebilir.
-  print("Request ${request.requestID} reported for: $reason");
-}
-
-
-// Mesaj ekranına yönlendirme fonksiyonu
-void _navigateToMessageScreen(dynamic entity, String entityType) {
-  User? currentUser = FirebaseAuth.instance.currentUser;
-  if (currentUser == null) {
-    // Kullanıcı giriş yapmamışsa, bir hata mesajı gösterebilirsiniz
-    print("User is not logged in");
-    return;
-  }
-  String senderId = "";
-  String receiverId = currentUser.uid;
-
-  if (entityType == "Item") {
-    senderId = entity.itemOwnerId;
-  } else if (entityType == "Request") {
-    senderId = entity.requestOwnerID;
-  }
-  if (senderId == receiverId) {
-    // SnackBar ile hata mesajı göster
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("You cannot send a message to yourself!")),
-    );
-    return;
-  }
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (context) => MessageScreen(
-        entity: entity,
-        entityType: entityType,
-        senderId: senderId,
-        receiverId: receiverId,
-      ),
-    ),
-  );
-}
-
 
 Widget _loadingRequestCard(Request request) {
   return Card(

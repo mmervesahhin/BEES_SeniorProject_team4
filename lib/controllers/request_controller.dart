@@ -23,33 +23,81 @@ class RequestController {
         return;
       }
 
-      Request newRequest = Request(
-        requestID: generatedID,
-        requestOwnerID: userId,
-        requestContent: request.requestContent,
-        requestStatus: request.requestStatus,
-        creationDate: request.creationDate,
-      );
+    Request newRequest = Request(
+      requestID: generatedID, // Firestore'un oluşturduğu ID'yi ata
+      requestOwnerID: userId,
+      requestContent: request.requestContent,
+      requestStatus: request.requestStatus,
+      creationDate: request.creationDate,
+      
+    );
 
-      await docRef.set(newRequest.toJson()); // Firestore'a kaydet
-      print("✅ Request oluşturuldu! ID: $generatedID");
+    // Request newRequest = Request(
+    //     requestID: generatedID,
+    //     requestOwnerID: currentUser.uid,
+    //     // requestOwnerName: currentUser.displayName ?? "Unknown User", // Store user's name
+    //     // requestOwnerProfilePic: currentUser.photoURL ?? "", // Store profile picture if available
+    //     requestContent: request.requestContent,
+    //     requestStatus: request.requestStatus,
+    //     creationDate: request.creationDate, // Firestore timestamp
+    //   );
 
-    } catch (e) {
-      print("🔥 Request oluşturma hatası: $e");
+    await docRef.set(newRequest.toJson()); // Veriyi kaydet
+
+    print("Request created with ID: $generatedID"); // ID’yi terminalde göster
+  } catch (e) {
+    print("Error creating request: $e");
+  }
+}
+
+  // 🔥 Firestore'dan canlı veri almak için güncellenmiş metod:
+  // Stream<List<Request>> getRequests() {
+  //   return _firestore.collection(collectionPath).snapshots().map((snapshot) {
+  //     return snapshot.docs.map((doc) {
+  //       final data = doc.data() as Map<String, dynamic>;
+  //       return Request.fromJson(data);
+  //     }).toList();
+  //   });
+  // } kodun eski hali, olur da bir şeyleri bozmuşsam burdan eski haline getirelim.
+Stream<List<Request>> getRequests(String currentUserId) {
+  return _firestore
+      .collection('requests')
+      .where('requestStatus', isEqualTo: 'active')
+      .snapshots()
+      .asyncMap((snapshot) async {
+    List<Request> requests = [];
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final request = Request.fromJson(data);
+
+      // Engellenen kişinin requestlerini filtrelemek için Firestore'dan kontrol ediyoruz
+      DocumentSnapshot blockerDoc = await _firestore
+          .collection('blocked_users')
+          .doc(currentUserId) // Request sahibinin engellediği kişiler
+          .collection('blockers')
+          .doc(request.requestOwnerID) // Bu kullanıcıyı engelledi mi?
+          .get();
+
+
+          DocumentSnapshot blockerDoc2 = await _firestore
+                    .collection('blocked_users')
+                    .doc(request.requestOwnerID)
+                    .collection('blockers')
+                    .doc(currentUserId)
+                    .get();
+      // Eğer requestOwnerID, currentUserId tarafından engellenmişse ekleme
+      if (!blockerDoc.exists && !blockerDoc2.exists) {
+        requests.add(request);
+      }
     }
-  }
 
-  /// **Firestore'dan Gerçek Zamanlı Request Alma**
-  Stream<List<Request>> getRequests() {
-    return _firestore.collection(collectionPath).snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return Request.fromJson(data);
-      }).toList();
-    });
-  }
+    return requests;
+  });
+}
 
-  /// **Belirli bir Request’i ID ile Getirme**
+
+  // Belirli bir isteği getirme
   Future<Request?> getRequestById(String requestID) async {
     try {
       DocumentSnapshot doc = await _firestore.collection(collectionPath).doc(requestID).get();

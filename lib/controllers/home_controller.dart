@@ -1,50 +1,80 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 
 class HomeController {
-  // The reference to the 'items' collection in Firestore
   final CollectionReference<Map<String, dynamic>> _itemsCollection =
       FirebaseFirestore.instance.collection('items');
 
-   // The reference to the 'users' collection in Firestore (eklenmiş)
   final CollectionReference<Map<String, dynamic>> _usersCollection =
-      FirebaseFirestore.instance.collection('users'); // Kullanıcı koleksiyonu
+      FirebaseFirestore.instance.collection('users');
 
-  get itemsCollection => null;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  // This method returns a Stream of QuerySnapshots, filtered by the provided parameters
-  Stream<QuerySnapshot<Map<String, dynamic>>> getItems({
-    double? minPrice,
-    double? maxPrice,
-    String? category,
-    List<String>? departments,
-    String? condition,
-  }) {
-    // Start with the basic collection reference
-    Query<Map<String, dynamic>> query = _itemsCollection;
+Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({ 
+  double? minPrice,
+  double? maxPrice,
+  String? category,
+  List<String>? departments,
+  String? condition,
+}) {
+  Query<Map<String, dynamic>> query = firestore.collection('items');
+  query = query.where('itemStatus', isEqualTo: 'active');
 
-    // Apply filters conditionally, ensuring that null values are handled
-    if (minPrice != null) {
-      query = query.where('price', isGreaterThanOrEqualTo: minPrice);
-    }
-    if (maxPrice != null) {
-      query = query.where('price', isLessThanOrEqualTo: maxPrice);
-    }
-    if (category != null) {
-      query = query.where('category', isEqualTo: category);
-    }
-    if (departments != null && departments.isNotEmpty) {
-      query = query.where('departments', arrayContainsAny: departments); 
-    }
-    if (condition != null) {
-      query = query.where('condition', isEqualTo: condition);
-    }
-
-    // Return the stream of results (QuerySnapshot)
-    return query.snapshots();
+  if (minPrice != null) {
+    query = query.where('price', isGreaterThanOrEqualTo: minPrice);
+  }
+  if (maxPrice != null) {
+    query = query.where('price', isLessThanOrEqualTo: maxPrice);
+  }
+  if (category != null) {
+    query = query.where('category', isEqualTo: category);
+  }
+  if (departments != null && departments.isNotEmpty) {
+    query = query.where('departments', arrayContainsAny: departments);
+  }
+  if (condition != null) {
+    query = query.where('condition', isEqualTo: condition);
   }
 
+  return query.snapshots().asyncMap((snapshot) async {
+    String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (currentUserId == null) {
+      return snapshot.docs; // Eğer giriş yapılmamışsa, direkt tüm ürünleri göster
+    }
+
+    List<DocumentSnapshot<Map<String, dynamic>>> filteredDocs = [];
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final itemOwnerId = data['itemOwnerId'];
+
+      DocumentSnapshot blockerDoc = await firestore
+          .collection('blocked_users')
+          .doc(currentUserId)
+          .collection('blockers')
+          .doc(itemOwnerId)
+          .get(); 
+
+        DocumentSnapshot blockerDoc2 = await firestore
+                    .collection('blocked_users')
+                    .doc(itemOwnerId)
+                    .collection('blockers')
+                    .doc(currentUserId)
+                    .get();
+
+      if (!blockerDoc.exists && !blockerDoc2.exists) {
+        filteredDocs.add(doc);
+      }
+    }
+
+    return filteredDocs; // Sadece bloklanmamış dökümanları döndür
+  });
+}
+
+    // Return the filtered item
   String getImageUrl(String photo) {
     return photo;
   }
@@ -61,32 +91,29 @@ class HomeController {
     DocumentReference<Map<String, dynamic>> itemDoc = _itemsCollection.doc(itemId);
     DocumentReference<Map<String, dynamic>> userDoc = _usersCollection.doc(userId);
 
-    // Firestore işlemlerini aynı anda çalıştırmak için batch kullan
     WriteBatch batch = FirebaseFirestore.instance.batch();
 
-    // Favori sayısını artır veya azalt
     batch.update(itemDoc, {
       'favoriteCount': FieldValue.increment(isFavorited ? 1 : -1),
     });
 
-    // Kullanıcının favoriteItems'ına ekle veya çıkar
     batch.update(userDoc, {
       'favoriteItems': isFavorited 
           ? FieldValue.arrayUnion([itemId]) 
           : FieldValue.arrayRemove([itemId]),
     });
 
-    await batch.commit(); // Tüm işlemleri aynı anda çalıştır
+    await batch.commit();
   }
 
-   Future<bool> fetchFavoriteStatus(String itemId) async {
+  Future<bool> fetchFavoriteStatus(String itemId) async {
     var itemDoc = await _itemsCollection.doc(itemId).get();
     if (itemDoc.exists) {
       return (itemDoc['favoriteCount'] ?? 0) > 0;
     }
     return false;
   }
-  
+
   bool applyFilters(
     double price,
     String condition,
@@ -112,8 +139,7 @@ class HomeController {
         departmentValid;
   }
 
-  //this is only used in favorites screen for now
-   Future<List<DocumentSnapshot>> fetchFavorites() async {
+  Future<List<DocumentSnapshot>> fetchFavorites() async {
     try {
       String userId = FirebaseAuth.instance.currentUser!.uid;
       var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
