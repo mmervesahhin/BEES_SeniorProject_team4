@@ -40,7 +40,7 @@ Future<void> handleLogin({
           _showError(context, 'Login failed. Please try again.');
         }
       } on FirebaseAuthException catch (e) {
-        String errorMessage = 'Wrong email or invalid address.';
+        String errorMessage = 'Wrong password or invalid address.';
         if (e.code == 'user-not-found') {
           errorMessage = 'No user found for that email.';
         } else if (e.code == 'wrong-password') {
@@ -53,6 +53,29 @@ Future<void> handleLogin({
     }
   }
 
+  // Add this method to handle password reset
+  Future<void> sendPasswordResetEmail({
+    required String email,
+    required BuildContext context,
+  }) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Password reset link sent to $email."),
+          backgroundColor: Colors.green[700],
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Failed to send password reset email.';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'No user found with this email address.';
+      }
+      _showError(context, errorMessage);
+    } catch (e) {
+      _showError(context, 'An unexpected error occurred. Please try again.');
+    }
+  }
 
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
