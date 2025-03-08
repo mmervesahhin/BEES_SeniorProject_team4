@@ -59,8 +59,24 @@ class MessageController {
     ids.sort();
     String chatRoomId = "${itemReqId}_${ids.join("_")}";
     print("🟢 Mesajlar getiriliyor: ChatRoomId = $chatRoomId");
-    return _firestore.collection('chatRooms').doc(chatRoomId).collection('messages').orderBy('timestamp', descending: false).snapshots();
+    return _firestore
+      .collection('chatRooms')
+      .doc(chatRoomId)
+      .collection('messages')
+      .orderBy('timestamp', descending: false)
+      .snapshots()
+      ..listen((snapshot) {
+        for (var doc in snapshot.docs) {
+          print("📩 Mesaj: ${doc.data()}");
+        }
+      });
   }
+
+  // Stream<QuerySnapshot> getMessages2(String? chatRoomId) {
+  //   print("🟢 Mesajlar getiriliyor: ChatRoomId = $chatRoomId");
+  //   return _firestore.collection('chatRooms').doc(chatRoomId).collection('messages').orderBy('timestamp', descending: false).snapshots();
+  // }
+
 
   // Mesaj Durumunu Güncelleme
   /*Future<void> updateMessageStatus(String messageId, String status) async {
