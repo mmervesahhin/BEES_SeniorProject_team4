@@ -448,6 +448,14 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   } else if (entityType == "Request") {
     senderId = entity.requestOwnerID;
   }
+
+  if (senderId == receiverId) {
+    // SnackBar ile hata mesajı göster
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("You cannot send a message to yourself!")),
+    );
+    return;
+  }
   Navigator.of(context).push(
     MaterialPageRoute(
       builder: (context) => MessageScreen(
