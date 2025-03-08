@@ -77,7 +77,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   onPressed: () {
                     setState(() {
                       _termsAccepted = true;
-                      _controller.termsAccepted = true; // Sync with controller
+                    // Sync with controller
                     });
                     Navigator.of(context).pop();
                   },
@@ -165,9 +165,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
+                      errorMaxLines: 3, // Hata mesajını 3 satıra kadar uzat
                     ),
                     validator: _controller.validatePassword,
                   ),
+
                   SizedBox(height: 20),
                   Row(
                     children: [
@@ -202,7 +204,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ),
                       padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                     ),
-                    onPressed: _controller.submitForm,
+                    onPressed: _termsAccepted ? _controller.submitForm : null,
+                   // onPressed: _controller.submitForm,
                     child: Text(
                       'Register',
                       style: TextStyle(fontSize: 16, color: Colors.white),

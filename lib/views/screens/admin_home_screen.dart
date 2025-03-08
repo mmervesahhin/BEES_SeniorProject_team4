@@ -98,7 +98,7 @@ Widget build(BuildContext context) {
           ),
         ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
+          child: StreamBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
             stream: _controller.getItems(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -108,11 +108,11 @@ Widget build(BuildContext context) {
                 return Center(child: Text('An error occurred: ${snapshot.error}'));
               }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return Center(child: Text('No items found.'));
               }
 
-              final items = snapshot.data!.docs.where((doc) {
+              final items = snapshot.data!.where((doc) {
                 var title = (doc['title'] ?? '').toString().toLowerCase();
                 var price = doc['price'] ?? 0;
                 var condition = doc['condition'] ?? 'Unknown';

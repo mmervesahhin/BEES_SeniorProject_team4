@@ -7,19 +7,19 @@ import 'package:bees/views/screens/home_screen.dart';
 class LoginController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> handleLogin({
-    required String emailAddress,
-    required String password,
-    required GlobalKey<FormState> formKey,
-    required BuildContext context,
-  }) async {
-    if (formKey.currentState?.validate() == true) {
-      try {
-        // Attempt to sign in with Firebase
-        UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-          email: emailAddress,
-          password: password,
-        );
+Future<void> handleLogin({
+  required String emailAddress,
+  required String password,
+  required GlobalKey<FormState> formKey,
+  required BuildContext context,
+}) async {
+  if (formKey.currentState?.validate() == true) {
+    try {
+      // Firebase ile giriş yapmayı dene
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: emailAddress,
+        password: password,
+      );
 
         if (userCredential.user != null) {
           // Firestore'dan kullanıcının isAdmin olup olmadığını al

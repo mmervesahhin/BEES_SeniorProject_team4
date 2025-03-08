@@ -3,6 +3,7 @@ import 'package:bees/views/screens/admin_data_analysis_screen.dart';
 import 'package:bees/views/screens/admin_profile_screen.dart';
 import 'package:bees/views/screens/admin_reports_screen.dart';
 import 'package:bees/views/screens/admin_home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/models/request_model.dart';
@@ -21,6 +22,8 @@ import 'package:bees/models/user_model.dart' as bees;
     int _selectedIndex = 1;
     TextEditingController _searchController = TextEditingController();
     final RequestController _requestController = RequestController();
+    final currentUser = FirebaseAuth.instance.currentUser;
+  
   String _searchQuery = '';
    final AdminController _controller = AdminController();
 
@@ -151,7 +154,7 @@ import 'package:bees/models/user_model.dart' as bees;
 
 Widget _buildRequestList() {
   return StreamBuilder<List<Request>>(
-    stream: _requestController.getRequests(),
+    stream: _requestController.getRequests(currentUser!.uid),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const Center(child: CircularProgressIndicator());

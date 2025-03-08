@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     List<String> selectedDepartments = [];
                   
   String? userId = FirebaseAuth.instance.currentUser?.uid;
+  
   final HomeController _controller = HomeController();
   final TextEditingController _searchController = TextEditingController();
   Map<String, bool> _favorites = {};
@@ -90,71 +91,73 @@ Widget build(BuildContext context) {
           ),
         ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: _controller.getItems(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text('An error occurred: ${snapshot.error}'));
-              }
+  child: StreamBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
+    stream: _controller.getItems(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(child: CircularProgressIndicator());
+      }
+      if (snapshot.hasError) {
+        return Center(child: Text('An error occurred: ${snapshot.error}'));
+      }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Center(child: Text('No items found.'));
-              }
+      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return Center(child: Text('No items found.'));
+      }
 
-              final items = snapshot.data!.docs.where((doc) {
-                var title = (doc['title'] ?? '').toString().toLowerCase();
-                var price = doc['price'] ?? 0;
-                var condition = doc['condition'] ?? 'Unknown';
-                var category = doc['category'] ?? 'Unknown';
-                var itemType = doc['itemType'] ?? 'Unknown';
-                var departments = doc['departments'] ?? [];
+      final items = snapshot.data!.where((doc) {
+        var data = doc.data() as Map<String, dynamic>? ?? {};
+        var title = (data['title'] ?? '').toString().toLowerCase();
+        var price = data['price'] ?? 0;
+        var condition = data['condition'] ?? 'Unknown';
+        var category = data['category'] ?? 'Unknown';
+        var itemType = data['itemType'] ?? 'Unknown';
+        var departments = data['departments'] ?? [];
 
-                bool matchesSearch = title.contains(_searchQuery);
-                bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
+        bool matchesSearch = title.contains(_searchQuery);
+        bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
 
-                return matchesSearch && matchesFilters;
-              }).toList();
+        return matchesSearch && matchesFilters;
+      }).toList();
 
-              items.sort((a, b) {
-                var titleA = (a['title'] ?? '').toString().toLowerCase();
-                var titleB = (b['title'] ?? '').toString().toLowerCase();
-                return titleA.indexOf(_searchQuery).compareTo(titleB.indexOf(_searchQuery));
-              });
+      items.sort((a, b) {
+        var dataA = a.data() as Map<String, dynamic>? ?? {};
+        var dataB = b.data() as Map<String, dynamic>? ?? {};
+        var titleA = (dataA['title'] ?? '').toString().toLowerCase();
+        var titleB = (dataB['title'] ?? '').toString().toLowerCase();
+        return titleA.indexOf(_searchQuery).compareTo(titleB.indexOf(_searchQuery));
+      });
 
-              return GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 0.7,
-                ),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  var item = items[index].data() as Map<String, dynamic>;
-                  String itemId = items[index].id;
+      return GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: 0.7,
+        ),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          var data = items[index].data() as Map<String, dynamic>;
+          String itemId = items[index].id;
 
-                  bool isFavorited = _favorites[itemId] ?? false;
+          bool isFavorited = _favorites[itemId] ?? false;
 
-                  String imageUrl = _controller.getImageUrl(item['photo']);
-                  String category = _controller.getCategory(item['category']);
-                  List<String> departments = _controller.getDepartments(item['departments']);
-                  String condition = item['condition'] ?? 'Unknown';
+          String imageUrl = _controller.getImageUrl(data['photo']);
+          String category = _controller.getCategory(data['category']);
+          List<String> departments = _controller.getDepartments(data['departments']);
+          String condition = data['condition'] ?? 'Unknown';
 
-                  bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
+          bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
 
                 return   GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetailedItemScreen(itemId: item['itemId']),
+                        builder: (context) => DetailedItemScreen(itemId: data['itemId']),
                       ),
                     );
                   },
-                  
                  child: Card(
                     elevation: 5,
                     shape: RoundedRectangleBorder(
@@ -186,18 +189,18 @@ Widget build(BuildContext context) {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      item['title'],
+                                      data['title'],
                                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                     ),
                                     SizedBox(height: 5),
                                     if (!hidePrice)
                                       Row(
                                         children: [
-                                          Text('₺${item['price']}'),
+                                          Text('₺${data['price']}'),
                                           SizedBox(width: 5),
-                                          if (item['paymentPlan'] != null)
+                                          if (data['paymentPlan'] != null)
                                           Text(
-                                            item['paymentPlan'],
+                                            data['paymentPlan'],
                                             style: TextStyle(fontSize: 12),
                                           ),
                                         ],
@@ -310,19 +313,20 @@ Widget build(BuildContext context) {
                                   _favorites[itemId] = !isFavorited;
                                 });
 
-                                _controller.updateFavoriteCount(itemId, !isFavorited, userId!);
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
+                          _controller.updateFavoriteCount(itemId, !isFavorited, userId!);
+                        },
+                      ),
                     ),
-                  ));
-                },
-              );
-            },
-          ),
-        ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  ),
+),
       ],
     ),
     floatingActionButton: FloatingActionButton(
