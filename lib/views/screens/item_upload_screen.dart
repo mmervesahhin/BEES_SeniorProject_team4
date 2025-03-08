@@ -220,11 +220,7 @@ bool showCoverError = false;
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Fotoğraf Yükleme
-              // Fotoğraf Yükleme Alanı
-      
-      
-
+   
 Column(
   crossAxisAlignment: CrossAxisAlignment.start,
   children: [
