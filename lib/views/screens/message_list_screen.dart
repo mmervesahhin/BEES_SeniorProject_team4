@@ -65,11 +65,11 @@ class MessageListScreen extends StatelessWidget {
             if (entityType == "Item") {
               String itemId = entity['itemId'];
               Item itemEntity = Item.fromJson(entity, itemId);
-              _navigateToMessageScreen(itemEntity, entityType, context);
+              _navigateToMessageScreen(chatRoomId,itemEntity, entityType, context);
             } else if (entityType == "Request") {
               String reqId = entity['requestID'];
               Request reqEntity = Request.fromJson2(entity);
-              _navigateToMessageScreen(reqEntity, entityType, context);
+              _navigateToMessageScreen(chatRoomId,reqEntity, entityType, context);
             }
           },
             leading: CircleAvatar(
@@ -120,47 +120,39 @@ class MessageListScreen extends StatelessWidget {
     );
   }
 
-  void _navigateToMessageScreen(dynamic entity, String entityType, BuildContext context) {
+  void _navigateToMessageScreen(
+    String chatRoomId, dynamic entity, String entityType, BuildContext context) {
+  String currentUserId = currentUser.uid;
 
+  // ChatRoom ID'yi "_" ile ayırıp user ID'lerini al
+  List<String> parts = chatRoomId.split("_");
 
-  String senderId = "";
-  String receiverId = currentUser.uid;
+  // İlk parça itemId veya requestID olduğu için çıkar
+  parts.removeAt(0);
 
-  // Entity'nin türüne göre senderId'yi belirle
-  if (entityType == "Item") {
-    senderId = entity.itemOwnerId;
-  } else if (entityType == "Request") {
-    senderId = entity.requestOwnerID;
-  }
+  // Current user ID olmayanı sender yap
+  String senderId = parts.firstWhere((id) => id != currentUserId, orElse: () => "");
+  String receiverId = currentUserId;
 
-  // Kullanıcı kendisine mesaj gönderemez
-  if (senderId == receiverId) {
-    // SnackBar ile hata mesajı göster
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("You cannot send a message to yourself!")),
-    );
-    return;
-  }
+  print("📩 Navigating to MessageScreen:");
+  print("🔹 ChatRoomId: $chatRoomId");
+  print("🔹 SenderId (ChatRoom'daki diğer kullanıcı): $senderId");
+  print("🔹 ReceiverId (Şu anki kullanıcı): $receiverId");
 
-  // Chat room ID'si oluşturuluyor
-  String itemReqId = ""; // Bu değeri doğru şekilde doldurmalısınız
-  List<String> ids = [senderId, receiverId];
-  ids.sort();
-  String chatRoomId = "${itemReqId}_${ids.join("_")}";
-
-  // MessageScreen'e yönlendirme yapılır
   Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => MessageScreen(
         chatRoomId: chatRoomId,
-        receiverId: senderId,
-        senderId: receiverId,
+        receiverId: receiverId,
+        senderId: senderId,
         entity: entity,
         entityType: entityType,
       ),
     ),
   );
 }
+
+
 
 }

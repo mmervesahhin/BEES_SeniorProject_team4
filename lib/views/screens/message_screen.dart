@@ -60,12 +60,31 @@ class MessageScreen extends StatelessWidget {
 
     TextEditingController _messageController = TextEditingController();
 
-    void sendMessage() async {
-      if(_messageController.text.isNotEmpty){
-        await MessageController().sendMessage(itemReqId: id, receiverId: userID, content: _messageController.text,entityType: entityType, entity: entity);
-        _messageController.clear();
-      }
-    }
+   void sendMessage() async {
+  if (_messageController.text.isNotEmpty) {
+    String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
+
+    // Eğer currentUserId, senderId ile aynıysa receiverId ve senderId yer değiştirsin
+    String finalSenderId = (currentUserId == senderId) ? receiverId : currentUserId;
+    String finalReceiverId = (currentUserId == senderId) ? currentUserId : senderId;
+
+    print("📩 Mesaj gönderiliyor...");
+    print("🔹 Gönderen (SenderId): $finalSenderId");
+    print("🔹 Alıcı (ReceiverId): $finalReceiverId");
+    print("🔹 Mesaj İçeriği: ${_messageController.text}");
+
+    await MessageController().sendMessage(
+      itemReqId: id,
+      receiverId: finalReceiverId,
+      content: _messageController.text,
+      entityType: entityType,
+      entity: entity,
+    );
+
+    _messageController.clear();
+  }
+}
+
 
     
 
@@ -133,7 +152,7 @@ class MessageScreen extends StatelessWidget {
       auth_user.User firebaseUser = auth_user.FirebaseAuth.instance.currentUser!;
       
       return StreamBuilder(stream: MessageController().getMessages(
-        id, userID, firebaseUser.uid), builder: (context, snapshot){
+        id, senderId, receiverId), builder: (context, snapshot){
           if(snapshot.hasError){
             return Text('Error${snapshot.error}');
           }
