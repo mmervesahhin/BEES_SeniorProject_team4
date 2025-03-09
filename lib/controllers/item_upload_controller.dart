@@ -164,7 +164,7 @@ class ItemController {
       photoUrl: null, // Varsayılan olarak boş bırakıldı, eklenecekse ayarlanmalı
       additionalPhotos: [], // Varsayılan olarak boş liste
       favoriteCount: 0, // Yeni oluşturulan öğe için favori sayısı sıfır olarak ayarlandı
-      itemStatus: "active", 
+      itemStatus: "active",
     );
 
       // Show loading indicator

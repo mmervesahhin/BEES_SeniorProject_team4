@@ -71,7 +71,7 @@ class Item {
           ? List<String>.from(json['additionalPhotos'])
           : [],
       favoriteCount: json['favoriteCount'] ?? 0,
-      itemStatus: json['itemStatus'] ?? 'available',
+      itemStatus: json['itemStatus'] ?? 'active',
     );
   }
 
@@ -116,7 +116,7 @@ class Item {
           ? List<String>.from(data['additionalPhotos'])
           : [],
       favoriteCount: data['favoriteCount'] ?? 0,
-      itemStatus: data['itemStatus'] ?? 'available',
+      itemStatus: data['itemStatus'] ?? 'active',
     );
   }
 }
