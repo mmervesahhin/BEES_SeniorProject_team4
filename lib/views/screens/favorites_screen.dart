@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/home_controller.dart';
+import 'message_list_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -55,11 +56,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.message, color: Colors.black),
-            onPressed: () {},
+        IconButton(
+          icon: Icon(Icons.message),
+          onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MessageListScreen(),
           ),
-        ],
+        );
+      },
+          color: Colors.black,
+        ),
+      ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -177,7 +186,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       ),
       child: Text(
         text,
-        style: TextStyle(color: Colors.white),
+        style: TextStyle(color: Colors.black),
       ),
     );
   }

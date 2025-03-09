@@ -44,6 +44,7 @@ dependencies:
   permission_handler: ^11.3.1
   carousel_slider: ^5.0.0
   firebase_database: ^11.2.0
+  dots_indicator: ^2.1.0
   
 
 
@@ -73,7 +74,8 @@ flutter:
   assets:
     - images/bee_pattern.jpg
     - images/bee.jpg
-  #   - images/a_dot_ham.jpeg
+    - images/anon_avatar.jpg
+  # 
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 
 class HomeController {
   final CollectionReference<Map<String, dynamic>> _itemsCollection =
@@ -13,7 +12,6 @@ class HomeController {
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  // This method returns a Stream of filtered items based on the provided parameters
 Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({ 
   double? minPrice,
   double? maxPrice,
@@ -22,6 +20,7 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
   String? condition,
 }) {
   Query<Map<String, dynamic>> query = firestore.collection('items');
+  query = query.where('itemStatus', isEqualTo: 'active');
 
   if (minPrice != null) {
     query = query.where('price', isGreaterThanOrEqualTo: minPrice);

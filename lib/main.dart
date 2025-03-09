@@ -1,10 +1,5 @@
-import 'dart:io';
-
-import 'package:bees/views/screens/home_screen.dart';
-import 'package:bees/views/screens/auth/register_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-//import 'views/screens/item_upload.dart';
 import 'views/screens/auth/login_screen.dart';
 
 void main() async {

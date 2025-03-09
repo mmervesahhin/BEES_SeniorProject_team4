@@ -2,6 +2,7 @@ import 'package:bees/controllers/reported_item_controller.dart';
 import 'package:bees/models/item_model.dart';
 import 'package:bees/models/reported_item_model.dart';
 import 'package:bees/views/screens/favorites_screen.dart';
+import 'package:bees/views/screens/message_screen.dart';
 import 'package:bees/views/screens/home_screen.dart';
 import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
@@ -13,6 +14,7 @@ import 'package:bees/controllers/detailed_item_controller.dart';
 import 'package:bees/controllers/home_controller.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:bees/models/item_model.dart';
 
 class DetailedItemScreen extends StatefulWidget {
   final String itemId;
@@ -29,8 +31,8 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
 
   final DetailedItemController _controller = DetailedItemController();
   final HomeController _homeController = HomeController();
-  
   Item? item;
+
   Map<String, dynamic>? itemDetails;
   bool isLoading = true;
   bool isFavorited = false;
@@ -43,15 +45,25 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   }
 
   Future<void> _fetchData() async {
+    print("Fetching details for itemId: ${widget.itemId}");
+
     Map<String, dynamic>? details = await _controller.fetchItemDetails(widget.itemId);
-    
-    setState(() {
-      itemDetails = details;
-      isLoading = false;
-      item = Item.fromJson(itemDetails!, widget.itemId); 
-    });
-    //print(item.toString()); //item doğru oluşmuş diye bakmak için koydum ve içi dolu bir şekilde oluşmuş görünüyor. Siz de burdan check edebilirsiniz. Kolay gelsin.
-   
+
+    if (details == null) {
+      print("Item not found in Firestore!");
+    } else {
+      print("Fetched details: $details");
+    }
+
+    if (mounted) { // Ensure widget is still active
+      setState(() {
+        itemDetails = details;
+        isLoading = false;
+        item = Item.fromJson(itemDetails!, widget.itemId);
+      });
+
+      print(item);
+    }
   }
 
   Future<void> _fetchFavoriteStatus() async {
@@ -239,7 +251,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Item Details", style: TextStyle(color: Colors.white)),
+        title: Text("Item Details", style: TextStyle(color: Colors.black)),
         backgroundColor: Color.fromARGB(255, 59, 137, 62),
       ),
       body: isLoading
@@ -419,9 +431,11 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                                   ),
                                   SizedBox(width: 10),
                                   IconButton(
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      _navigateToMessageScreen(item, "Item");
+                                    },
                                     icon: Icon(Icons.message, color: Color.fromARGB(255, 59, 137, 62), size: 30),
-                                  ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -454,6 +468,41 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
       ),
     );
   }
+  
+  void _navigateToMessageScreen(dynamic entity, String entityType) {
+  User? currentUser = FirebaseAuth.instance.currentUser;
+  if (currentUser == null) {
+    // Kullanıcı giriş yapmamışsa, bir hata mesajı gösterebilirsiniz
+    print("User is not logged in");
+    return;
+  }
+  String senderId = "";
+  String receiverId = currentUser.uid;
+
+  if (entityType == "Item") {
+    senderId = entity.itemOwnerId;
+  } else if (entityType == "Request") {
+    senderId = entity.requestOwnerID;
+  }
+
+  if (senderId == receiverId) {
+    // SnackBar ile hata mesajı göster
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("You cannot send a message to yourself!")),
+    );
+    return;
+  }
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => MessageScreen(
+        entity: entity,
+        entityType: entityType,
+        senderId: senderId,
+        receiverId: receiverId,
+      ),
+    ),
+  );
+}
 
   void _onItemTapped(int index) {
     switch (index) {

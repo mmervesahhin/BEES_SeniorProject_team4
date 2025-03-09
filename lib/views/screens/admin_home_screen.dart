@@ -1,23 +1,24 @@
-import 'package:bees/views/screens/favorites_screen.dart';
-import 'package:bees/views/screens/item_upload_screen.dart';
-import 'package:bees/views/screens/requests_screen.dart';
-import 'package:bees/views/screens/user_profile_screen.dart';
-import 'package:bees/views/screens/detailed_item_screen.dart';
+import 'package:bees/controllers/admin_controller.dart';
+import 'package:bees/models/item_model.dart';
+import 'package:bees/views/screens/admin_data_analysis_screen.dart';
+import 'package:bees/views/screens/admin_profile_screen.dart';
+import 'package:bees/views/screens/admin_reports_screen.dart';
+import 'package:bees/views/screens/admin_requests_screen.dart';
+import 'package:bees/views/screens/admin_detailed_item_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/home_controller.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'message_list_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class AdminHomeScreen extends StatefulWidget {
+  const AdminHomeScreen({super.key});
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _AdminHomeScreenState createState() => _AdminHomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
   List<String> departmentList = [
       'All Departments', 'AMER', 'ARCH', 'CHEM', 'COMD', 'CS', 'CTIS', 'ECON', 'EDU', 'EEE', 'ELIT', 'FA', 'GRA',
       'HART', 'IAED', 'IE', 'IR', 'LAUD', 'LAW', 'MAN', 'MATH', 'MBG', 'ME', 'MSC', 'PHIL', 'PHYS', 'POLS', 'PREP',
@@ -27,10 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
     List<String> selectedDepartments = [];
                   
   String? userId = FirebaseAuth.instance.currentUser?.uid;
-  
   final HomeController _controller = HomeController();
+  final AdminController _controller1 = AdminController();
   final TextEditingController _searchController = TextEditingController();
-  Map<String, bool> _favorites = {};
   String _searchQuery = '';
   Map<String, dynamic> _filters = {
     'priceRange': RangeValues(0, 1000),
@@ -46,28 +46,27 @@ Widget build(BuildContext context) {
     appBar: AppBar(
       backgroundColor: const Color.fromARGB(255, 59, 137, 62),
       automaticallyImplyLeading: false, // Geri butonunu kaldırır
-      title: Text(
-        'BEES',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.yellow,
+      title: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: 'BEES ',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.yellow,
+              ),
+            ),
+            TextSpan(
+              text: 'admin',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.yellow,
+              ),
+            ),
+          ],
         ),
       ),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.message),
-          onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MessageListScreen(),
-          ),
-        );
-      },
-          color: Colors.black,
-        ),
-      ],
     ),
     body: Column(
       children: [
@@ -99,73 +98,69 @@ Widget build(BuildContext context) {
           ),
         ),
         Expanded(
-  child: StreamBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
-    stream: _controller.getItems(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return Center(child: CircularProgressIndicator());
-      }
-      if (snapshot.hasError) {
-        return Center(child: Text('An error occurred: ${snapshot.error}'));
-      }
+          child: StreamBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
+            stream: _controller.getItems(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('An error occurred: ${snapshot.error}'));
+              }
 
-      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-        return Center(child: Text('No items found.'));
-      }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No items found.'));
+              }
 
-      final items = snapshot.data!.where((doc) {
-        var data = doc.data() as Map<String, dynamic>? ?? {};
-        var title = (data['title'] ?? '').toString().toLowerCase();
-        var price = data['price'] ?? 0;
-        var condition = data['condition'] ?? 'Unknown';
-        var category = data['category'] ?? 'Unknown';
-        var itemType = data['itemType'] ?? 'Unknown';
-        var departments = data['departments'] ?? [];
+              final items = snapshot.data!.where((doc) {
+                var title = (doc['title'] ?? '').toString().toLowerCase();
+                var price = doc['price'] ?? 0;
+                var condition = doc['condition'] ?? 'Unknown';
+                var category = doc['category'] ?? 'Unknown';
+                var itemType = doc['itemType'] ?? 'Unknown';
+                var departments = doc['departments'] ?? [];
 
-        bool matchesSearch = title.contains(_searchQuery);
-        bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
+                bool matchesSearch = title.contains(_searchQuery);
+                bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
 
-        return matchesSearch && matchesFilters;
-      }).toList();
+                return matchesSearch && matchesFilters;
+              }).toList();
 
-      items.sort((a, b) {
-        var dataA = a.data() as Map<String, dynamic>? ?? {};
-        var dataB = b.data() as Map<String, dynamic>? ?? {};
-        var titleA = (dataA['title'] ?? '').toString().toLowerCase();
-        var titleB = (dataB['title'] ?? '').toString().toLowerCase();
-        return titleA.indexOf(_searchQuery).compareTo(titleB.indexOf(_searchQuery));
-      });
+              items.sort((a, b) {
+                var titleA = (a['title'] ?? '').toString().toLowerCase();
+                var titleB = (b['title'] ?? '').toString().toLowerCase();
+                return titleA.indexOf(_searchQuery).compareTo(titleB.indexOf(_searchQuery));
+              });
 
-      return GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: 0.7,
-        ),
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          var data = items[index].data() as Map<String, dynamic>;
-          String itemId = items[index].id;
+              return GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  var item = items[index].data() as Map<String, dynamic>;
+                  String itemId = items[index].id;
 
-          bool isFavorited = _favorites[itemId] ?? false;
+                  String imageUrl = _controller.getImageUrl(item['photo']);
+                  String category = _controller.getCategory(item['category']);
+                  List<String> departments = _controller.getDepartments(item['departments']);
+                  String condition = item['condition'] ?? 'Unknown';
 
-          String imageUrl = _controller.getImageUrl(data['photo']);
-          String category = _controller.getCategory(data['category']);
-          List<String> departments = _controller.getDepartments(data['departments']);
-          String condition = data['condition'] ?? 'Unknown';
-
-          bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
+                  bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
 
                 return   GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetailedItemScreen(itemId: data['itemId']),
+                        builder: (context) => AdminDetailedItemScreen(itemId: item['itemId']),
                       ),
                     );
                   },
+                  
                  child: Card(
                     elevation: 5,
                     shape: RoundedRectangleBorder(
@@ -197,18 +192,18 @@ Widget build(BuildContext context) {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      data['title'],
+                                      item['title'],
                                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                     ),
                                     SizedBox(height: 5),
                                     if (!hidePrice)
                                       Row(
                                         children: [
-                                          Text('₺${data['price']}'),
+                                          Text('₺${item['price']}'),
                                           SizedBox(width: 5),
-                                          if (data['paymentPlan'] != null)
+                                          if (item['paymentPlan'] != null)
                                           Text(
-                                            data['paymentPlan'],
+                                            item['paymentPlan'],
                                             style: TextStyle(fontSize: 12),
                                           ),
                                         ],
@@ -246,7 +241,6 @@ Widget build(BuildContext context) {
                                       style: TextStyle(color: Colors.black),
                                     ),
                                   ),
-                                  
                                 ],
                               ),
                             ),
@@ -295,57 +289,24 @@ Widget build(BuildContext context) {
                           ],
                         ),
                         Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 5,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                isFavorited ? Icons.favorite : Icons.favorite_border,
-                                color: isFavorited ? Colors.red : Colors.grey,
-                              ),
-                              onPressed: () async {
-                                setState(() {
-                                  _favorites[itemId] = !isFavorited;
-                                });
-
-                          _controller.updateFavoriteCount(itemId, !isFavorited, userId!);
-                        },
+                        top: 2,
+                        right: -12,
+                        child: IconButton(
+                          icon: Icon(Icons.more_vert, color: Colors.black),
+                          onPressed: () {
+                            _controller1.showItemRemoveOptions(context, Item.fromJson(item, itemId));
+                          },
+                        ),
                       ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    },
-  ),
-),
+                  ));
+                },
+              );
+            },
+          ),
+        ),
       ],
-    ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const UploadItemPage()),
-                );
-      },
-      backgroundColor: Color.fromARGB(255, 59, 137, 62),
-      child: Icon(Icons.add, color: Colors.white),
     ),
     bottomNavigationBar: Padding(
       padding: const EdgeInsets.only(bottom: 0),
@@ -362,9 +323,13 @@ Widget build(BuildContext context) {
             label: 'Requests',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favorites',
+            icon: Icon(Icons.report),
+            label: 'Reports',
           ),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Analysis',
+            ),
           BottomNavigationBarItem(
             icon: Icon(Icons.account_circle),
             label: 'Profile',
@@ -375,22 +340,27 @@ Widget build(BuildContext context) {
           switch (index) {
             case 0:
             Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => HomeScreen(),
+                builder: (context) => AdminHomeScreen(),
               ));
               break;
             case 1:
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => RequestsScreen(),
+                Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminRequestsScreen(),
               ));
               break;
             case 2:
               Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => FavoritesScreen(),
+                builder: (context) => AdminReportsScreen(),
               ));
               break;
             case 3:
             Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => UserProfileScreen(),
+                builder: (context) => AdminDataAnalysisScreen(),
+              ));
+              break;
+            case 4:
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminProfileScreen(),
               ));
               break;
           }
