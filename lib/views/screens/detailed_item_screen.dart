@@ -227,7 +227,6 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
     complaintID: DateTime.now().millisecondsSinceEpoch, // Benzersiz bir ID oluşturuluyor
     complaintDetails: complaintDetails,
     reportReason: reportReason,
-    reportedObjectType: "item", // Bu raporun bir item'a ait olduğunu belirtiyoruz
     reportedBy: userIDD, // Dinamik kullanıcı ID'si
     itemId: itemId, // Dinamik item ID'si
   );

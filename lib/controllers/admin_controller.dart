@@ -5,6 +5,68 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bees/models/request_model.dart';
 
 class AdminController {
+  Future<List<Map<String, dynamic>>> fetchItemReports() async {
+  try {
+    // reported_items koleksiyonundaki raporları al
+    QuerySnapshot<Map<String, dynamic>> reportsSnapshot =
+        await FirebaseFirestore.instance.collection('reported_items').get();
+
+    List<Map<String, dynamic>> reports = [];
+
+    for (var doc in reportsSnapshot.docs) {
+      Map<String, dynamic> reportData = doc.data();
+
+      // Item ID'sini al
+      String itemId = reportData['itemId'];
+      
+      // Items koleksiyonunda item'ı sorgula
+      DocumentSnapshot<Map<String, dynamic>> itemDoc =
+          await FirebaseFirestore.instance.collection('items').doc(itemId).get();
+
+      // Eğer itemStatus "active" ise raporu ekle
+      if (itemDoc.exists && itemDoc.data()?['itemStatus'] == 'active') {
+        // Report eden kullanıcıyı al
+        String? userId = reportData['reportedBy'];
+        String reporterName = "Unknown User";
+
+        if (userId != null) {
+          DocumentSnapshot<Map<String, dynamic>> userDoc =
+              await FirebaseFirestore.instance.collection('users').doc(userId).get();
+          if (userDoc.exists) {
+            var userData = userDoc.data();
+            reporterName = "${userData?['firstName']} ${userData?['lastName']}";
+          }
+        }
+
+        // Reporter'ı rapor verisine ekle
+        reportData['reporterName'] = reporterName;
+        reports.add(reportData);
+      }
+    }
+
+    return reports;
+  } catch (e) {
+    print("Error fetching reports: $e");
+    return [];
+  }
+}
+
+Future<Map<String, dynamic>> getItemDetails(String itemId) async {
+  try {
+    // Firestore'dan itemId'ye göre item verilerini alıyoruz
+    var itemSnapshot = await FirebaseFirestore.instance.collection('items').doc(itemId).get();
+    
+    if (itemSnapshot.exists) {
+      return itemSnapshot.data()!;
+    } else {
+      return {}; // Eğer item bulunmazsa boş bir map döndür
+    }
+  } catch (e) {
+    print("Error fetching item details: $e");
+    return {}; // Hata durumunda boş bir map döndür
+  }
+}
+
   void showRequestRemoveOptions(BuildContext context, Request request) {
     showModalBottomSheet(
       context: context,
