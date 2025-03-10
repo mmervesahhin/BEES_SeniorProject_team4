@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'actor_model.dart';
 
 class User extends Actor {
