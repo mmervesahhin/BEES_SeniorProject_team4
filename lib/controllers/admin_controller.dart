@@ -259,4 +259,26 @@ void showItemRemoveOptions(BuildContext context, Item item, {VoidCallback? onSuc
       return false;
     }
   }
+
+   Stream<QuerySnapshot> getReportedUsers() {
+    return FirebaseFirestore.instance.collection('reported_users').snapshots();
+  }
+
+  Stream<QuerySnapshot> getBannedUsers() {
+    return FirebaseFirestore.instance.collection('users').where('isBanned', isEqualTo: true).snapshots();
+  }
+
+  Future<Map<String, dynamic>?> getUserInfo(String userId) async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    return userDoc.exists ? userDoc.data() as Map<String, dynamic>? : null;
+  }
+
+  Future<void> banUser(String userId) async {
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({'isBanned': true});
+    await FirebaseFirestore.instance.collection('reported_users').doc(userId).delete();
+  }
+
+  Future<void> unbanUser(String userId) async {
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({'isBanned': false});
+  }
 }
