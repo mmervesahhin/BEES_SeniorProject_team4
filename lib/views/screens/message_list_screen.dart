@@ -53,7 +53,7 @@ class MessageListScreen extends StatelessWidget {
           String userName = '$firstName $lastName';
           String userProfilePic = userData['profilePicture'] ?? ''; // Kullanıcı profil fotoğrafı
 
-          return ListTile(
+          return ListTile( //değişklik
             onTap: () {
             print('Navigating to MessageScreen:');
             print('ChatRoomId: $chatRoomId');
