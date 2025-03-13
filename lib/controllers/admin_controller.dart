@@ -5,6 +5,68 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bees/models/request_model.dart';
 
 class AdminController {
+  Future<List<Map<String, dynamic>>> fetchItemReports() async {
+  try {
+    // reported_items koleksiyonundaki raporları al
+    QuerySnapshot<Map<String, dynamic>> reportsSnapshot =
+        await FirebaseFirestore.instance.collection('reported_items').get();
+
+    List<Map<String, dynamic>> reports = [];
+
+    for (var doc in reportsSnapshot.docs) {
+      Map<String, dynamic> reportData = doc.data();
+
+      // Item ID'sini al
+      String itemId = reportData['itemId'];
+      
+      // Items koleksiyonunda item'ı sorgula
+      DocumentSnapshot<Map<String, dynamic>> itemDoc =
+          await FirebaseFirestore.instance.collection('items').doc(itemId).get();
+
+      // Eğer itemStatus "active" ise raporu ekle
+      if (itemDoc.exists && itemDoc.data()?['itemStatus'] == 'active') {
+        // Report eden kullanıcıyı al
+        String? userId = reportData['reportedBy'];
+        String reporterName = "Unknown User";
+
+        if (userId != null) {
+          DocumentSnapshot<Map<String, dynamic>> userDoc =
+              await FirebaseFirestore.instance.collection('users').doc(userId).get();
+          if (userDoc.exists) {
+            var userData = userDoc.data();
+            reporterName = "${userData?['firstName']} ${userData?['lastName']}";
+          }
+        }
+
+        // Reporter'ı rapor verisine ekle
+        reportData['reporterName'] = reporterName;
+        reports.add(reportData);
+      }
+    }
+
+    return reports;
+  } catch (e) {
+    print("Error fetching reports: $e");
+    return [];
+  }
+}
+
+Future<Map<String, dynamic>> getItemDetails(String itemId) async {
+  try {
+    // Firestore'dan itemId'ye göre item verilerini alıyoruz
+    var itemSnapshot = await FirebaseFirestore.instance.collection('items').doc(itemId).get();
+    
+    if (itemSnapshot.exists) {
+      return itemSnapshot.data()!;
+    } else {
+      return {}; // Eğer item bulunmazsa boş bir map döndür
+    }
+  } catch (e) {
+    print("Error fetching item details: $e");
+    return {}; // Hata durumunda boş bir map döndür
+  }
+}
+
   void showRequestRemoveOptions(BuildContext context, Request request) {
     showModalBottomSheet(
       context: context,
@@ -195,6 +257,89 @@ void showItemRemoveOptions(BuildContext context, Item item, {VoidCallback? onSuc
     } catch (e) {
       print("Error removing request: $e");
       return false;
+    }
+  }
+
+  Stream<QuerySnapshot> getReportedUsers() {
+    return FirebaseFirestore.instance
+        .collection('reported_users') // Your collection name
+        .where('isConsidered', isEqualTo: false) // Filter reports where isConsidered is false
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getBannedUsers() {
+    return FirebaseFirestore.instance.collection('users').where('isBanned', isEqualTo: true).snapshots();
+  }
+
+  Future<Map<String, dynamic>?> getUserInfo(String userId) async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    return userDoc.exists ? userDoc.data() as Map<String, dynamic>? : null;
+  }
+
+  Future<void> banUser({
+  required String userId,
+  required String banReason,
+  required String explanation,
+  required String banPeriod,
+}) async {
+  try {
+    String adminId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown_admin';
+    String banOperationId = FirebaseFirestore.instance.collection('banned_users').doc().id;
+    DateTime banDate = DateTime.now();
+    DateTime? banEndDate;
+
+    if (banPeriod != 'Permanent') {
+      int days = int.tryParse(banPeriod.split(' ')[0]) ?? 0;
+      banEndDate = banDate.add(Duration(days: days));
+    }
+
+    // Add user to banned_users collection
+    await FirebaseFirestore.instance.collection('banned_users').doc(banOperationId).set({
+      'banOperationId': banOperationId,
+      'adminId': adminId,
+      'userId': userId,
+      'banReason': banReason,
+      'explanation': explanation,
+      'banDate': banDate,
+      'banPeriod': banPeriod,
+    });
+
+    // Update user's ban status
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'isBanned': true,
+      'banEndDate': banEndDate,
+    });
+
+    // Update all reports where the reported user is the banned user
+    QuerySnapshot reportedUsersSnapshot = await FirebaseFirestore.instance
+        .collection('reported_users')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    for (var doc in reportedUsersSnapshot.docs) {
+      await doc.reference.update({'isConsidered': true});
+    }
+  } catch (e) {
+    print('Error banning user: $e');
+    throw Exception('Failed to ban user');
+  }
+}
+
+  Future<void> unbanUser(String userId) async {
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'isBanned': false,
+      'banEndDate': null,
+    });
+  }
+
+  Future<void> ignoreUserReport(String reportId) async {
+    DocumentSnapshot reportedUserDoc = await FirebaseFirestore.instance
+      .collection('reported_users')
+      .doc(reportId)
+      .get();
+
+    if (reportedUserDoc.exists) {
+      await reportedUserDoc.reference.update({'isConsidered': true});
     }
   }
 }
