@@ -17,8 +17,12 @@ class UserReportsScreen extends StatefulWidget {
 
 class _UserReportsScreenState extends State<UserReportsScreen> {
   int _selectedIndex = 2;
-  
   final AdminController _adminController = AdminController();
+
+  // Declare variables to hold the selected reason and ban duration
+  String? _selectedBanReason;
+  String? _selectedBanDuration;
+  String _banExplanation = '';
 
   @override
   Widget build(BuildContext context) {
@@ -98,9 +102,18 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                                 ],
                               ),
                             ),
-                            trailing: ElevatedButton(
-                              onPressed: () => _adminController.banUser(doc['userId']),
-                              child: const Text('Ban'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                              ElevatedButton(
+                                onPressed: () => _showBanDialog(doc['userId']),
+                                child: const Text('Ban'),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () => _adminController.ignoreUserReport(doc['complaintID']),
+                              ),
+                              ],
                             ),
                           );
                         },
@@ -146,9 +159,20 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                               userName,
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            subtitle: const Text('Banned'),
+                            subtitle: RichText(
+                              text: TextSpan(
+                              style: DefaultTextStyle.of(context).style,
+                                children: [
+                                const TextSpan(
+                                  text: 'Expiration: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(text: (userSnapshot.data?['banEndDate'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? 'Permanent'),
+                              ],
+                              ),
+                            ),
                             trailing: ElevatedButton(
-                              onPressed: () => _adminController.unbanUser(doc.id),
+                              onPressed: () => _showUnbanDialog(doc.id), // Show the unban confirmation dialog
                               child: const Text('Unban'),
                             ),
                           );
@@ -198,4 +222,143 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
         break;
     }
   }
+
+void _showUnbanDialog(String userId) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Unban User'),
+        content: const Text('Are you sure you want to unban this user?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Proceed with the unban operation
+              _adminController.unbanUser(userId);
+              Navigator.of(context).pop(); // Close the dialog after unbanning
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+ // Show the dialog for banning a user
+void _showBanDialog(String userId) {
+  // Reset the state of the dialog by clearing previous selections
+  setState(() {
+    _selectedBanReason = null;
+    _selectedBanDuration = null;
+    _banExplanation = '';
+  });
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Ban User'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Ban reason dropdown with no default selection
+                DropdownButton<String>(
+                  value: _selectedBanReason,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedBanReason = newValue;
+                    });
+                  },
+                  hint: const Text('Select Ban Reason'),
+                  items: <String>[
+                    'Harassment',
+                    'Suspicious or Fraudulent Behavior',
+                    'Inappropriate Profile Picture',
+                    'Name or Surname Issues',
+                    'Hate Speech or Bullying',
+                    'Violent Behavior',
+                    'Other'
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                if (_selectedBanReason == 'Other')
+                  TextField(
+                    onChanged: (value) {
+                      setState(() {
+                        _banExplanation = value;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Explanation (Required)',
+                    ),
+                    autofocus: true,
+                  ),
+                // Ban duration dropdown with no default selection
+                DropdownButton<String>(
+                  value: _selectedBanDuration,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedBanDuration = newValue;
+                    });
+                  },
+                  hint: const Text('Select Ban Duration'),
+                  items: <String>[
+                    'Permanent',
+                    '7 days',
+                    '10 days',
+                    '15 days',
+                    '30 days'
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: (_selectedBanReason == null ||
+                        _selectedBanDuration == null ||
+                        (_selectedBanReason == 'Other' && _banExplanation.isEmpty))
+                    ? null  // Disable button if required fields are not filled
+                    : () {
+                        // Call the ban user method
+                        _adminController.banUser(
+                          userId: userId,
+                          banReason: _selectedBanReason!,
+                          explanation: _banExplanation,
+                          banPeriod: _selectedBanDuration!,
+                        );
+                        Navigator.of(context).pop();
+                      },
+                child: const Text('Ban'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 }

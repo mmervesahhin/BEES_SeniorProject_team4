@@ -260,8 +260,11 @@ void showItemRemoveOptions(BuildContext context, Item item, {VoidCallback? onSuc
     }
   }
 
-   Stream<QuerySnapshot> getReportedUsers() {
-    return FirebaseFirestore.instance.collection('reported_users').snapshots();
+  Stream<QuerySnapshot> getReportedUsers() {
+    return FirebaseFirestore.instance
+        .collection('reported_users') // Your collection name
+        .where('isConsidered', isEqualTo: false) // Filter reports where isConsidered is false
+        .snapshots();
   }
 
   Stream<QuerySnapshot> getBannedUsers() {
@@ -273,12 +276,70 @@ void showItemRemoveOptions(BuildContext context, Item item, {VoidCallback? onSuc
     return userDoc.exists ? userDoc.data() as Map<String, dynamic>? : null;
   }
 
-  Future<void> banUser(String userId) async {
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({'isBanned': true});
-    await FirebaseFirestore.instance.collection('reported_users').doc(userId).delete();
+  Future<void> banUser({
+  required String userId,
+  required String banReason,
+  required String explanation,
+  required String banPeriod,
+}) async {
+  try {
+    String adminId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown_admin';
+    String banOperationId = FirebaseFirestore.instance.collection('banned_users').doc().id;
+    DateTime banDate = DateTime.now();
+    DateTime? banEndDate;
+
+    if (banPeriod != 'Permanent') {
+      int days = int.tryParse(banPeriod.split(' ')[0]) ?? 0;
+      banEndDate = banDate.add(Duration(days: days));
+    }
+
+    // Add user to banned_users collection
+    await FirebaseFirestore.instance.collection('banned_users').doc(banOperationId).set({
+      'banOperationId': banOperationId,
+      'adminId': adminId,
+      'userId': userId,
+      'banReason': banReason,
+      'explanation': explanation,
+      'banDate': banDate,
+      'banPeriod': banPeriod,
+    });
+
+    // Update user's ban status
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'isBanned': true,
+      'banEndDate': banEndDate,
+    });
+
+    // Update all reports where the reported user is the banned user
+    QuerySnapshot reportedUsersSnapshot = await FirebaseFirestore.instance
+        .collection('reported_users')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    for (var doc in reportedUsersSnapshot.docs) {
+      await doc.reference.update({'isConsidered': true});
+    }
+  } catch (e) {
+    print('Error banning user: $e');
+    throw Exception('Failed to ban user');
   }
+}
 
   Future<void> unbanUser(String userId) async {
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({'isBanned': false});
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'isBanned': false,
+      'banEndDate': null,
+    });
+  }
+
+  Future<void> ignoreUserReport(String reportId) async {
+    DocumentSnapshot reportedUserDoc = await FirebaseFirestore.instance
+      .collection('reported_users')
+      .doc(reportId)
+      .get();
+
+    if (reportedUserDoc.exists) {
+      await reportedUserDoc.reference.update({'isConsidered': true});
+    }
   }
 }
