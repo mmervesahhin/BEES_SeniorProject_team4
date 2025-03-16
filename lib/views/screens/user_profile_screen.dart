@@ -1,3 +1,4 @@
+import 'package:bees/views/edit_item_screen.dart';
 import 'package:bees/views/screens/auth/login_screen.dart';
 import 'package:bees/views/screens/favorites_screen.dart';
 import 'package:bees/views/screens/home_screen.dart';
@@ -462,6 +463,7 @@ bool _confirmPasswordVisible = false;
     stream: FirebaseFirestore.instance
         .collection('items')
         .where('itemOwnerId', isEqualTo: userId)
+        .where('itemStatus', isEqualTo: 'active')
         .snapshots(),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -665,7 +667,7 @@ bool _confirmPasswordVisible = false;
                           _buildIconButton(
                             icon: Icons.edit,
                             color: primaryColor,
-                            onPressed: () => _showEditItemDialog(context, item),
+                            onPressed: () => _navigateToEditItemScreen(item),
                           ),
                           SizedBox(width: 4),
                           _buildIconButton(
@@ -973,259 +975,103 @@ Widget _buildBEESEDExplanationItem(String letter, String meaning) {
   }
 
   Future<void> _showDeleteConfirmation(BuildContext context, Item item) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Delete Item',
-          style: TextStyle(
-            color: errorColor,
-            fontWeight: FontWeight.bold,
-          ),
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(
+        'Remove Item',
+        style: TextStyle(
+          color: errorColor,
+          fontWeight: FontWeight.bold,
         ),
-        content: Text(
-          'Are you sure you want to delete this item? This action cannot be undone.',
-          style: TextStyle(color: textColor),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: errorColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('Delete'),
-          ),
-        ],
       ),
-    );
+      content: Text(
+        'Are you sure you want to remove this item from your active listings? It will be marked as inactive.',
+        style: TextStyle(color: textColor),
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: errorColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text('Remove'),
+        ),
+      ],
+    ),
+  );
 
-    if (confirmed == true) {
-      try {
+  if (confirmed == true) {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+          ),
+        ),
+      );
+
+      // Instead of deleting, update the item status to 'inactive'
+      await FirebaseFirestore.instance
+          .collection('items')
+          .doc(item.itemId)
+          .update({
+        'itemStatus': 'inactive',
+        'lastModifiedDate': FieldValue.serverTimestamp(),
+      });
+
+      // Update the user's activeItems list if needed
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
         await FirebaseFirestore.instance
-            .collection('items')
-            .doc(item.itemId)
-            .delete();
-        _showSnackBar('Item deleted successfully');
-      } catch (e) {
-        _showSnackBar('Error deleting item', isError: true);
+            .collection('users')
+            .doc(user.uid)
+            .update({
+          'inactiveItems': FieldValue.arrayUnion([item.itemId]),
+        });
       }
+
+      // Close loading indicator
+      Navigator.of(context, rootNavigator: true).pop();
+      
+      _showSnackBar('Item marked as inactive');
+      
+      // Refresh the items list to reflect the change
+      setState(() {});
+    } catch (e) {
+      // Close loading indicator if it's showing
+      Navigator.of(context, rootNavigator: true).pop();
+      
+      _showSnackBar('Error updating item status: ${e.toString()}', isError: true);
     }
   }
+}
 
-  Future<void> _showEditItemDialog(BuildContext context, Item item) async {
-    final editedItem = Item(
-      itemId: item.itemId,
-      itemOwnerId: item.itemOwnerId,
-      title: item.title,
-      description: item.description,
-      category: item.category,
-      condition: item.condition,
-      itemType: item.itemType,
-      departments: item.departments,
-      price: item.price,
-      paymentPlan: item.paymentPlan,
-      photoUrl: item.photoUrl,
-      additionalPhotos: item.additionalPhotos,
-      favoriteCount: item.favoriteCount,
-      itemStatus: item.itemStatus,
-    );
-
-    final formKey = GlobalKey<FormState>();
-
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Edit Item',
-          style: TextStyle(
-            color: primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildFormField(
-                  initialValue: editedItem.title,
-                  labelText: 'Title',
-                  validator: (value) =>
-                      value?.isEmpty ?? true ? 'Title is required' : null,
-                  onChanged: (value) => editedItem.title = value,
-                ),
-                SizedBox(height: 16),
-                _buildFormField(
-                  initialValue: editedItem.description,
-                  labelText: 'Description',
-                  maxLines: 3,
-                  validator: (value) =>
-                      value?.isEmpty ?? true ? null : null,
-                  onChanged: (value) => editedItem.description = value,
-                ),
-                SizedBox(height: 16),
-                _buildFormField(
-                  initialValue: editedItem.price.toString(),
-                  labelText: 'Price',
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) return 'Price is required';
-                    if (double.tryParse(value!) == null) return 'Invalid price';
-                    return null;
-                  },
-                  onChanged: (value) =>
-                      editedItem.price = double.tryParse(value) ?? editedItem.price,
-                ),
-                SizedBox(height: 16),
-                _buildDropdownField(
-                  value: editedItem.condition,
-                  labelText: 'Condition',
-                  items: ['New', 'Lightly Used', 'Moderately Used', 'Heavily Used'],
-                  onChanged: (value) {
-                    if (value != null) editedItem.condition = value;
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState?.validate() ?? false) {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('items')
-                      .doc(editedItem.itemId)
-                      .update(editedItem.toJson());
-                  Navigator.of(context).pop();
-                  _showSnackBar('Item updated successfully');
-                } catch (e) {
-                  _showSnackBar('Error updating item', isError: true);
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFormField({
-    required String labelText,
-    required String? Function(String?) validator,
-    required Function(String) onChanged,
-    String? initialValue,
-    int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return TextFormField(
-      initialValue: initialValue,
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: TextStyle(color: Colors.grey.shade700),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: errorColor, width: 1),
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-      ),
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      validator: validator,
-      onChanged: onChanged,
-      style: TextStyle(color: textColor),
-    );
-  }
-
-  Widget _buildDropdownField({
-    required String labelText,
-    required String value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: TextStyle(color: Colors.grey.shade700),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: primaryColor, width: 2),
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-      ),
-      items: items.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      icon: Icon(Icons.arrow_drop_down, color: primaryColor),
-      style: TextStyle(color: textColor),
-      dropdownColor: Colors.white,
-    );
-  }
+  void _navigateToEditItemScreen(Item item) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => EditItemScreen(item: item),
+    ),
+  );
+}
 
 
   // Implementation for Req 2.9
@@ -2484,10 +2330,29 @@ Future<void> _showChangePasswordDialog() async {
   );
 }
   
-  // Implementation for Req 10.4.7.1
- Future<void> _changePassword() async {
+ // Implementation for Req 10.4.7.1
+Future<void> _changePassword() async {
   final User? user = FirebaseAuth.instance.currentUser;
   if (user == null) return;
+
+  // Check if the password form is valid
+  if (!_passwordFormKey.currentState!.validate()) return;
+
+  // Check if new password matches confirmation
+  if (_newPasswordController.text != _confirmPasswordController.text) {
+    _displaySnackBar('New passwords do not match', isError: true);
+    return;
+  }
+
+  // Validate password strength using regex
+  RegExp passwordRegex = RegExp("^(?=.*[A-Z])(?=.*\\d)(?=.*[!\"#\$%&'()*+,-./:;<=>?@[\\]^_`{|}~]).{8,}\$");
+  if (!passwordRegex.hasMatch(_newPasswordController.text)) {
+    _displaySnackBar(
+      'Password must be at least 8 characters and include an uppercase letter, a number, and a special character',
+      isError: true
+    );
+    return;
+  }
 
   try {
     // Step 1: Re-authenticate the user with current password
@@ -2499,20 +2364,17 @@ Future<void> _showChangePasswordDialog() async {
     // Reauthenticate
     await user.reauthenticateWithCredential(credential);
     
-    // Step 2: Send password reset email
-    await FirebaseAuth.instance.sendPasswordResetEmail(email: user.email!);
+    // Step 2: Update password directly without sending email
+    await user.updatePassword(_newPasswordController.text);
     
-    // Step 3: Show success message with instructions
-    _showSnackBar(
-      'A password reset link has been sent to ${user.email}. Please check your inbox and click the link. When prompted, enter the new password you specified.',
-      isError: false
-    );
+    // Step 3: Show success message
+    _displaySnackBar('Password changed successfully', isError: false);
     
     // Close the dialog
     Navigator.of(context).pop();
     
   } catch (e) {
-    String errorMessage = 'Error initiating password change: ';
+    String errorMessage = 'Error changing password: ';
     
     if (e.toString().contains('wrong-password')) {
       errorMessage += 'The current password is incorrect.';
@@ -2522,10 +2384,21 @@ Future<void> _showChangePasswordDialog() async {
       errorMessage += e.toString();
     }
     
-    _showSnackBar(errorMessage, isError: true);
+    _displaySnackBar(errorMessage, isError: true);
     print('Detailed error: $e'); // Log the detailed error for debugging
   }
 }
+
+void _displaySnackBar(String message, {bool isError = false}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red : Colors.green,
+      behavior: SnackBarBehavior.floating, // Helps it appear above overlays
+    ),
+  );
+}
+
 
 void _setupPasswordChangeVerificationListener(String userId, String newPassword) {
   // This listener will check for email verification
