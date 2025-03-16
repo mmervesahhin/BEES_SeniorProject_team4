@@ -4,16 +4,16 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.4'  // or your required version
+        //classpath 'com.android.tools.build:gradle:8.2.0' // or your required version
         classpath 'com.google.gms:google-services:4.3.15'  // Correct placement here
     }
 }
 
 plugins {
     id "com.android.application"
-    id "kotlin-android"
+    id "org.jetbrains.kotlin.android"  // Güncel Kotlin sürümünü ekle
     id "dev.flutter.flutter-gradle-plugin"
-    id 'com.google.gms.google-services'  // Correctly applied here
+    id 'com.google.gms.google-services'
 }
 
 android {

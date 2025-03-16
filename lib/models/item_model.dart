@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 class Item {
   String? itemId;
   String itemOwnerId;
@@ -71,7 +71,52 @@ class Item {
           ? List<String>.from(json['additionalPhotos'])
           : [],
       favoriteCount: json['favoriteCount'] ?? 0,
-      itemStatus: json['itemStatus'] ?? 'available',
+      itemStatus: json['itemStatus'] ?? 'active',
+    );
+  }
+
+  String toString() {
+    return 'Item{itemId: $itemId, itemOwnerId: $itemOwnerId, title: $title, ...}';
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'itemId': itemId,
+      'itemOwnerId': itemOwnerId,
+      'title': title,
+      'description': description,
+      'category': category,
+      'condition': condition,
+      'itemType': itemType,
+      'departments': departments,
+      'price': price,
+      'paymentPlan': paymentPlan,
+      'photoUrl': photoUrl,
+      'additionalPhotos': additionalPhotos,
+      'favoriteCount': favoriteCount,
+      'itemStatus': itemStatus,
+    };
+  }
+
+  factory Item.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Item(
+      itemId: doc.id,
+      itemOwnerId: data['itemOwnerId'] ?? '',
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      category: data['category'] ?? '',
+      condition: data['condition'] ?? '',
+      itemType: data['itemType'] ?? '',
+      departments: List<String>.from(data['departments'] ?? []),
+      price: (data['price'] as num).toDouble(),
+      paymentPlan: data['paymentPlan'],
+      photoUrl: data['photo'],
+      additionalPhotos: data['additionalPhotos'] != null
+          ? List<String>.from(data['additionalPhotos'])
+          : [],
+      favoriteCount: data['favoriteCount'] ?? 0,
+      itemStatus: data['itemStatus'] ?? 'active',
     );
   }
 }

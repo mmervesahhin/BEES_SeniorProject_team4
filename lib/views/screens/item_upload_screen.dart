@@ -135,21 +135,42 @@ Widget addMorePhotosPlaceholder() {
       },
     );
   }
+bool showCoverError = false;
 
-  // Function to handle form submission
   void _uploadItem() async {
+
+      setState(() {
+    showCoverError = _imageCover == null; // Eğer cover photo yüklenmemişse hata mesajını göster
+  });
+
     if (_formKey.currentState?.validate() ?? false) {
       // If the form is valid, upload the item
       await itemController.validateAndUploadItem(
         category: category,
         condition: condition,
+        itemType: itemType,
         coverImage: _imageCover,
         additionalImages: _additionalImages,
         selectedDepartments: selectedDepartments,
         context: context,
       );
     }
+
+
+  if (_formKey.currentState?.validate() ?? false) {
+    // Proceed with upload only if form is valid
+    await itemController.validateAndUploadItem(
+      category: category,
+      condition: condition,
+      itemType: itemType,
+      coverImage: _imageCover,
+      additionalImages: _additionalImages,
+      selectedDepartments: selectedDepartments,
+      context: context,
+    );
   }
+}
+
 
 
   // Department list for multi-select dropdown
@@ -157,6 +178,11 @@ Widget addMorePhotosPlaceholder() {
   
   // Selected departments
   List<String> selectedDepartments = [];
+ @override
+  void initState() {
+    super.initState();
+    selectedDepartments = List<String>.from(departments); // Varsayılan olarak tüm departmanları seç
+  }
 
   // Payment plan options
   String paymentPlan = 'Per Hour';
@@ -167,22 +193,21 @@ Widget addMorePhotosPlaceholder() {
   }
 
   bool get allSelected => selectedDepartments.length == departments.length;
-  // Function to handle "All Departments" selection
-   void toggleSelection() {
-    setState(() {
-      if (allSelected) {
-        selectedDepartments = []; // Hepsini kaldır
-      } else {
-        selectedDepartments = List<String>.from(departments); // Hepsini seç
-      }
-    });
-  }
+  void toggleSelection() {
+  setState(() {
+    if (allSelected) {
+      selectedDepartments = []; // Hepsini kaldır
+    } else {
+      selectedDepartments = List<String>.from(departments); // Hepsini seç
+    }
+  });
+}
+
     @override
     Widget build(BuildContext context) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Upload Item'),
-          centerTitle: true,
           backgroundColor: Colors.green, // AppBar'ın arka plan rengi
           foregroundColor: Colors.white, // AppBar'daki yazı ve ikon renkleri
         ),
@@ -192,41 +217,65 @@ Widget addMorePhotosPlaceholder() {
             child: Form(
             key: _formKey,
             child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+   
+Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    const Text(
+      'Upload Photo* and Additional Photos',
+      style: TextStyle(color: Colors.black),
+    ),
 
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Fotoğraf Yükleme
-                const Text('Upload Photo* and Additional Photos', style: TextStyle(color: Colors.black)),
-              
-             Row(
-              children: [
-                _imageCover == null
-                    ? Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        child: uploadCoverImagePlaceholder(),
-                      )
-                    : Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.file(
-                            _imageCover!,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                const SizedBox(width: 16),
-                Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  child: addMorePhotosPlaceholder(),
+    Row(
+      children: [
+        _imageCover == null
+            ? Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: uploadCoverImagePlaceholder(),
+              )
+            : Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(
+                    _imageCover!,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ],
-            ),
+              ),
+        const SizedBox(width: 16),
+        Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: addMorePhotosPlaceholder(),
+        ),
+      ],
+    ),
+
+    // Hata mesajını buraya taşıdık (fotoğrafların altına)
+    Visibility(
+      visible: showCoverError,
+      child: const Padding(
+        padding: EdgeInsets.only(top: 8),
+        child: Text(
+          'Please upload a cover photo before submitting.',
+          style: TextStyle(color: Colors.red, fontSize: 14),
+        ),
+      ),
+    ),
+
+    const SizedBox(height: 20),
+  ],
+),
+
+const SizedBox(height: 20),
+
                 const SizedBox(height: 20),
 
                 // Display additional images
@@ -333,36 +382,56 @@ Widget addMorePhotosPlaceholder() {
                 const SizedBox(height: 10),
 
                 // Departman Dropdown (Multi-Select)
-const Text('Department', style: TextStyle(color: Colors.black)),
-        MultiSelectDialogField(
-          items: departments.map((dept) => MultiSelectItem(dept, dept)).toList(),
-          initialValue: selectedDepartments,
-          title: const Text("Departments"),
-          buttonText: const Text("Select Departments"),
-          searchable: true,
-          listType: MultiSelectListType.CHIP,
-          onConfirm: (results) {
-            setState(() {
-              selectedDepartments = List<String>.from(results);
-            });
-          },
-          chipDisplay: MultiSelectChipDisplay(
-            onTap: (item) {
-              setState(() {
-                selectedDepartments.remove(item);
-              });
-            },
-          ),
-        ),
-        const SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: toggleSelection,
-          child: Text(allSelected ? "Deselect All" : "Select All"),
-        ),
+                
+              const Text('Department', style: TextStyle(color: Colors.black)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MultiSelectDialogField(
+                    items: departments.map((dept) => MultiSelectItem(dept, dept)).toList(),
+                    initialValue: selectedDepartments,
+                    title: const Text("Departments"),
+                    buttonText: const Text("Select Departments"),
+                    searchable: true,
+                    chipDisplay: MultiSelectChipDisplay.none(), // Çift gösterimi engelle
+                    onConfirm: (results) {
+                      setState(() {
+                        selectedDepartments = List<String>.from(results); // Seçimleri güncelle
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8), // Boşluk ekliyoruz
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton(
+                      onPressed: toggleSelection,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white, // Buton arka planı beyaz
+                        foregroundColor: Colors.black, // Yazı rengi siyah
+                        elevation: 0, // Gölgeyi kaldırıyoruz
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8), // Köşeleri yuvarlıyoruz
+                          side: const BorderSide(color: Colors.grey), // Kenarlık ekliyoruz
+                        ),
+                      ),
+                      child: Text(allSelected ? "Deselect All" : "Select All"),
+                    ),
+                  ),
+                  const SizedBox(height: 8), // Boşluk ekliyoruz
+                  if (selectedDepartments.isNotEmpty) // Eğer seçim varsa chip'leri göster
+                    MultiSelectChipDisplay(
+                      items: selectedDepartments.map((dept) => MultiSelectItem(dept, dept)).toList(),
+                      onTap: (item) {
+                        setState(() {
+                          selectedDepartments.remove(item);
+                        });
+                      },
+                    ),
+                ],
+              ),
 
+        // Şart Dropdown
 
-
-                // Şart Dropdown
                 const Text('Condition', style: TextStyle(color: Colors.black)),
                 DropdownButton<String>(
                   value: condition,
