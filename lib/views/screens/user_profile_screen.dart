@@ -1301,32 +1301,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         },
                         style: TextStyle(color: _controller.model.textColor, fontSize: 14),
                       ),
-                      SizedBox(height: 12),
-                      
-                      Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blue.shade200),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.info_outline, color: Colors.blue.shade700, size: 16),
-                            SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                'A verification email will be sent to your email address. You must verify your email before the password change will take effect.',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.blue.shade700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
