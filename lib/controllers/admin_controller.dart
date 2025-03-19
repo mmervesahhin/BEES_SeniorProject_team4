@@ -18,13 +18,24 @@ class AdminController {
 
       // Item ID'sini al
       String itemId = reportData['itemId'];
-      
+
       // Items koleksiyonunda item'ı sorgula
       DocumentSnapshot<Map<String, dynamic>> itemDoc =
           await FirebaseFirestore.instance.collection('items').doc(itemId).get();
 
       // Eğer itemStatus "active" ise raporu ekle
       if (itemDoc.exists && itemDoc.data()?['itemStatus'] == 'active') {
+        // Item sahibi kullanıcının hesabını kontrol et
+        String? itemOwnerId = itemDoc.data()?['itemOwnerId'];
+        if (itemOwnerId != null) {
+          DocumentSnapshot<Map<String, dynamic>> ownerDoc =
+              await FirebaseFirestore.instance.collection('users').doc(itemOwnerId).get();
+
+          if (!ownerDoc.exists || ownerDoc.data()?['isBanned'] == true) {
+            continue; // Eğer kullanıcı banlıysa bu raporu geç
+          }
+        }
+
         // Report eden kullanıcıyı al
         String? userId = reportData['reportedBy'];
         String reporterName = "Unknown User";

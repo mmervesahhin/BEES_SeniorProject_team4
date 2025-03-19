@@ -58,21 +58,30 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
           .doc(itemOwnerId)
           .get(); 
 
-        DocumentSnapshot blockerDoc2 = await firestore
-                    .collection('blocked_users')
-                    .doc(itemOwnerId)
-                    .collection('blockers')
-                    .doc(currentUserId)
-                    .get();
+      DocumentSnapshot blockerDoc2 = await firestore
+          .collection('blocked_users')
+          .doc(itemOwnerId)
+          .collection('blockers')
+          .doc(currentUserId)
+          .get();
 
-      if (!blockerDoc.exists && !blockerDoc2.exists) {
-        filteredDocs.add(doc);
+      DocumentSnapshot userDoc = await firestore
+          .collection('users')
+          .doc(itemOwnerId)
+          .get();
+
+      if (!blockerDoc.exists && !blockerDoc2.exists && userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>?;
+        if (userData != null && userData['isBanned'] == false) {
+          filteredDocs.add(doc);
+        }
       }
     }
 
-    return filteredDocs; // Sadece bloklanmamış dökümanları döndür
+    return filteredDocs; // Sadece bloklanmamış ve yasaklı olmayan kullanıcıların ürünlerini döndür
   });
 }
+
 
     // Return the filtered item
   String getImageUrl(String photo) {
