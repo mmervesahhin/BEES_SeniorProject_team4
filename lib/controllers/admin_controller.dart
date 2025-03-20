@@ -78,38 +78,39 @@ Future<Map<String, dynamic>> getItemDetails(String itemId) async {
   }
 }
 
-  void showRequestRemoveOptions(BuildContext context, Request request) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.report_problem, color: Colors.orange),
-              title: const Text("Inappropriate for BEES"),
-              onTap: () {
-                Navigator.pop(context);
-                _showRequestConfirmationDialog(context, request.requestID, "Inappropriate for BEES");
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.gavel, color: Colors.red),
-              title: const Text("Illegal request"),
-              onTap: () {
-                Navigator.pop(context);
-                _showRequestConfirmationDialog(context, request.requestID, "Illegal request");
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.cancel, color: Colors.grey),
-              title: const Text("Cancel"),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
-        );
-      },
-    );
-  }
+void showRequestRemoveOptions(BuildContext context, Request request, {VoidCallback? onSuccess}) {
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return Wrap(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.report_problem, color: Colors.orange),
+            title: const Text("Inappropriate for BEES"),
+            onTap: () {
+              Navigator.pop(context);
+              _showRequestConfirmationDialog(context, request.requestID, "Inappropriate for BEES", onSuccess: onSuccess);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.gavel, color: Colors.red),
+            title: const Text("Illegal request"),
+            onTap: () {
+              Navigator.pop(context);
+              _showRequestConfirmationDialog(context, request.requestID, "Illegal request", onSuccess: onSuccess);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.cancel, color: Colors.grey),
+            title: const Text("Cancel"),
+            onTap: () => Navigator.pop(context),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 
 void showItemRemoveOptions(BuildContext context, Item item, {VoidCallback? onSuccess}) {
   showModalBottomSheet(
@@ -152,32 +153,34 @@ void showItemRemoveOptions(BuildContext context, Item item, {VoidCallback? onSuc
   );
 }
 
-
-  void _showRequestConfirmationDialog(BuildContext context, String requestID, String reason) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Confirm Removal"),
-          content: const Text(
-              "Are you sure you want to remove this request from BEES? This action is permanent and cannot be undone."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context), // Kullanıcı iptal etti
-              child: const Text("No", style: TextStyle(color: Colors.grey)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Dialog'u kapat
-                removeRequest(requestID, reason); // İşlemi başlat
-              },
-              child: const Text("Yes", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-  }
+void _showRequestConfirmationDialog(BuildContext context, String requestID, String reason, {VoidCallback? onSuccess}) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("Confirm Removal"),
+        content: const Text(
+            "Are you sure you want to remove this request from BEES? This action is permanent and cannot be undone."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("No", style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              bool success = await removeRequest(requestID, reason);
+              if (success) {
+                onSuccess?.call(); // Notify screen to reload
+              }
+            },
+            child: const Text("Yes", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   void _showItemConfirmationDialog(
   BuildContext context, 
@@ -214,6 +217,62 @@ void showItemRemoveOptions(BuildContext context, Item item, {VoidCallback? onSuc
   );
 }
 
+  Future<List<Map<String, dynamic>>> fetchReportedRequests() async {
+  try {
+    // reported_requests koleksiyonundaki raporları al
+    QuerySnapshot<Map<String, dynamic>> reportsSnapshot =
+        await FirebaseFirestore.instance.collection('reported_requests').get();
+
+    List<Map<String, dynamic>> reports = [];
+
+    for (var doc in reportsSnapshot.docs) {
+      Map<String, dynamic> reportData = doc.data();
+
+      // Request ID'sini al
+      String requestId = reportData['requestId'];
+
+      // Requests koleksiyonunda ilgili request'i sorgula
+      DocumentSnapshot<Map<String, dynamic>> requestDoc =
+          await FirebaseFirestore.instance.collection('requests').doc(requestId).get();
+
+      // Eğer requestStatus "active" ise raporu ekle
+      if (requestDoc.exists && requestDoc.data()?['requestStatus'] == 'active') {
+        // Request sahibi kullanıcının hesabını kontrol et
+        String? requestOwnerId = requestDoc.data()?['requestOwnerId'];
+        if (requestOwnerId != null) {
+          DocumentSnapshot<Map<String, dynamic>> ownerDoc =
+              await FirebaseFirestore.instance.collection('users').doc(requestOwnerId).get();
+
+          if (!ownerDoc.exists || ownerDoc.data()?['isBanned'] == true) {
+            continue; // Kullanıcı banlıysa bu raporu geç
+          }
+        }
+
+        // Raporlayan kullanıcı bilgisi
+        String? userId = reportData['reportedBy'];
+        String reporterName = "Unknown User";
+
+        if (userId != null) {
+          DocumentSnapshot<Map<String, dynamic>> userDoc =
+              await FirebaseFirestore.instance.collection('users').doc(userId).get();
+          if (userDoc.exists) {
+            var userData = userDoc.data();
+            reporterName = "${userData?['firstName']} ${userData?['lastName']}";
+          }
+        }
+
+        // Reporter bilgisini rapora ekle
+        reportData['reporterName'] = reporterName;
+        reports.add(reportData);
+      }
+    }
+
+    return reports;
+  } catch (e) {
+    print("Error fetching request reports: $e");
+    return [];
+  }
+}
 
   Future<bool> removeRequest(String requestID, String reason) async {
     try {
