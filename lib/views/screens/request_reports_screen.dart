@@ -88,7 +88,7 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
   void _navigateToProfile(String userId) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => OthersUserProfileScreen(userId: userId)),
+      MaterialPageRoute(builder: (context) => AdminOthersUserProfileScreen(userId: userId)),
     );
   }
 
