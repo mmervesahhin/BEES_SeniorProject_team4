@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bees/views/screens/admin_others_user_profile_screen.dart';
 import 'package:bees/controllers/admin_controller.dart';
 import 'package:bees/views/screens/admin_data_analysis_screen.dart';
 import 'package:bees/views/screens/admin_home_screen.dart';
@@ -18,11 +20,28 @@ class UserReportsScreen extends StatefulWidget {
 class _UserReportsScreenState extends State<UserReportsScreen> {
   int _selectedIndex = 2;
   final AdminController _adminController = AdminController();
+  final currentUser = FirebaseAuth.instance.currentUser;
 
   // Declare variables to hold the selected reason and ban duration
   String? _selectedBanReason;
   String? _selectedBanDuration;
   String _banExplanation = '';
+
+  void _navigateToProfile(String userId) {
+  if (userId == currentUser?.uid) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AdminProfileScreen()),
+    );
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdminOthersUserProfileScreen(userId: userId),
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -69,22 +88,26 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                           String? complaintDetails = doc['complaintDetails'];
 
                           return ListTile(
-                            leading: profileImageUrl != null
-                                ? CircleAvatar(
-                                    backgroundImage: NetworkImage(profileImageUrl),
-                                  )
-                                : const CircleAvatar(child: Icon(Icons.person)),
-                            title: Text(
-                              reportedUserName,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            leading: GestureDetector(
+                              onTap: () => _navigateToProfile(doc['userId']),
+                              child: profileImageUrl != null
+                                  ? CircleAvatar(backgroundImage: NetworkImage(profileImageUrl))
+                                  : const CircleAvatar(child: Icon(Icons.person)),
+                            ),
+                            title: GestureDetector(
+                              onTap: () => _navigateToProfile(doc['userId']),
+                              child: Text(
+                                reportedUserName,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
                             ),
                             subtitle: RichText(
                               text: TextSpan(
                                 style: DefaultTextStyle.of(context).style,
                                 children: [
-                                  TextSpan(
+                                  const TextSpan(
                                     text: 'Reported by: ',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                   TextSpan(text: reportedByName),
                                   const TextSpan(
@@ -105,14 +128,14 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                              ElevatedButton(
-                                onPressed: () => _showBanDialog(doc['userId']),
-                                child: const Text('Ban'),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () => _adminController.ignoreUserReport(doc['complaintID']),
-                              ),
+                                ElevatedButton(
+                                  onPressed: () => _showBanDialog(doc['userId']),
+                                  child: const Text('Ban'),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () => _adminController.ignoreUserReport(doc['complaintID']),
+                                ),
                               ],
                             ),
                           );
