@@ -96,7 +96,7 @@ class _OthersUserProfileScreenState extends State<AdminOthersUserProfileScreen> 
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-         title: Text("Profile", style: TextStyle(color: const Color.fromARGB(255, 251, 251, 251))),
+         title: Text("Profile", style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0))),
         backgroundColor: Color.fromARGB(255, 59, 137, 62),
       ),
       body: FutureBuilder<User>(
