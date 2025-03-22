@@ -81,6 +81,89 @@ class UserProfileModel {
       return false;
     }
   }
+
+  // Add this method to the UserProfileModel class
+
+// Update these methods in the UserProfileModel class
+
+// Get blocked users
+Future<List<Map<String, dynamic>>> getBlockedUsers(String userId) async {
+  try {
+    // Get the blocked_users document for the current user
+    DocumentSnapshot blockedDoc = await _firestore.collection('blocked_users').doc(userId).get();
+    
+    if (!blockedDoc.exists) {
+      return [];
+    }
+    
+    Map<String, dynamic> blockedData = blockedDoc.data() as Map<String, dynamic>;
+    List<String> blockedUserIds = [];
+    
+    // Extract the blocked_users array
+    if (blockedData.containsKey('blocked_users')) {
+      blockedUserIds = List<String>.from(blockedData['blocked_users'] ?? []);
+    }
+    
+    if (blockedUserIds.isEmpty) {
+      return [];
+    }
+    
+    // Fetch user details for each blocked user ID
+    List<Map<String, dynamic>> blockedUsers = [];
+    for (String blockedId in blockedUserIds) {
+      DocumentSnapshot blockedUserDoc = await _firestore.collection('users').doc(blockedId).get();
+      if (blockedUserDoc.exists) {
+        Map<String, dynamic> blockedUserData = blockedUserDoc.data() as Map<String, dynamic>;
+        blockedUsers.add({
+          'userId': blockedId,
+          'firstName': blockedUserData['firstName'] ?? '',
+          'lastName': blockedUserData['lastName'] ?? '',
+          'profilePicture': blockedUserData['profilePicture'],
+          'emailAddress': blockedUserData['emailAddress'] ?? '',
+        });
+      }
+    }
+    
+    return blockedUsers;
+  } catch (e) {
+    print('Error getting blocked users: $e');
+    return [];
+  }
+}
+
+// Unblock a user
+Future<bool> unblockUser(String currentUserId, String userToUnblockId) async {
+  try {
+    // Get the current blocked_users document
+    DocumentSnapshot blockedDoc = await _firestore.collection('blocked_users').doc(currentUserId).get();
+    
+    if (!blockedDoc.exists) {
+      return false;
+    }
+    
+    // Remove the user from the blocked_users array
+    await _firestore.collection('blocked_users').doc(currentUserId).update({
+      'blocked_users': FieldValue.arrayRemove([userToUnblockId]),
+    });
+    
+    // Also update the user's local blocked users cache if it exists
+    // This ensures the home page will immediately reflect the change
+    await _firestore.collection('users').doc(currentUserId).update({
+      'blockedUsersCache': FieldValue.arrayRemove([userToUnblockId]),
+      'lastBlockedUsersUpdate': FieldValue.serverTimestamp(),
+    });
+    
+    // Clear any cached item filters that might be excluding this user's items
+    await _firestore.collection('users').doc(currentUserId).update({
+      'itemFilterCache': FieldValue.delete(),
+    });
+    
+    return true;
+  } catch (e) {
+    print('Error unblocking user: $e');
+    return false;
+  }
+}
   
   // Change user password
   Future<String?> changePassword(String currentPassword, String newPassword) async {
@@ -109,40 +192,75 @@ class UserProfileModel {
   }
   
   // Change user email
-  Future<String?> changeEmail(String currentPassword, String newEmail) async {
-    try {
-      User? user = _auth.currentUser;
-      if (user == null) return "User not found";
-      
-      // Re-authenticate the user
-      final credential = EmailAuthProvider.credential(
-        email: user.email!,
-        password: currentPassword,
-      );
-      await user.reauthenticateWithCredential(credential);
-      
-      // Send verification email to the new address
-      await user.verifyBeforeUpdateEmail(newEmail);
-      
-      // Store the pending email in Firestore
-      await _firestore.collection('users').doc(user.uid).update({
-        'pendingEmail': newEmail,
-        'emailChangeRequestTime': FieldValue.serverTimestamp(),
+Future<String?> changeEmail(String currentPassword, String newEmail) async {
+  try {
+    User? user = _auth.currentUser;
+    if (user == null) return "User not found";
+    
+    // Re-authenticate the user
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPassword,
+    );
+    await user.reauthenticateWithCredential(credential);
+    
+    // Send verification email to the new address
+    await user.verifyBeforeUpdateEmail(newEmail);
+    
+    // Store the pending email in Firestore, but don't update the actual email yet
+    await _firestore.collection('users').doc(user.uid).update({
+      'pendingEmail': newEmail,
+      'emailChangeRequestTime': FieldValue.serverTimestamp(),
+    });
+    
+    return null; // Success, no error message
+  } catch (e) {
+    if (e.toString().contains('requires-recent-login')) {
+      return "Please log out and log back in before trying again";
+    } else if (e.toString().contains('invalid-email')) {
+      return "The email address is not valid";
+    } else if (e.toString().contains('email-already-in-use')) {
+      return "This email is already in use by another account";
+    }
+    return "Error changing email: ${e.toString()}";
+  }
+}
+
+// Check if email verification is complete and update email if verified
+Future<bool> checkAndUpdateEmailVerification(String uid) async {
+  try {
+    User? user = _auth.currentUser;
+    if (user == null) return false;
+    
+    // Reload user to get the latest email
+    await user.reload();
+    user = _auth.currentUser; // Get the refreshed user
+    
+    // Get the user document from Firestore
+    DocumentSnapshot userDoc = await _firestore.collection('users').doc(uid).get();
+    if (!userDoc.exists) return false;
+    
+    Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+    String? pendingEmail = userData['pendingEmail'];
+    
+    // If there's a pending email and the current email matches it, the verification is complete
+    if (pendingEmail != null && user!.email == pendingEmail) {
+      // Update the email in Firestore and remove the pending email
+      await _firestore.collection('users').doc(uid).update({
+        'emailAddress': pendingEmail,
+        'pendingEmail': FieldValue.delete(),
+        'emailChangeRequestTime': FieldValue.delete(),
       });
       
-      return null; // Success, no error message
-    } catch (e) {
-      if (e.toString().contains('requires-recent-login')) {
-        return "Please log out and log back in before trying again";
-      } else if (e.toString().contains('invalid-email')) {
-        return "The email address is not valid";
-      } else if (e.toString().contains('email-already-in-use')) {
-        return "This email is already in use by another account";
-      }
-      return "Error changing email: ${e.toString()}";
+      print('Email verification complete: Updated email to $pendingEmail');
+      return true; // Email was updated
     }
+    return false; // No update needed
+  } catch (e) {
+    print('Error checking email verification: $e');
+    return false;
   }
-  
+}
   // Sign out user
   Future<bool> signOut() async {
     try {

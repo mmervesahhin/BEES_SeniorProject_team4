@@ -40,6 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
     'departments' : [],
   };
 
+  
+
   @override
 Widget build(BuildContext context) {
   return Scaffold(
@@ -667,4 +669,6 @@ void _showFiltersDialog() {
     },
   );
 }
+
+
 }

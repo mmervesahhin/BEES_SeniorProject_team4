@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bees/models/user_profile_model.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -91,6 +93,24 @@ class UserProfileController {
     }
     return success;
   }
+
+  // Add these methods to the UserProfileController class
+
+// Get blocked users
+Future<List<Map<String, dynamic>>> getBlockedUsers() async {
+  User? user = model.currentUser;
+  if (user == null) return [];
+  
+  return await model.getBlockedUsers(user.uid);
+}
+
+// Unblock a user
+Future<bool> unblockUser(String userToUnblockId) async {
+  User? user = model.currentUser;
+  if (user == null) return false;
+  
+  return await model.unblockUser(user.uid, userToUnblockId);
+}
   
   // Save profile changes
   Future<bool> saveProfile() async {
@@ -142,6 +162,64 @@ class UserProfileController {
       newPasswordController.text
     );
   }
+
+  // Timer for checking email verification
+Timer? _emailVerificationTimer;
+
+// Start periodic check for email verification
+void startEmailVerificationCheck() {
+  // Cancel any existing timer
+  _emailVerificationTimer?.cancel();
+  
+  // Check immediately
+  _checkEmailVerification();
+  
+  // Then check every 5 seconds
+  _emailVerificationTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+    _checkEmailVerification();
+  });
+}
+
+// Stop periodic check
+void stopEmailVerificationCheck() {
+  _emailVerificationTimer?.cancel();
+  _emailVerificationTimer = null;
+}
+
+// Callback for when email is verified
+Function? onEmailVerified;
+
+// Check for email verification
+Future<void> _checkEmailVerification() async {
+  User? user = model.currentUser;
+  if (user == null) return;
+  
+  bool updated = await model.checkAndUpdateEmailVerification(user.uid);
+  if (updated) {
+    // Email was updated, refresh the UI
+    stopEmailVerificationCheck(); // Stop checking
+    
+    // Call the callback if it exists
+    if (onEmailVerified != null) {
+      onEmailVerified!();
+    }
+  }
+}
+
+
+  // Resend email verification
+Future<void> resendEmailVerification(String email) async {
+  User? user = model.currentUser;
+  if (user == null) return;
+  
+  try {
+    await user.verifyBeforeUpdateEmail(email);
+  } catch (e) {
+    print('Error resending verification: $e');
+  }
+}
+
+
   
   // Change email
   Future<String?> changeEmail() async {

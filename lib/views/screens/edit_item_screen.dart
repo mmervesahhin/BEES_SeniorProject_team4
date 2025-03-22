@@ -492,65 +492,69 @@ class _EditItemScreenState extends State<EditItemScreen> {
     );
   }
 
-  Widget _buildDepartmentsSelector() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: secondaryColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Select departments relevant to this item:',
-            style: TextStyle(
-              color: textColor,
-              fontWeight: FontWeight.w500,
-            ),
+ Widget _buildDepartmentsSelector() {
+  return Container(
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: secondaryColor,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: Colors.grey.shade300),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select departments relevant to this item:',
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _departments.map((department) {
-              final isSelected = _selectedDepartments.contains(department);
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    if (isSelected) {
-                      _selectedDepartments.remove(department);
-                    } else {
-                      _selectedDepartments.add(department);
-                    }
-                    _editedItem.departments = _selectedDepartments;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected ? primaryColor : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected ? primaryColor : Colors.grey.shade300,
-                    ),
-                  ),
-                  child: Text(
-                    department,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : textColor,
-                      fontSize: 14,
-                    ),
+        ),
+        const SizedBox(height: 12, width: 10,),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _departments.map((department) {
+            final isSelected = _selectedDepartments.contains(department);
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    _selectedDepartments.remove(department);
+                  } else {
+                    _selectedDepartments.add(department);
+                  }
+                  _editedItem.departments = _selectedDepartments;
+                });
+              },
+              child: Container(
+                width: 70, // Set a fixed width
+                height: 30, // Set a fixed height
+                alignment: Alignment.center, // Center the text
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? primaryColor : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? primaryColor : Colors.grey.shade300,
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
+                child: Text(
+                  department,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : textColor,
+                    fontSize: 10,
+                  ),
+                  overflow: TextOverflow.ellipsis, // Handle overflow
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    ),
+  );
+}
 
   // Pick new photos from the gallery or camera
   Future<void> _pickPhotos() async {
