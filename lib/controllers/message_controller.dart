@@ -40,17 +40,28 @@ class MessageController {
         entityType: entityType,
         entity: entityMap,
       );
-
+      
       await chatRoomRef.set(newChatRoom.toMap());
+
+
     } else {
       // 🔸 Var olan ChatRoom'un son mesajını güncelle
       await chatRoomRef.update({
         'lastMessage': content,
         'lastMessageTimestamp': timestamp,
       });
+      await chatRoomRef.collection('messages').add(newMessage.toMap());
+
+        if (receiverId != currentUserID) {
+          await FirebaseFirestore.instance.collection('notifications').add({
+            'recipientId': receiverId,
+            'message': 'You have received a new message.',
+            'timestamp': FieldValue.serverTimestamp(),
+            'isRead': false,
+          });
+      }
     }
 
-    await chatRoomRef.collection('messages').add(newMessage.toMap());
   }
 
   // Mesajları Getirme

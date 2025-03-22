@@ -90,6 +90,9 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
   Future<void> updateFavoriteCount(String itemId, bool isFavorited, String userId) async {
     DocumentReference<Map<String, dynamic>> itemDoc = _itemsCollection.doc(itemId);
     DocumentReference<Map<String, dynamic>> userDoc = _usersCollection.doc(userId);
+    final itemRef = FirebaseFirestore.instance.collection('items').doc(itemId);
+  final itemSnapshot = await itemRef.get();
+  if (!itemSnapshot.exists) return;
 
     WriteBatch batch = FirebaseFirestore.instance.batch();
 
@@ -103,8 +106,34 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
           : FieldValue.arrayRemove([itemId]),
     });
 
+  final itemData = itemSnapshot.data()!;
+  final ownerId = itemData['itemOwnerId'];
+
+  if (isFavorited) {
+    // Favoriye ekleme işlemi
+    await FirebaseFirestore.instance.collection('favorites').doc('$userId\_$itemId').set({
+      'userId': userId,
+      'itemId': itemId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    // 🛎️ Bildirim gönder
+    if (ownerId != userId) {
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'recipientId': ownerId,
+        'message': 'Your item has been added to another user\'s favorites.',
+        'timestamp': FieldValue.serverTimestamp(),
+        'isRead': false,
+      });
+    }
+  } else {
+    // Favoriden çıkarma
+    await FirebaseFirestore.instance.collection('favorites').doc('$userId\_$itemId').delete();
+    }
+
     await batch.commit();
   }
+
 
   Future<bool> fetchFavoriteStatus(String itemId) async {
     var itemDoc = await _itemsCollection.doc(itemId).get();
