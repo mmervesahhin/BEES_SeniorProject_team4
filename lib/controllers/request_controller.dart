@@ -79,23 +79,30 @@ Stream<List<Request>> getRequests(String currentUserId) {
           .doc(request.requestOwnerID) // Bu kullanıcıyı engelledi mi?
           .get();
 
+      DocumentSnapshot blockerDoc2 = await _firestore
+          .collection('blocked_users')
+          .doc(request.requestOwnerID)
+          .collection('blockers')
+          .doc(currentUserId)
+          .get();
 
-          DocumentSnapshot blockerDoc2 = await _firestore
-                    .collection('blocked_users')
-                    .doc(request.requestOwnerID)
-                    .collection('blockers')
-                    .doc(currentUserId)
-                    .get();
-      // Eğer requestOwnerID, currentUserId tarafından engellenmişse ekleme
-      if (!blockerDoc.exists && !blockerDoc2.exists) {
-        requests.add(request);
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(request.requestOwnerID)
+          .get();
+
+      // Eğer requestOwnerID, currentUserId tarafından engellenmişse veya yasaklıysa ekleme
+      if (!blockerDoc.exists && !blockerDoc2.exists && userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>?;
+        if (userData != null && userData['isBanned'] == false) {
+          requests.add(request);
+        }
       }
     }
 
     return requests;
   });
 }
-
 
   // Belirli bir isteği getirme
   Future<Request?> getRequestById(String requestID) async {

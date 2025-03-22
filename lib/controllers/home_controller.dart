@@ -58,21 +58,30 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
           .doc(itemOwnerId)
           .get(); 
 
-        DocumentSnapshot blockerDoc2 = await firestore
-                    .collection('blocked_users')
-                    .doc(itemOwnerId)
-                    .collection('blockers')
-                    .doc(currentUserId)
-                    .get();
+      DocumentSnapshot blockerDoc2 = await firestore
+          .collection('blocked_users')
+          .doc(itemOwnerId)
+          .collection('blockers')
+          .doc(currentUserId)
+          .get();
 
-      if (!blockerDoc.exists && !blockerDoc2.exists) {
-        filteredDocs.add(doc);
+      DocumentSnapshot userDoc = await firestore
+          .collection('users')
+          .doc(itemOwnerId)
+          .get();
+
+      if (!blockerDoc.exists && !blockerDoc2.exists && userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>?;
+        if (userData != null && userData['isBanned'] == false) {
+          filteredDocs.add(doc);
+        }
       }
     }
 
-    return filteredDocs; // Sadece bloklanmamış dökümanları döndür
+    return filteredDocs; // Sadece bloklanmamış ve yasaklı olmayan kullanıcıların ürünlerini döndür
   });
 }
+
 
     // Return the filtered item
   String getImageUrl(String photo) {
@@ -94,17 +103,33 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
   final itemSnapshot = await itemRef.get();
   if (!itemSnapshot.exists) return;
 
-    WriteBatch batch = FirebaseFirestore.instance.batch();
+  WriteBatch batch = FirebaseFirestore.instance.batch();
 
-    batch.update(itemDoc, {
-      'favoriteCount': FieldValue.increment(isFavorited ? 1 : -1),
-    });
+  
+  if (!itemSnapshot.exists) {
+    throw Exception("Item does not exist!");
+  }
 
-    batch.update(userDoc, {
-      'favoriteItems': isFavorited 
-          ? FieldValue.arrayUnion([itemId]) 
-          : FieldValue.arrayRemove([itemId]),
-    });
+  // Mevcut favori sayısını al
+  int currentFavoriteCount = itemSnapshot['favoriteCount'] ?? 0;
+
+  // Eğer isFavorited true ise, favori sayısını 1 artır
+  // Eğer isFavorited false ise, favori sayısını 1 azalt fakat negatif olmasın
+  int newFavoriteCount = isFavorited
+      ? currentFavoriteCount + 1
+      : (currentFavoriteCount > 0 ? currentFavoriteCount - 1 : 0);
+
+  // Item favori sayısını güncelle
+  batch.update(itemDoc, {
+    'favoriteCount': newFavoriteCount,
+  });
+
+  // Kullanıcının favori öğelerini güncelle
+  batch.update(userDoc, {
+    'favoriteItems': isFavorited
+        ? FieldValue.arrayUnion([itemId])
+        : FieldValue.arrayRemove([itemId]),
+  });
 
   final itemData = itemSnapshot.data()!;
   final ownerId = itemData['itemOwnerId'];

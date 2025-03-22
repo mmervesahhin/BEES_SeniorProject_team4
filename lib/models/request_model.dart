@@ -50,7 +50,7 @@ class Request {
       requestID: doc.id,  // Firestore ID is used as requestID
       requestOwnerID: data['requestOwnerID'] ?? '',
       requestContent: data['requestContent'] ?? '',
-      requestStatus: data['requestStatus'] ?? 'pending',  // Default status if not provided
+      requestStatus: data['requestStatus'] ?? 'active',  // Default status if not provided
       creationDate: (data['creationDate'] as Timestamp).toDate(),  // Convert Firestore Timestamp to DateTime
     );
   }

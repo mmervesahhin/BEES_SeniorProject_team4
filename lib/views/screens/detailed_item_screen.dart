@@ -7,14 +7,12 @@ import 'package:bees/views/screens/home_screen.dart';
 import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:bees/views/screens/others_user_profile_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/controllers/detailed_item_controller.dart';
 import 'package:bees/controllers/home_controller.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:bees/models/item_model.dart';
 
 class DetailedItemScreen extends StatefulWidget {
   final String itemId;
@@ -229,7 +227,6 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
     complaintID: DateTime.now().millisecondsSinceEpoch, // Benzersiz bir ID oluşturuluyor
     complaintDetails: complaintDetails,
     reportReason: reportReason,
-    reportedObjectType: "item", // Bu raporun bir item'a ait olduğunu belirtiyoruz
     reportedBy: userIDD, // Dinamik kullanıcı ID'si
     itemId: itemId, // Dinamik item ID'si
   );
