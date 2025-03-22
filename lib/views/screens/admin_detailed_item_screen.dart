@@ -1,10 +1,14 @@
 import 'package:bees/models/item_model.dart';
+import 'package:bees/models/user_model.dart' show User;
 import 'package:bees/views/screens/admin_data_analysis_screen.dart';
 import 'package:bees/views/screens/admin_home_screen.dart';
+import 'package:bees/views/screens/admin_others_user_profile_screen.dart';
 import 'package:bees/views/screens/admin_profile_screen.dart';
 import 'package:bees/views/screens/admin_reports_screen.dart';
 import 'package:bees/views/screens/admin_requests_screen.dart';
+import 'package:bees/views/screens/message_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/controllers/detailed_item_controller.dart';
 import 'package:bees/controllers/admin_controller.dart';
@@ -147,10 +151,26 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
                           children: [
                             GestureDetector(
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => UserProfileScreen()),
-                                );
+                                if (itemDetails!["itemOwnerId"] != null) {
+                                  // Kullanıcı ID'si ve item sahibi ID'si eşit mi kontrol et
+                                  if (itemDetails!["itemOwnerId"] == FirebaseAuth.instance.currentUser!.uid) {
+                                    // Eğer eşitse, kendi profil sayfasına yönlendir
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AdminProfileScreen(), // Kendi profil sayfası
+                                      ),
+                                    );
+                                  } else {
+                                    // Eğer eşit değilse, başkasının profil sayfasına yönlendir
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AdminOthersUserProfileScreen(userId: itemDetails!["itemOwnerId"]),
+                                      ),
+                                    );
+                                  }
+                                }
                               },
                               child: Row(
                                 children: [
@@ -166,7 +186,19 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
                                         : null,
                                   ),
                                   SizedBox(width: 10),
-                                  Text(itemDetails!["ownerFullName"], style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(
+                                    itemDetails!["ownerFullName"] != null && itemDetails!["ownerFullName"].isNotEmpty
+                                        ? itemDetails!["ownerFullName"]
+                                        : "No Name", // Varsayılan bir değer eklenebilir
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(width: 10),
+                                  // IconButton(
+                                  //   onPressed: () {
+                                  //     _navigateToMessageScreen(item, "Item");
+                                  //   },
+                                  //   icon: Icon(Icons.message, color: Color.fromARGB(255, 59, 137, 62), size: 30),
+                                  //   ),
                                 ],
                               ),
                             ),

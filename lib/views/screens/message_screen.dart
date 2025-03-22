@@ -368,7 +368,7 @@ Widget _buildMessageItem(DocumentSnapshot document) {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Message - $entityType"),
+       // title: Text("Message - $entityType"),
         backgroundColor: const Color.fromARGB(255, 59, 137, 62),
         actions: [
           FutureBuilder<User?>(

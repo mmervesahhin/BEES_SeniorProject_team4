@@ -157,7 +157,7 @@ import 'package:bees/controllers/message_controller.dart';
     Widget build(BuildContext context) {
       return Scaffold(
         appBar: AppBar(
-          title: Text("Mesajlar"),
+          title: Text("Messages"),
           backgroundColor: const Color.fromARGB(255, 59, 137, 62),
         ),
         body: StreamBuilder<List<ChatRoom>>(
@@ -173,7 +173,7 @@ import 'package:bees/controllers/message_controller.dart';
             }
 
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return Center(child: Text("Henüz mesajlaşma başlatılmadı"));
+              return Center(child: Text("No messages found."));
             }
 
             return ListView(

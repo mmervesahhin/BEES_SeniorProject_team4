@@ -10,6 +10,7 @@ import 'package:bees/controllers/home_controller.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'message_list_screen.dart';
+import 'package:bees/views/screens/notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -67,6 +68,17 @@ Widget build(BuildContext context) {
       },
           color: Colors.black,
         ),
+          IconButton(
+          icon: Icon(Icons.notifications),
+          color: Colors.black,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NotificationScreen()),
+            );
+          },
+        )
+        
       ],
     ),
     body: Column(
@@ -94,7 +106,7 @@ Widget build(BuildContext context) {
                 onPressed: () {
                   _showFiltersDialog();
                 },
-              ),
+              )
             ],
           ),
         ),
@@ -667,4 +679,6 @@ void _showFiltersDialog() {
     },
   );
 }
+
+
 }

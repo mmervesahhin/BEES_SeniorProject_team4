@@ -70,6 +70,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
       ],
       ),
+      
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : favoriteItems.isEmpty

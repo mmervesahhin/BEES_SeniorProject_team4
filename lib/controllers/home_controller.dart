@@ -58,21 +58,30 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
           .doc(itemOwnerId)
           .get(); 
 
-        DocumentSnapshot blockerDoc2 = await firestore
-                    .collection('blocked_users')
-                    .doc(itemOwnerId)
-                    .collection('blockers')
-                    .doc(currentUserId)
-                    .get();
+      DocumentSnapshot blockerDoc2 = await firestore
+          .collection('blocked_users')
+          .doc(itemOwnerId)
+          .collection('blockers')
+          .doc(currentUserId)
+          .get();
 
-      if (!blockerDoc.exists && !blockerDoc2.exists) {
-        filteredDocs.add(doc);
+      DocumentSnapshot userDoc = await firestore
+          .collection('users')
+          .doc(itemOwnerId)
+          .get();
+
+      if (!blockerDoc.exists && !blockerDoc2.exists && userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>?;
+        if (userData != null && userData['isBanned'] == false) {
+          filteredDocs.add(doc);
+        }
       }
     }
 
-    return filteredDocs; // Sadece bloklanmamış dökümanları döndür
+    return filteredDocs; // Sadece bloklanmamış ve yasaklı olmayan kullanıcıların ürünlerini döndür
   });
 }
+
 
     // Return the filtered item
   String getImageUrl(String photo) {
@@ -90,21 +99,66 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
   Future<void> updateFavoriteCount(String itemId, bool isFavorited, String userId) async {
     DocumentReference<Map<String, dynamic>> itemDoc = _itemsCollection.doc(itemId);
     DocumentReference<Map<String, dynamic>> userDoc = _usersCollection.doc(userId);
+    final itemRef = FirebaseFirestore.instance.collection('items').doc(itemId);
+  final itemSnapshot = await itemRef.get();
+  if (!itemSnapshot.exists) return;
 
-    WriteBatch batch = FirebaseFirestore.instance.batch();
+  WriteBatch batch = FirebaseFirestore.instance.batch();
 
-    batch.update(itemDoc, {
-      'favoriteCount': FieldValue.increment(isFavorited ? 1 : -1),
+  
+  if (!itemSnapshot.exists) {
+    throw Exception("Item does not exist!");
+  }
+
+  // Mevcut favori sayısını al
+  int currentFavoriteCount = itemSnapshot['favoriteCount'] ?? 0;
+
+  // Eğer isFavorited true ise, favori sayısını 1 artır
+  // Eğer isFavorited false ise, favori sayısını 1 azalt fakat negatif olmasın
+  int newFavoriteCount = isFavorited
+      ? currentFavoriteCount + 1
+      : (currentFavoriteCount > 0 ? currentFavoriteCount - 1 : 0);
+
+  // Item favori sayısını güncelle
+  batch.update(itemDoc, {
+    'favoriteCount': newFavoriteCount,
+  });
+
+  // Kullanıcının favori öğelerini güncelle
+  batch.update(userDoc, {
+    'favoriteItems': isFavorited
+        ? FieldValue.arrayUnion([itemId])
+        : FieldValue.arrayRemove([itemId]),
+  });
+
+  final itemData = itemSnapshot.data()!;
+  final ownerId = itemData['itemOwnerId'];
+
+  if (isFavorited) {
+    // Favoriye ekleme işlemi
+    await FirebaseFirestore.instance.collection('favorites').doc('$userId\_$itemId').set({
+      'userId': userId,
+      'itemId': itemId,
+      'timestamp': FieldValue.serverTimestamp(),
     });
 
-    batch.update(userDoc, {
-      'favoriteItems': isFavorited 
-          ? FieldValue.arrayUnion([itemId]) 
-          : FieldValue.arrayRemove([itemId]),
-    });
+    // 🛎️ Bildirim gönder
+    if (ownerId != userId) {
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'recipientId': ownerId,
+        'message': 'Your item has been added to another user\'s favorites.',
+        'timestamp': FieldValue.serverTimestamp(),
+        'isRead': false,
+      });
+    }
+  } else {
+    // Favoriden çıkarma
+    await FirebaseFirestore.instance.collection('favorites').doc('$userId\_$itemId').delete();
+    }
 
     await batch.commit();
   }
+
 
   Future<bool> fetchFavoriteStatus(String itemId) async {
     var itemDoc = await _itemsCollection.doc(itemId).get();
