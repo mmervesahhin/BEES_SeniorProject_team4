@@ -45,7 +45,10 @@ dependencies:
   carousel_slider: ^5.0.0
   firebase_database: ^11.2.0
   dots_indicator: ^2.1.0
-  
+  flutter_sound: ^9.0.0
+  file_picker:
+  video_player: ^2.3.0
+  intl: ^0.20.2
 
 
 dev_dependencies:

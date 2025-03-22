@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'detailed_item_screen.dart';
 import 'detailed_request_screen.dart';
@@ -6,7 +8,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bees/controllers/message_controller.dart';
 import 'package:bees/models/message_model.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth_user;
-
+import 'package:bees/controllers/blocked_user_controller.dart';
+import 'package:bees/views/screens/others_user_profile_screen.dart';
+import 'package:bees/views/screens/user_profile_screen.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:video_player/video_player.dart';
 class MessageScreen extends StatelessWidget {
   //final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final String? chatRoomId;
@@ -15,7 +24,8 @@ class MessageScreen extends StatelessWidget {
   final String senderId;
   final String receiverId;
 
-  const MessageScreen({super.key, this.chatRoomId,
+
+  MessageScreen({super.key, this.chatRoomId,
     required this.entity, required this.entityType,required this.senderId,
     required this.receiverId,});
 
@@ -39,6 +49,23 @@ class MessageScreen extends StatelessWidget {
       return null;
     }
   }
+  
+
+   void _navigateToProfile(String userId, BuildContext context) {  //kullanıcı isminden ya da profilinden o kişinin profiline yönlendirmeyi burda yapıyorum.
+    if (userId == auth_user.FirebaseAuth.instance.currentUser!.uid) {
+    // Eğer kullanıcı kendi profiline bakıyorsa
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => UserProfileScreen()),
+    );
+  } else {
+    // Eğer başka birinin profiline bakıyorsa
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => OthersUserProfileScreen(userId: userId)),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -58,20 +85,58 @@ class MessageScreen extends StatelessWidget {
       userID = entity.requestOwnerID;
     }
 
+    Future<void> _addUserToRemovedUserIds(String senderId, String receiverId) async {
+  // Chat room'u al ve güncelle
+  final chatRoomRef = FirebaseFirestore.instance.collection('chatRooms').doc(chatRoomId);
+  final chatRoomSnapshot = await chatRoomRef.get();
+
+  if (chatRoomSnapshot.exists) {
+    final chatRoomData = chatRoomSnapshot.data()!;
+    List<String> removedUserIds = List<String>.from(chatRoomData['removedUserIds'] ?? []);
+    
+    // Her iki kullanıcıyı da `removedUserIds` listesine ekle
+    if (!removedUserIds.contains(senderId)) removedUserIds.add(senderId);
+    if (!removedUserIds.contains(receiverId)) removedUserIds.add(receiverId);
+    
+    // Güncellenmiş `removedUserIds` listesi ile chat room'u güncelle
+    await chatRoomRef.update({
+      'removedUserIds': removedUserIds,
+    });
+
+    print("🔹 Kullanıcılar removedUserIds'ye eklendi: $senderId, $receiverId");
+  } else {
+    print("Hata: Chat room bulunamadı.");
+  }
+}
+
     TextEditingController _messageController = TextEditingController();
 
-   void sendMessage() async {
-  if (_messageController.text.isNotEmpty) {
+  void sendMessage() async {
+    final BlockedUserController _blockedUserController = BlockedUserController();
+    if (_messageController.text.isNotEmpty) {
     String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
 
     // Eğer currentUserId, senderId ile aynıysa receiverId ve senderId yer değiştirsin
     String finalSenderId = (currentUserId == senderId) ? receiverId : currentUserId;
     String finalReceiverId = (currentUserId == senderId) ? currentUserId : senderId;
 
-    print("📩 Mesaj gönderiliyor...");
-    print("🔹 Gönderen (SenderId): $finalSenderId");
-    print("🔹 Alıcı (ReceiverId): $finalReceiverId");
-    print("🔹 Mesaj İçeriği: ${_messageController.text}");
+    // Engellenme durumlarını kontrol et
+    bool isBlockedByReceiver = await _blockedUserController.isUserBlocked(finalReceiverId);
+    bool isCurrentUserBlocked = await _blockedUserController.isUserBlocked(finalSenderId);
+
+    if (isCurrentUserBlocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('You cannot send a message to this user.')),
+      );
+      return;
+    }
+
+    if (isBlockedByReceiver) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('You have blocked this user. Unblock to send messages.')),
+      );
+      return;
+    }
 
     await MessageController().sendMessage(
       itemReqId: id,
@@ -81,36 +146,142 @@ class MessageScreen extends StatelessWidget {
       entity: entity,
     );
 
+    await _addUserToRemovedUserIds(finalSenderId, finalReceiverId);
+
     _messageController.clear();
+  }else{
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Message cannot be empty')),
+    );
   }
 }
 
+Widget messageStatusIcon(String status) {
+  if (status == 'sent') {
+    return Icon(
+      Icons.check_circle, // Tek onay işareti
+      color: Colors.green,
+    );
+  } else if (status == 'delivered') {
+    return Icon(
+      Icons.check_rounded, // Çift onay işareti
+      color: Colors.blue,
+    );
+  } else if (status == 'failed') {
+    return Icon(
+      Icons.warning_amber_outlined, // Kırmızı uyarı işareti
+      color: Colors.red,
+    );
+  } else if (status == 'sending') {
+    return Icon(
+      Icons.access_time, // Saat simgesi
+      color: Colors.orange,
+    );
+  } else if (status == 'read') {
+    return Icon(
+      Icons.check_circle_outline, // Çift onay işareti okundu
+      color: Colors.green, // Okunduysa farklı renkli
+    );
+  } else {
+    return Container(); // Durum bilinmiyorsa boş bir container
+  }
+}
 
-    
+Future<void> _sendImageMessage(XFile image) async {
+  try {
+    // Resmi Firebase Storage'a yükle
+    String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg'; // Benzersiz bir dosya adı
+    Reference storageRef = FirebaseStorage.instance.ref().child('chat_images/$fileName');
+    UploadTask uploadTask = storageRef.putFile(File(image.path));
+    String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
+    // Yükleme tamamlandığında, resmin URL'sini al
+    TaskSnapshot snapshot = await uploadTask;
+    String imageUrl = await snapshot.ref.getDownloadURL();
+    //String finalSenderId = (currentUserId == senderId) ? receiverId : currentUserId;
+    String finalReceiverId = (currentUserId == senderId) ? currentUserId : senderId;
+    // Resmi mesaj olarak gönder
+    await MessageController().sendMessage(
+      itemReqId: id,
+      receiverId: finalReceiverId,
+      content: imageUrl,
+      entityType: entityType,
+      entity: entity,
+    );
+  } catch (e) {
+    print("Error sending image: $e");
+  }
+}
 
-    // Widget _buildMessageItem(DocumentSnapshot document){
-    //   Map<String, dynamic>? data = document.data() as Map<String, dynamic>?; // Null olursa hata vermez
-    //   if (data == null) return SizedBox.shrink(); // Boş bir widget döndür
+Future<void> _sendVideoMessage(XFile video) async {
+  try {
+    String fileName = '${DateTime.now().millisecondsSinceEpoch}.mp4';
+    Reference storageRef = FirebaseStorage.instance.ref().child('chat_videos/$fileName');
+    UploadTask uploadTask = storageRef.putFile(File(video.path));
+    String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
 
-    //   auth_user.User firebaseUser = auth_user.FirebaseAuth.instance.currentUser!;
-    //   var alignment = (data['senderId'] == firebaseUser.uid) ? Alignment.centerRight : Alignment.centerLeft;
+    TaskSnapshot snapshot = await uploadTask;
+    String videoUrl = await snapshot.ref.getDownloadURL();
 
-    //   return Container(
-    //     alignment: alignment,
-    //     child: Column(
-    //       children: [
-    //         Text(data['senderId']),
-    //         Text(data['content'])
-    //       ],
-    //     )
-    //   );
-    // }
-    Widget _buildMessageItem(DocumentSnapshot document) {
+    String finalReceiverId = (currentUserId == senderId) ? currentUserId : senderId;
+
+    await MessageController().sendMessage(
+      itemReqId: id,
+      receiverId: finalReceiverId,
+      content: videoUrl,
+      entityType: entityType,
+      entity: entity,
+    );
+  } catch (e) {
+    print("Error sending video: $e");
+  }
+}
+// VideoPlayer widget'ı ile video oynatma işlemi
+// Widget buildVideoPlayer(String url) {
+
+//   return FutureBuilder(
+//     future: controller.initialize(),
+//     builder: (context, snapshot) {
+//       if (snapshot.connectionState == ConnectionState.done) {
+//         return AspectRatio(
+//           aspectRatio: controller.value.aspectRatio,
+//           child: VideoPlayer(controller),
+//         );
+//       } else {
+//         return Center(child: CircularProgressIndicator());
+//       }
+//     },
+//   );
+// }
+
+Widget _buildVideoPlayer(String videoUrl) {
+  VideoPlayerController controller = VideoPlayerController.network(videoUrl);
+
+  return FutureBuilder<void>(
+    future: controller.initialize(),  // VideoController'ı initialize ediyoruz
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.done) {
+        if (controller.value.hasError) {
+          return Center(child: Text('Video yüklenirken bir hata oluştu: ${controller.value.errorDescription}'));
+        }
+        return AspectRatio(
+          aspectRatio: controller.value.aspectRatio,
+          child: VideoPlayer(controller),
+        );
+      } else if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(child: CircularProgressIndicator());
+      } else {
+        return Center(child: Text('Video yüklenemedi'));
+      }
+    },
+  );
+}
+Widget _buildMessageItem(DocumentSnapshot document) {
   Map<String, dynamic>? data = document.data() as Map<String, dynamic>?; // Null olursa hata vermez
   if (data == null) return SizedBox.shrink(); // Boş bir widget döndür
 
   auth_user.User firebaseUser = auth_user.FirebaseAuth.instance.currentUser!;
   var alignment = (data['senderId'] == firebaseUser.uid) ? Alignment.centerRight : Alignment.centerLeft;
+  String status = data['status'];
 
   return FutureBuilder<User?>(
     future: _getUserDetails(data['senderId']),  // Gönderenin bilgilerini getir
@@ -122,12 +293,30 @@ class MessageScreen extends StatelessWidget {
         senderName = "${snapshot.data!.firstName} ${snapshot.data!.lastName}";
       }
 
+      Widget messageContent;
+      if (data['content'].startsWith('http')) {
+        // Eğer içerik bir URL ise ve video ise
+        if (data['content'].endsWith('.mp4')) {
+          // Video URL'si olduğunda VideoPlayer widget'ını kullan
+          //print("video test"+data['content']);
+          messageContent = _buildVideoPlayer(data['content']);
+        } else {
+          // Resim URL'si olduğunda Image widget'ını kullan
+          messageContent = Image.network(data['content'], width: 200, height: 200, fit: BoxFit.cover);
+        }
+      } else {
+        // Mesaj metni
+        messageContent = Text(data['content'], style: TextStyle(fontSize: 16));
+      }
+
+      Widget statusIcon = messageStatusIcon(status);
+
       return Container(
         alignment: alignment,
         padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         child: Column(
-          crossAxisAlignment: alignment == Alignment.centerRight 
-              ? CrossAxisAlignment.end 
+          crossAxisAlignment: alignment == Alignment.centerRight
+              ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
             Text(senderName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
@@ -138,7 +327,19 @@ class MessageScreen extends StatelessWidget {
                 color: alignment == Alignment.centerRight ? Colors.green[100] : Colors.grey[300],
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(data['content'], style: TextStyle(fontSize: 16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min, // Yatayda minimum alanı kaplamasına izin verir
+                    children: [
+                      messageContent, // Mesaj içeriği
+                      SizedBox(width: 8), // Mesaj ile ikon arasında boşluk
+                      statusIcon, // Duruma göre ikon
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -147,10 +348,8 @@ class MessageScreen extends StatelessWidget {
   );
 }
 
-
     Widget _buildMessageList(){
       auth_user.User firebaseUser = auth_user.FirebaseAuth.instance.currentUser!;
-      
       return StreamBuilder(stream: MessageController().getMessages(
         id, senderId, receiverId), builder: (context, snapshot){
           if(snapshot.hasError){
@@ -192,7 +391,9 @@ class MessageScreen extends StatelessWidget {
               User user = snapshot.data!;
               return Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Row(
+                child: GestureDetector(
+                  onTap: () => _navigateToProfile(user.userID, context),
+                  child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(2.0), // Border space
@@ -219,6 +420,7 @@ class MessageScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                )
               );
             },
           ),
@@ -271,47 +473,56 @@ class MessageScreen extends StatelessWidget {
               child: Container(
                 color: Colors.grey[200],
                 child: _buildMessageList(),
-//                 child: StreamBuilder<List<Message>>(
-//                   stream: FirebaseFirestore.instance
-//                     .collection('messages')
-//                     .where('senderId', isEqualTo: senderId)
-//                     .where('receiverId', isEqualTo: receiverId)
-//                     //.orderBy('timestamp', descending: true) // Timestamp sıralaması
-//                     .snapshots()
-//                     .map((querySnapshot) {
-//                       return querySnapshot.docs.map((doc) {
-//                         return Message.fromFirestore(doc);
-//                       }).toList();
-//                   }),
-//                   builder: (context, snapshot) {
-//                     if (snapshot.connectionState == ConnectionState.waiting) {
-//                       return const Center(child: CircularProgressIndicator());
-//                     }
-// //|| snapshot.data!.isEmpty
-//                     if (!snapshot.hasData ) {
-//                       return const Center(child: Text("No messages yet"));
-//                     }
-
-//                     final messages = snapshot.data!;
-//                     return ListView.builder(
-//                       reverse: true, // Mesajları tersten gösterme
-//                       itemCount: messages.length,
-//                       itemBuilder: (context, index) {
-//                         final message = messages[index];
-//                         return ListTile(
-//                           title: Text(message.content),
-//                           subtitle: Text(message.senderId),
-//                           trailing: Text(message.timestamp.toString()),
-//                         );
-//                       },
-//                     );
-//                   },
-//                 )
               ),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
+                IconButton(
+                  icon: const Icon(Icons.attach_file, color: Color.fromARGB(255, 59, 137, 62)),
+                  onPressed: () {
+                      showMenu(
+                        context: context,
+                        position: RelativeRect.fromLTRB(000.0, 580.0, 100.0, 100.0), // Menüyü konumlandır
+                        items: [
+                          PopupMenuItem(
+                            child: Row(
+                              children: const [
+                                Icon(Icons.photo, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text("Send a Photo"),
+                              ],
+                            ),
+                            onTap: () async {
+                              final ImagePicker _picker = ImagePicker();
+                              final List<XFile>? images = await _picker.pickMultiImage();
+                              if (images != null && images.isNotEmpty) {
+                                for (var image in images) {
+                                  _sendImageMessage(image);
+                                }
+                              }
+                            },
+                          ),
+                          PopupMenuItem(
+                            child: Row(
+                              children: const [
+                                Icon(Icons.video_collection, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text("Send a Video"),
+                              ],
+                            ),
+                            onTap: () async {
+                              final ImagePicker _picker = ImagePicker();
+                              final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
+                              if (video != null) {
+                                _sendVideoMessage(video);
+                              }
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
