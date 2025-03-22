@@ -420,9 +420,17 @@ String? _validatePassword(String? value) {
   if (value == null || value.isEmpty) {
     return 'Password is required';
   }
-  final passwordPattern = RegExp("^(?=.*[A-Z])(?=.*\\d)(?=.*[!\"#\$%&'()*+,-./:;<=>?@[\\]^_`{|}~]).{8,}\$");
+  final passwordPattern = RegExp(
+    r"^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$"
+  );
   if (!passwordPattern.hasMatch(value)) {
-    return 'Password must contain at least one uppercase letter, one number, one special character, and be at least 8 characters long.';
+    return '''
+Password must contain:
+- At least one uppercase letter
+- One number
+- One special character
+- Be at least 8 characters long
+''';
   }
   return null;
 }

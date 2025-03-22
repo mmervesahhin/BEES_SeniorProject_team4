@@ -1,4 +1,5 @@
 import 'package:bees/controllers/user_profile_controller.dart';
+import 'package:bees/views/screens/blocked_users_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,10 +20,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   final UserProfileController _controller = UserProfileController();
   
   @override
-  void initState() {
-    super.initState();
-    _controller.initializeUserData();
-  }
+void initState() {
+  super.initState();
+  _controller.initializeUserData();
+  
+  // Set callback for email verification
+  _controller.onEmailVerified = () {
+    setState(() {}); // Refresh the UI
+    _showSnackBar('Email address has been successfully updated!');
+  };
+}
   
   @override
   void dispose() {
@@ -48,104 +55,126 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  void _showSettingsMenu() {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: _controller.model.cardColor,
-      elevation: 8,
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Account Settings",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: _controller.model.primaryColor,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              SizedBox(height: 24),
-              _buildSettingsListTile(
-                icon: Icons.lock,
-                title: "Change Password",
-                onTap: () {
-                  Navigator.pop(context);
-                  _showChangePasswordDialog();
-                },
-              ),
-              Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
-              _buildSettingsListTile(
-                icon: Icons.email,
-                title: "Change Email Address",
-                onTap: () {
-                  Navigator.pop(context);
-                  _showChangeEmailDialog();
-                },
-              ),
-              Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
-              SizedBox(height: 8),
-              _buildSettingsListTile(
-                icon: Icons.exit_to_app,
-                title: "Log Out",
-                isDestructive: true,
-                onTap: () {
-                  Navigator.pop(context);
-                  _logout();
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+ // Update the _showSettingsMenu method in the _UserProfileScreenState class
 
-  Widget _buildSettingsListTile({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-  }) {
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-      leading: Container(
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isDestructive ? _controller.model.errorColor.withOpacity(0.1) : _controller.model.primaryColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
+void _showSettingsMenu() {
+  showModalBottomSheet(
+    context: context,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    backgroundColor: _controller.model.cardColor,
+    elevation: 8,
+    builder: (context) {
+      return Container(
+        padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Account Settings",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: _controller.model.primaryColor,
+                letterSpacing: 0.5,
+              ),
+            ),
+            SizedBox(height: 24),
+            _buildSettingsListTile(
+              icon: Icons.lock,
+              title: "Change Password",
+              onTap: () {
+                Navigator.pop(context);
+                _showChangePasswordDialog();
+              },
+            ),
+            Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+            _buildSettingsListTile(
+              icon: Icons.email,
+              title: "Change Email Address",
+              onTap: () {
+                Navigator.pop(context);
+                _showChangeEmailDialog();
+              },
+            ),
+            Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+            _buildSettingsListTile(
+              icon: Icons.block,
+              title: "Blocked Users",
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToBlockedUsers();
+              },
+            ),
+            Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+            SizedBox(height: 8),
+            _buildSettingsListTile(
+              icon: Icons.exit_to_app,
+              title: "Log Out",
+              isDestructive: true,
+              onTap: () {
+                Navigator.pop(context);
+                _logout();
+              },
+            ),
+          ],
         ),
-        child: Icon(
-          icon,
-          color: isDestructive ? _controller.model.errorColor : _controller.model.primaryColor,
-          size: 24,
-        ),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: isDestructive ? _controller.model.errorColor : _controller.model.textColor,
-        ),
-      ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: isDestructive ? _controller.model.errorColor.withOpacity(0.5) : Colors.grey.shade400,
-      ),
-      shape: RoundedRectangleBorder(
+      );
+    },
+  );
+}
+
+// Add this method to the _UserProfileScreenState class if it's not already defined
+
+Widget _buildSettingsListTile({
+  required IconData icon,
+  required String title,
+  required VoidCallback onTap,
+  bool isDestructive = false,
+}) {
+  return ListTile(
+    contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+    leading: Container(
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isDestructive ? _controller.model.errorColor.withOpacity(0.1) : _controller.model.primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      onTap: onTap,
-    );
-  }
+      child: Icon(
+        icon,
+        color: isDestructive ? _controller.model.errorColor : _controller.model.primaryColor,
+        size: 24,
+      ),
+    ),
+    title: Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: isDestructive ? _controller.model.errorColor : _controller.model.textColor,
+      ),
+    ),
+    trailing: Icon(
+      Icons.arrow_forward_ios,
+      size: 16,
+      color: isDestructive ? _controller.model.errorColor.withOpacity(0.5) : Colors.grey.shade400,
+    ),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    ),
+    onTap: onTap,
+  );
+}
+
+// Add this method to the _UserProfileScreenState class
+void _navigateToBlockedUsers() {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => BlockedUsersScreen(),
+    ),
+  );
+}
 
   Future<void> _showImagePickerOptions() async {
     showModalBottomSheet(
@@ -1301,6 +1330,32 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         },
                         style: TextStyle(color: _controller.model.textColor, fontSize: 14),
                       ),
+                      SizedBox(height: 12),
+                      
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.info_outline, color: Colors.blue.shade700, size: 16),
+                            SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'A verification email will be sent to your email address. You must verify your email before the password change will take effect.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.blue.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1349,162 +1404,256 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Future<void> _showChangeEmailDialog() async {
-    _controller.newEmailController.clear();
-    _controller.currentPasswordController.clear();
+ Future<void> _showChangeEmailDialog() async {
+  _controller.newEmailController.clear();
+  _controller.currentPasswordController.clear();
 
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Change Email Address',
-          style: TextStyle(
-            color: _controller.model.primaryColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
+  // Check if there's a pending email verification
+  User? user = FirebaseAuth.instance.currentUser;
+  DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user?.uid).get();
+  Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+  String? pendingEmail = userData['pendingEmail'];
+
+  if (pendingEmail != null) {
+    _controller.startEmailVerificationCheck();
+  }
+
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(
+        'Change Email Address',
+        style: TextStyle(
+          color: _controller.model.primaryColor,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
         ),
-        content: Form(
-          key: _controller.emailFormKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _controller.currentPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Current Password',
-                  labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: _controller.model.primaryColor, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: _controller.model.errorColor, width: 1),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
-                ),
-                obscureText: true,
-                validator: (value) => value?.isEmpty ?? true ? 'Password is required for verification' : null,
-                style: TextStyle(color: _controller.model.textColor),
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _controller.newEmailController,
-                decoration: InputDecoration(
-                  labelText: 'New Email Address',
-                  labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: _controller.model.primaryColor, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: _controller.model.errorColor, width: 1),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
-                  helperText: "Must be a Bilkent email (example@bilkent.edu.tr or example@ug.bilkent.edu.tr)",
-                  helperStyle: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-                  errorMaxLines: 4,
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Email is required';
-                  }
-                  if (!RegExp(r"^[a-zA-Z0-9._%+-]+@(?:ug\.)?bilkent\.edu\.tr$").hasMatch(value)) {
-                    return 'Please enter a valid Bilkent email address';
-                  }
-                  return null;
-                },
-                style: TextStyle(color: _controller.model.textColor),
-              ),
-              SizedBox(height: 12),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'A verification email will be sent to the new address. Your email will only be updated after you verify the new address. Please check your spam folder if you don\'t see the email.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue.shade700,
+      ),
+      content: Container(
+        width: MediaQuery.of(context).size.width * 0.8,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
+        ),
+        child: SingleChildScrollView(
+          child: pendingEmail != null
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.amber[700], size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'You have a pending email change to: $pendingEmail\n\nPlease check your email and click the verification link to complete the change.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.amber[800],
+                            ),
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Resend verification email
+                      _controller.resendEmailVerification(pendingEmail!);
+                      Navigator.of(context).pop();
+                      _showSnackBar('Verification email resent to $pendingEmail');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _controller.model.primaryColor,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text('Resend Verification Email'),
+                  ),
+                  SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () async {
+                      // Cancel the pending email change
+                      await FirebaseFirestore.instance.collection('users').doc(user?.uid).update({
+                        'pendingEmail': FieldValue.delete(),
+                        'emailChangeRequestTime': FieldValue.delete(),
+                      });
+                      _controller.stopEmailVerificationCheck();
+                      Navigator.of(context).pop();
+                      _showSnackBar('Email change request cancelled');
+                    },
+                    child: Text(
+                      'Cancel Email Change',
+                      style: TextStyle(color: _controller.model.errorColor),
+                    ),
+                  ),
+                ],
+              )
+            : Form(
+                key: _controller.emailFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: _controller.currentPasswordController,
+                      decoration: InputDecoration(
+                        labelText: 'Current Password',
+                        labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _controller.model.primaryColor, width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _controller.model.errorColor, width: 1),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
+                      ),
+                      obscureText: true,
+                      validator: (value) => value?.isEmpty ?? true ? 'Password is required for verification' : null,
+                      style: TextStyle(color: _controller.model.textColor),
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: _controller.newEmailController,
+                      decoration: InputDecoration(
+                        labelText: 'New Email Address',
+                        labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _controller.model.primaryColor, width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _controller.model.errorColor, width: 1),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
+                        helperText: 'Must be a Bilkent email (example@bilkent.edu.tr)',
+                        helperStyle: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                        errorMaxLines: 4,
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Email is required';
+                        }
+                        if (!RegExp(r"^[a-zA-Z0-9._%+-]+@(?:ug\.)?bilkent\.edu\.tr$").hasMatch(value)) {
+                          return 'Please enter a valid Bilkent email address';
+                        }
+                        return null;
+                      },
+                      style: TextStyle(color: _controller.model.textColor),
+                    ),
+                    SizedBox(height: 12),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'A verification email will be sent to the new address. Your email will only be updated after you verify the new address and log in again. Please check your spam folder if you don\'t see the email.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (_controller.emailFormKey.currentState?.validate() ?? false) {
-                String? error = await _controller.changeEmail();
-                if (error == null) {
-                  Navigator.of(context).pop();
-                  _showSnackBar('Verification email sent to ${_controller.newEmailController.text}. Please check your inbox and verify the new email address before the change takes effect.');
-                } else {
-                  _showSnackBar(error, isError: true);
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _controller.model.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      actions: pendingEmail != null
+        ? [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Close',
+                style: TextStyle(color: Colors.grey.shade700),
               ),
             ),
-            child: Text('Send Verification'),
-          ),
-        ],
-      ),
-    );
-  }
+          ]
+        : [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_controller.emailFormKey.currentState?.validate() ?? false) {
+                  String? error = await _controller.changeEmail();
+                  if (error == null) {
+                    // Start checking for email verification
+                    _controller.startEmailVerificationCheck();
+                    Navigator.of(context).pop();
+                    _showSnackBar('Verification email sent to ${_controller.newEmailController.text}. Please check your inbox and verify the new email address before the change takes effect.');
+                  } else {
+                    _showSnackBar(error, isError: true);
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _controller.model.primaryColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text('Send Verification'),
+            ),
+          ],
+    ),
+  );
+}
 
   Future<void> _logout() async {
     bool confirmLogout = await showDialog(
@@ -1817,6 +1966,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _controller.firstNameController.text = userData['firstName'] ?? '';
           _controller.lastNameController.text = userData['lastName'] ?? '';
           _controller.currentProfilePictureUrl = userData['profilePicture'];
+          _controller.newEmailController.text = userData['emailAddress']?? '';
 
           return SingleChildScrollView(
             child: Column(
