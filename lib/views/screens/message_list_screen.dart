@@ -92,7 +92,7 @@ class MessageListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Mesajlar"),
+        title: Text("Messages"),
         backgroundColor: const Color.fromARGB(255, 59, 137, 62),
       ),
       body: StreamBuilder<List<ChatRoom>>(
@@ -107,7 +107,7 @@ class MessageListScreen extends StatelessWidget {
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text("Henüz mesajlaşma başlatılmadı"));
+            return Center(child: Text("No messages yet."));
           }
 
           return ListView(
