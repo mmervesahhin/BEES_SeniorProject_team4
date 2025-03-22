@@ -103,14 +103,29 @@ Future<List<Map<String, dynamic>>> getBlockedUsers() async {
   
   return await model.getBlockedUsers(user.uid);
 }
-
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 // Unblock a user
-Future<bool> unblockUser(String userToUnblockId) async {
-  User? user = model.currentUser;
-  if (user == null) return false;
-  
-  return await model.unblockUser(user.uid, userToUnblockId);
+ Future<bool> unblockUser(String currentUserId, String blockedUserId) async {
+  try {
+    await _firestore.collection('blocked_users').doc(currentUserId).update({
+      'blocked_users': FieldValue.arrayRemove([blockedUserId]),
+    });
+
+    await _firestore.collection('blocked_users')
+        .doc(blockedUserId)
+        .collection('blockers')
+        .doc(currentUserId)
+        .delete();
+
+    print("User unblocked successfully.");
+    return true;
+  } catch (e) {
+    print("Failed to unblock user: $e");
+    return false;
+  }
 }
+
+
   
   // Save profile changes
   Future<bool> saveProfile() async {

@@ -1,4 +1,5 @@
 import 'package:bees/controllers/user_profile_controller.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -44,7 +45,7 @@ Future<void> _loadBlockedUsers() async {
 }
 
 // Update the _unblockUser method to handle the specific structure
-Future<void> _unblockUser(String userId, String userName) async {
+Future<void> _unblockUser(String blockedUserId, String userName) async {
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
@@ -98,25 +99,42 @@ Future<void> _unblockUser(String userId, String userName) async {
           ),
         ),
       );
-      
-      bool success = await _controller.unblockUser(userId);
-      
+
+      String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
+      // Remove the blocked user from the current user's blocked list
+      await FirebaseFirestore.instance
+          .collection('blocked_users')
+          .doc(currentUserId)
+          .update({
+        'blocked_users': FieldValue.arrayRemove([blockedUserId]),
+      });
+
+      // Remove the blocker entry from the blocked user's "blockers" collection
+      await FirebaseFirestore.instance
+          .collection('blocked_users')
+          .doc(blockedUserId)
+          .collection('blockers')
+          .doc(currentUserId)
+          .delete();
+
       // Close loading indicator
       Navigator.of(context, rootNavigator: true).pop();
-      
-      if (success) {
-        _showSnackBar('User unblocked successfully');
-        _loadBlockedUsers(); // Refresh the list
-      } else {
-        _showSnackBar('Error unblocking user', isError: true);
-      }
+
+      // Show success message
+      _showSnackBar('User unblocked successfully');
+
+      // Refresh blocked users list
+      await _loadBlockedUsers();
     } catch (e) {
-      // Close loading indicator if it's showing
+      // Close loading indicator if an error occurs
       Navigator.of(context, rootNavigator: true).pop();
       _showSnackBar('Error unblocking user: ${e.toString()}', isError: true);
     }
   }
 }
+
+
 
 // Add this method to the _BlockedUsersScreenState class
 
