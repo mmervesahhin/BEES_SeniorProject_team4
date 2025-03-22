@@ -91,6 +91,16 @@ Widget build(BuildContext context) {
       },
           color: Colors.black,
         ),
+          IconButton(
+          icon: Icon(Icons.notifications),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NotificationScreen()),
+            );
+          },
+        )
+        
       ],
     ),
     body: Column(
@@ -118,16 +128,7 @@ Widget build(BuildContext context) {
                 onPressed: () {
                   _showFiltersDialog();
                 },
-              ),
-              IconButton(
-  icon: Icon(Icons.notifications),
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => NotificationScreen()),
-    );
-  },
-)
+              )
             ],
           ),
         ),
