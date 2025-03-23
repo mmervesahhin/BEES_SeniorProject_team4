@@ -55,7 +55,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildReportCard(
-                    title: 'Item Reports',
+                    title: 'Item Complaints',
                     onTap: () {
                       Navigator.push(
                         context,
@@ -65,7 +65,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                   ),
                   SizedBox(height: 16),
                   _buildReportCard(
-                    title: 'Request Reports',
+                    title: 'Request Complaints',
                     onTap: () {
                       Navigator.push(
                         context,
@@ -75,7 +75,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                   ),
                   SizedBox(height: 16),
                   _buildReportCard(
-                    title: 'User Reports',
+                    title: 'User Complaints',
                     onTap: () {
                       Navigator.push(
                         context,
@@ -94,7 +94,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
           BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
-          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Reports'),
+          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Complaints'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analysis'),
           BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
         ],

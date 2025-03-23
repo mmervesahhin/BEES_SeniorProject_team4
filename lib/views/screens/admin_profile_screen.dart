@@ -1368,7 +1368,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.report),
-            label: 'Reports',
+            label: 'Complaints',
           ),
           BottomNavigationBarItem(
               icon: Icon(Icons.bar_chart),

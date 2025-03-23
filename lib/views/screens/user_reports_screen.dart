@@ -49,7 +49,7 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 59, 137, 62),
         title: const Text(
-          'User Reports',
+          'User Complaints',
           style: TextStyle(
             fontSize: 24,
             color: Colors.black,
@@ -61,7 +61,7 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
         child: Column(
           children: [
             const Text(
-              'Reported Users',
+              'Complaints',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             Expanded(
@@ -217,7 +217,7 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
           BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
-          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Reports'),
+          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Complaints'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analysis'),
           BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
         ],

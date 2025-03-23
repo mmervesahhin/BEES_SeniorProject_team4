@@ -305,7 +305,7 @@ class _OthersUserProfileScreenState extends State<AdminOthersUserProfileScreen> 
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.report),
-              label: 'Reports',
+              label: 'Complaints',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.bar_chart),

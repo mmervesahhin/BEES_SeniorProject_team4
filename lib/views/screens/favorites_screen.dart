@@ -30,10 +30,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   void fetchFavorites() async {
-      setState(() => isLoading = true);
-      favoriteItems = await _controller.fetchFavorites();
-      setState(() => isLoading = false);
-    }
+    setState(() => isLoading = true);
+    favoriteItems = await _controller.fetchFavorites();
+    setState(() => isLoading = false);
+  }
 
   void _toggleFavorite(String itemId, bool isFavorited) async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -56,21 +56,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
         ),
         actions: [
-        IconButton(
-          icon: Icon(Icons.message),
-          onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MessageListScreen(),
+          IconButton(
+            icon: Icon(Icons.message),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MessageListScreen(),
+                ),
+              );
+            },
+            color: Colors.black,
           ),
-        );
-      },
-          color: Colors.black,
-        ),
-      ],
+        ],
       ),
-      
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : favoriteItems.isEmpty
@@ -103,62 +102,87 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             ),
                           );
                         },
-                      child: Card(
-                        elevation: 3,
-                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(12),
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              item['photo'],
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
+                        child: Card(
+                          elevation: 3,
+                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    item['photo'],
+                                    width: 90,
+                                    height: 90,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        item['title'],
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '₺${item['price']}',
+                                            style: TextStyle(fontSize: 20),
+                                          ),
+                                          if (item['category'] == 'Rent')
+                                            Padding(
+                                              padding: const EdgeInsets.only(left: 8.0),
+                                              child: Text(item['paymentPlan']),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              _buildTag(item['category'], Colors.green),
+                                              _buildTag(item['condition'], Colors.yellow),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              _buildDepartmentsTag(item['departments']),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.favorite, color: Colors.red),
+                                      onPressed: () {
+                                        _toggleFavorite(item['itemId'], false);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          title: Text(
-                            item['title'],
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    '₺${item['price']}',
-                                    style: TextStyle(fontSize: 20), 
-                                  ),
-                                  if (item['category'] == 'Rent') 
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 8.0), // Boşluk ekledik
-                                      child: Text(
-                                        item['paymentPlan'],
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  _buildTag(item['category'], Colors.green),
-                                  _buildTag(item['condition'], Colors.yellow),
-                                  _buildDepartmentsTag(item['departments']),
-                                ],
-                              ),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.favorite, color: Colors.red),
-                            onPressed: () {
-                              _toggleFavorite(item['itemId'], false);
-                            },
-                          ),
                         ),
-                      ));
+                      );
                     },
                   ),
                 ),
@@ -194,14 +218,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildDepartmentsTag(List<dynamic> departments) {
     if (departments.isEmpty) return Container();
-    
-    // List<dynamic>'i List<String>'e dönüştürme
+
     List<String> visibleDepartments = departments.map((e) => e.toString()).take(1).toList();
-    
+
     if (departments.length > 1) {
       visibleDepartments.add('...');
     }
-    
+
     return Row(
       children: visibleDepartments.map((department) {
         return _buildTag(department, Colors.orange);

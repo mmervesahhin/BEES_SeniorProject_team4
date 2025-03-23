@@ -94,7 +94,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
           builder: (BuildContext context, StateSetter setDialogState) {
             return AlertDialog(
               title: Text(
-                "Report Item",
+                "Submit Complaint",
                 style: TextStyle(color: Color.fromARGB(255, 17, 39, 18)), // Başlık için yeşil
               ),
               content: Column(
@@ -445,7 +445,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                               _showReportDialog(context); // Report butonuna basıldığında pop-up gösterilir
                             },
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                            child: Text("Report Item", style: TextStyle(color: Colors.white)),
+                            child: Text("Submit Complaint", style: TextStyle(color: Colors.white)),
                           ),
                         ),
                       ],

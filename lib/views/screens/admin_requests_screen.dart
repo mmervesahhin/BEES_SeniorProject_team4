@@ -149,7 +149,7 @@ import 'package:bees/models/user_model.dart' as bees;
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.report),
-                label: 'Reports',
+                label: 'Complaints',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.bar_chart),
