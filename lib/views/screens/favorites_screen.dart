@@ -29,11 +29,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     fetchFavorites();
   }
 
-  void fetchFavorites() async {
-    setState(() => isLoading = true);
-    favoriteItems = await _controller.fetchFavorites();
-    setState(() => isLoading = false);
-  }
+void fetchFavorites() async {
+  setState(() => isLoading = true);
+  final allFavorites = await _controller.fetchFavorites();
+  favoriteItems = allFavorites.where((doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return data['itemStatus'] != null && data['itemStatus'].toLowerCase() == 'active';
+  }).toList();
+  setState(() => isLoading = false);
+}
+
 
   void _toggleFavorite(String itemId, bool isFavorited) async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
