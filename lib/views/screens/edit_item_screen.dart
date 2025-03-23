@@ -34,10 +34,12 @@ class _EditItemScreenState extends State<EditItemScreen> {
 
   // Available options for dropdowns
   final List<String> _conditions = ['New', 'Lightly Used', 'Moderately Used', 'Heavily Used'];
-  final List<String> _categories = ['Notes', 'Books', 'Electronics', 'Stationary', 'Other'];
-  final List<String> _itemTypes = ['Sale', 'Rent', 'Exchange', 'Donate'];
+  final List<String> _categories = ['Sale', 'Rent', 'Exchange', 'Donate'];
+  final List<String> _itemTypes = ['Notes', 'Books', 'Electronics', 'Stationary', 'Other'];
   final List<String> _departments = ['AMER', 'ARCH', 'CHEM', 'COMD', 'CS', 'CTIS', 'ECON', 'EDU', 'EEE', 'ELIT', 'FA', 'GRA', 'HART', 'IAED', 'IE', 'IR', 'LAUD', 'LAW', 'MAN', 'MATH', 'MBG', 'ME', 'MSC', 'PHIL', 'PHYS', 'POLS', 'PREP', 'PSYC', 'THM','THR','TRIN'];
-  
+  final List<String> _paymentPlan = ['Per Hour', 'Per Day', 'Per Month'];
+String _selectedPaymentPlan = 'Per Month'; // Default
+
   // Selected departments
   List<String> _selectedDepartments = [];
 
@@ -127,39 +129,81 @@ class _EditItemScreenState extends State<EditItemScreen> {
 
                 // Item Type (Sale/Rent/Exchange/Donate)
                 _buildDropdownField(
-                  value: _editedItem.itemType ?? _itemTypes[0],
-                  labelText: 'Item Type',
-                  items: _itemTypes,
+                  value: _editedItem.category ?? _categories[0],
+                  labelText: 'Category',
+                  items: _categories,
                   onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _editedItem.itemType = value;
-                      });
-                    }
-                  },
+  if (value != null) {
+    setState(() {
+      _editedItem.category = value;
+      
+      // Set price to 0 if category is "Donate" or "Exchange"
+      if (value == 'Donate' || value == 'Exchange') {
+        _editedItem.price = 0;
+      }
+    });
+  }
+},
+
                 ),
                 const SizedBox(height: 16),
 
-                // Price Field (only show if Sale or Rent)
-                if (_editedItem.itemType == 'Sale' || _editedItem.itemType == 'Rent')
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildFormField(
-                        initialValue: _editedItem.price.toString(),
-                        labelText: 'Price (${_editedItem.itemType == 'Rent' ? 'per month' : 'Turkish Lira'})',
-                        keyboardType: TextInputType.number,
-                        prefixIcon: const Icon(Icons.currency_lira, color: Colors.black),
-                        validator: (value) {
-                          if (value?.isEmpty ?? true) return 'Price is required';
-                          if (double.tryParse(value!) == null) return 'Invalid price';
-                          return null;
-                        },
-                        onChanged: (value) => _editedItem.price = double.tryParse(value) ?? _editedItem.price,
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                if (_editedItem.category == 'Sale' || _editedItem.category == 'Rent')
+  Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          // Price Input Field
+          Expanded(
+            child: _buildFormField(
+              initialValue: _editedItem.price.toString(),
+              labelText: 'Price',
+              keyboardType: TextInputType.number,
+              prefixIcon: const Icon(Icons.currency_lira, color: Colors.black),
+              validator: (value) {
+                if (value?.isEmpty ?? true) return 'Price is required';
+                if (double.tryParse(value!) == null) return 'Invalid price';
+                return null;
+              },
+              onChanged: (value) => _editedItem.price = double.tryParse(value) ?? _editedItem.price,
+            ),
+          ),
+
+          // Show payment plan dropdown if category is Rent
+          if (_editedItem.category == 'Rent')
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Row(
+                children: [
+                  Text("/", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  DropdownButton<String>(
+                    value: _selectedPaymentPlan,
+                    items: _paymentPlan.map((String duration) {
+                      return DropdownMenuItem<String>(
+                        value: duration,
+                        child: Text(duration),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _selectedPaymentPlan = value;
+                          _editedItem.paymentPlan = value; // Save selection
+                        });
+                      }
+                    },
                   ),
+                ],
+              ),
+            ),
+        ],
+      ),
+      const SizedBox(height: 16),
+    ],
+  ),
+
+
 
                 // Condition Dropdown
                 _buildDropdownField(
@@ -172,13 +216,13 @@ class _EditItemScreenState extends State<EditItemScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Category Dropdown
+                // ItemType Dropdown
                 _buildDropdownField(
-                  value: _editedItem.category,
-                  labelText: 'Category',
-                  items: _categories,
+                  value: _editedItem.itemType,
+                  labelText: 'Item Type',
+                  items: _itemTypes,
                   onChanged: (value) {
-                    if (value != null) _editedItem.category = value;
+                    if (value != null) _editedItem.itemType = value;
                   },
                 ),
                 const SizedBox(height: 24),

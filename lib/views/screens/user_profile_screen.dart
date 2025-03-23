@@ -883,7 +883,7 @@ void _navigateToBlockedUsers() {
         Navigator.of(context, rootNavigator: true).pop();
         
         if (success) {
-          _showSnackBar('Item marked as inactive');
+          
           setState(() {});
         } else {
           _showSnackBar('Error updating item status', isError: true);
