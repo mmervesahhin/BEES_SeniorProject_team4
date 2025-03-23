@@ -5,15 +5,16 @@ class Message {
   final String receiverId;
   final String content;
   final Timestamp timestamp;
+  final String status;
 
   Message({
     required this.senderId,
     required this.receiverId,
     required this.content,
     required this.timestamp,
+    required this.status,
   });
 
-  // // Firestore'dan veri almak için
   factory Message.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
@@ -22,6 +23,7 @@ class Message {
       receiverId: data['receiverId'],
       content: data['content'],
       timestamp: (data['timestamp'] as Timestamp),
+      status: data['status'],
     );
   }
 
@@ -32,6 +34,7 @@ class Message {
       'receiverId': receiverId,
       'content': content,
       'timestamp': timestamp,
+      'status': status, 
     };
   }
 }

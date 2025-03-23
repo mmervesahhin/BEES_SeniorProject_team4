@@ -10,6 +10,9 @@ import 'package:bees/views/screens/message_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'message_list_screen.dart';
 import 'package:bees/views/screens/others_user_profile_screen.dart';
+import 'package:bees/controllers/reported_request_controller.dart';
+import 'package:bees/models/reported_request_model.dart';
+
 
 
 import 'package:bees/models/user_model.dart' as bees;
@@ -308,7 +311,6 @@ Widget _buildRequestCard(Request request) {
   );
 }
 
-// Kullanıcıya rapor seçeneklerini gösteren fonksiyon
 void _showReportOptions(BuildContext context, Request request) {
   showModalBottomSheet(
     context: context,
@@ -339,10 +341,40 @@ void _showReportOptions(BuildContext context, Request request) {
   );
 }
 
-// Raporlama işlemini yöneten fonksiyon
-void _reportRequest(Request request, String reason) {
-  // Burada raporlama işlemi backend'e gönderilebilir.
-  print("Request ${request.requestID} reported for: $reason");
+void _reportRequest(Request request, String reason) async {
+  String? userId = FirebaseAuth.instance.currentUser?.uid;
+  if (userId == null) {
+    print("Error: User not logged in");
+      print("Request ${request.requestID} reported for: $reason");
+
+    return;
+  }
+
+
+  // Aynı request'in daha önce raporlanıp raporlanmadığını kontrol et
+  bool alreadyReported = await ReportedRequestController().hasUserReportedRequest(request.requestID, userId);
+  
+  if (alreadyReported) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("You have already reported this request.")),
+    );
+    return;
+  }
+
+  // Yeni rapor kaydet
+  ReportedRequest reportedRequest = ReportedRequest(
+    requestId: request.requestID,
+    reportedBy: userId,
+    reportReason: reason,
+    reportDate: DateTime.now(),
+  );
+
+  await ReportedRequestController().reportRequest(reportedRequest);
+
+  // Kullanıcıya bildirim göster
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Request reported successfully!")),
+  );
 }
 
 

@@ -414,23 +414,34 @@ void _showForgotPasswordDialog(BuildContext context) {
     },
   );
 }
+}
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Email is required';
-    }
-    final emailPattern = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-    if (!emailPattern.hasMatch(value)) {
-      return 'Please enter a valid email address';
-    }
-    return null;
+String? _validatePassword(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'Password is required';
   }
+  final passwordPattern = RegExp(
+    r"^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$"
+  );
+  if (!passwordPattern.hasMatch(value)) {
+    return '''
+Password must contain:
+- At least one uppercase letter
+- One number
+- One special character
+- Be at least 8 characters long
+''';
+  }
+  return null;
+}
 
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Password is required';
-    }
-    // Add more password validation if needed
-    return null;
+String? _validateEmail(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'Email is required';
   }
+  final emailPattern = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+  if (!emailPattern.hasMatch(value)) {
+    return 'Please enter a valid email address';
+  }
+  return null;
 }
