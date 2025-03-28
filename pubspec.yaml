@@ -49,6 +49,9 @@ dependencies:
   file_picker:
   video_player: ^2.3.0
   intl: ^0.20.2
+  fl_chart: ^0.70.2
+  pdf: ^3.11.3
+  printing: ^5.14.2
 
 
 dev_dependencies:
