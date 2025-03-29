@@ -208,14 +208,16 @@ Map<String, int> lineChartData = {};
                           final lineBytes = await _controller.captureChart(lineChartKey);
 
                           // PDF oluştur
-                          await _controller.createReport(
+                         await _controller.createReport(
                             barChartBytes: barChartBytes,
                             pieChartBytes: pieBytes,
                             lineChartBytes: lineBytes,
+                            barChartData: barChartData,
+                            pieChartData: pieChartData,
+                            lineChartData: lineChartData,
                             startDate: _controller.startDate!,
                             endDate: _controller.endDate!,
                           );
-
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('PDF report created successfully!')),
                           );
