@@ -5,7 +5,7 @@ const axios = require('axios');
 const app = express();
 app.use(bodyParser.json());
 
-const API_KEY = "AIzaSyCJ1njYuAJubcBfjvBuUeVwOtwV3iXTTDw"; // Buraya kendi API key'in
+const API_KEY = ""; // güvenlik nedeniyle githuba pushlamamak için şimdilik siliyorum, ihtiyacınız olursa benle (suna) iletişime geçin lütfen.
 
 app.post('/', async (req, res) => {
   const prompt = req.body.prompt;
