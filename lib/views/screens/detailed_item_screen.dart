@@ -248,8 +248,10 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Item Details", style: TextStyle(color: Colors.black)),
-        backgroundColor: Color.fromARGB(255, 59, 137, 62),
+          title: Text('Item Details', style: TextStyle(color: Colors.black)),
+                backgroundColor: const Color.fromARGB(255, 248, 250, 248),
+                elevation: 1,
+                iconTheme: IconThemeData(color: Colors.black),
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -343,7 +345,12 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                           ),
                           SizedBox(height: 10),
                         ],
-                        Text(itemDetails!["description"] ?? "No description available"),
+                        if (itemDetails!["description"] != null && itemDetails!["description"].toString().trim().isNotEmpty) ...[
+                            Text("Description:", style: TextStyle(fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Text(itemDetails!["description"]),
+                            SizedBox(height: 10),
+                          ],
                           // Departman başlığı ve departman chipleri
                           if (item!.departments != null && (item!.departments as List).isNotEmpty) ...[
                             Text("Department(s):", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -352,16 +359,24 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                               spacing: 8.0,
                               runSpacing: 4.0,
                               children: List.generate(itemDetails!["departments"].length, (index) {
-                                return Chip(
-                                  label: Text(itemDetails!["departments"][index]),
-                                  backgroundColor: Colors.green.shade100, // Pastel yeşil tonu
+                                return SizedBox(
+                                  width: 80, // Sabit genişlik (gerekiyorsa ayarlarız)
+                                  child: Chip(
+                                    label: Center(
+                                      child: Text(
+                                        itemDetails!["departments"][index],
+                                        textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis, // Taşarsa 3 nokta koy
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                    backgroundColor: Colors.green.shade100,
+                                  ),
                                 );
                               }),
                             ),
                           ],
-
                           SizedBox(height: 10),
-
                           // Category başlığı ve category chipi
                           Text("Category:", style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(height: 4),
@@ -379,8 +394,17 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                             label: Text(itemDetails!["condition"]),
                             backgroundColor: Colors.green.shade100, // Pastel yeşil tonu
                           ),
-
-                          SizedBox(height: 10),
+                          // Item Type başlığı ve chip'i
+                          if (itemDetails!["itemType"] != null && itemDetails!["itemType"].toString().isNotEmpty) ...[
+                            Text("Item Type:", style: TextStyle(fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Chip(
+                              label: Text(itemDetails!["itemType"]),
+                              backgroundColor: const Color.fromARGB(255, 248, 248, 248),
+                            ),
+                            SizedBox(height: 10),
+                          ],
+                         // SizedBox(height: 10),
                         Row(
                           children: [
                             GestureDetector(
@@ -439,15 +463,17 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                           ],
                         ),
                         SizedBox(height: 20),
-                        Center(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _showReportDialog(context); // Report butonuna basıldığında pop-up gösterilir
-                            },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                            child: Text("Report Item", style: TextStyle(color: Colors.white)),
+                        if (itemDetails!["itemOwnerId"] != FirebaseAuth.instance.currentUser!.uid) ...[
+                          Center(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                _showReportDialog(context);
+                              },
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                              child: Text("Report Item", style: TextStyle(color: Colors.white)),
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -465,7 +491,6 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
       ),
     );
   }
-  
   void _navigateToMessageScreen(dynamic entity, String entityType) {
   User? currentUser = FirebaseAuth.instance.currentUser;
   if (currentUser == null) {
