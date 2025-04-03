@@ -12,6 +12,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'message_list_screen.dart';
 import 'package:bees/views/screens/notification_screen.dart';
+import 'package:badges/badges.dart' as badges;
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -78,16 +80,38 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             color: textDark,
           ),
-          IconButton(
-            icon: Icon(Icons.notifications, size: 24),
-            color: textDark,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NotificationScreen()),
-              );
-            },
-          ),
+          StreamBuilder<QuerySnapshot>(
+  stream: FirebaseFirestore.instance
+      .collection('notifications')
+      .where('receiverId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+      .where('isRead', isEqualTo: false)
+      .snapshots(),
+  builder: (context, snapshot) {
+    int unreadCount = snapshot.data?.docs.length ?? 0;
+
+    return IconButton(
+      icon: badges.Badge(
+        showBadge: unreadCount > 0,
+        badgeContent: Text(
+          unreadCount.toString(),
+          style: const TextStyle(color: Colors.white, fontSize: 10),
+        ),
+        child: const Icon(Icons.notifications),
+        badgeStyle: const badges.BadgeStyle(
+          badgeColor: Colors.red,
+        ),
+      ),
+      color: textDark,
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationScreen()),
+        );
+      },
+    );
+  },
+),
+
         ],
       ),
       body: SafeArea(

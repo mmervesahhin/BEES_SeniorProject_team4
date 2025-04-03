@@ -340,6 +340,36 @@ void _showRequestConfirmationDialog(BuildContext context, String requestID, Stri
         'itemStatus': 'removed',
       });
 
+      // 🔍 Item bilgilerini al
+      DocumentSnapshot itemDoc = await firestore.collection('items').doc(itemId).get();
+      if (!itemDoc.exists) {
+        print("Item not found.");
+        return false;
+      }
+
+      final itemData = itemDoc.data() as Map<String, dynamic>;
+      final String? ownerId = itemData['itemOwnerId'];
+
+      if (ownerId == null) {
+        print("❌ Item'ın sahibi bulunamadı.");
+        return false;
+      }
+        // 🔄 Item'ı sil
+        await firestore.collection('items').doc(itemId).update({
+          'itemStatus': 'removed',
+        });
+
+        // 📩 Bildirim gönder
+        await firestore.collection('notifications').add({
+          'receiverId': ownerId,
+          'message': 'Your item has been removed by admin. Reason: $reason',
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+          'type': 'item_removal',
+          'itemId': itemId,
+        });
+
+
       await firestore.collection('removed_items').add({
         'adminID': admin.uid,
         'itemId': itemId,
