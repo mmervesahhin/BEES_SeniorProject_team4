@@ -36,7 +36,6 @@ class Request {
   );
 }
 
-  
   factory Request.fromJson2(Map<String, dynamic> json) {
     return Request(
       requestID: json['requestID'],

@@ -218,14 +218,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       
 
                         if (type == 'message') {
-final rawEntity = await fetchEntity(data['itemId'], data['entityType']);
+                          final rawEntity = await fetchEntity(data['itemId'], data['entityType']);
 
-dynamic entity;
-if (data['entityType'] == "Item") {
-  entity = Item.fromMap(rawEntity!); // Item modelini import et
-} else {
-  entity = Request.fromMap(rawEntity!); // Request modelini import et
-}                        
+                          dynamic entity;
+                          if (data['entityType'] == "Item") {
+                            entity = Item.fromMap(rawEntity!); // Item modelini import et
+                          } else {
+                            entity = Request.fromMap(rawEntity!); // Request modelini import et
+                          }                        
                         if (entity != null) {
                           Navigator.push(
                           context,
@@ -243,8 +243,22 @@ if (data['entityType'] == "Item") {
                         }
                       }
 
+                      if (type == 'request_removal') {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Request Removed"),
+                              content: Text(message),
+                              actions: [
+                                TextButton(
+                                  child: const Text("OK"),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
 
-                      
                       // Handle different notification types
                       if (type == 'rate_seller' && !rated && sellerId != null && itemId != null) {
                         _controller.showRatingDialog(

@@ -288,6 +288,28 @@ void _showRequestConfirmationDialog(BuildContext context, String requestID, Stri
         'requestStatus': 'removed',
       });
 
+          DocumentSnapshot requestDoc = await FirebaseFirestore.instance
+        .collection('requests')
+        .doc(requestID)
+        .get();
+
+    if (!requestDoc.exists) return false;
+
+
+    final requestData = requestDoc.data() as Map<String, dynamic>;
+    final String ownerId = requestData['requestOwnerID'];
+
+
+       // Bildirim oluştur
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'receiverId': ownerId,
+      'message': 'Your request has been removed by admin. Reason: $reason',
+      'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,
+      'type': 'request_removal',
+      'requestId': requestID,
+    });
+
       await firestore.collection('removed_requests').add({
         'adminID': admin.uid,
         'requestID': requestID,
@@ -298,6 +320,8 @@ void _showRequestConfirmationDialog(BuildContext context, String requestID, Stri
       return true;
     } catch (e) {
       print("Error removing request: $e");
+      print("❌ Bildirim eklenemedi: $e");
+
       return false;
     }
   }
