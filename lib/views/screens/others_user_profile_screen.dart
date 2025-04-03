@@ -333,7 +333,7 @@ Widget build(BuildContext context) {
                 SizedBox(height: 8),
                 Text(userEmail, style: TextStyle(fontSize: 16, color: Colors.grey)),
                 SizedBox(height: 8),
-                Text('Rating: ${userRatingDouble.toDouble()}', style: TextStyle(fontSize: 16)),
+                Text('Rating: ${userRatingDouble.toStringAsFixed(2)}',style: TextStyle(fontSize: 16)),
                 SizedBox(height: 16),
                 Text('Active Items:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 FutureBuilder<List<Item>>(

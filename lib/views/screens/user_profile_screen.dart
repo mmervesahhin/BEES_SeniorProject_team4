@@ -1,3 +1,4 @@
+import 'package:bees/controllers/beesed_transaction_controller.dart';
 import 'package:bees/controllers/user_profile_controller.dart';
 import 'package:bees/views/screens/blocked_users_screen.dart';
 import 'package:flutter/material.dart';
@@ -663,166 +664,151 @@ void _navigateToBlockedUsers() {
   }
 
   Future<void> _markItemAsBeesed(Item item) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Text(
-              'Mark as BEESED',
-              style: TextStyle(
-                color: _controller.model.primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(width: 8),
-            IconButton(
-              icon: Icon(Icons.info_outline, size: 18, color: _controller.model.primaryColor),
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints(),
-              splashRadius: 20,
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Row(
-                        children: [
-                          Icon(Icons.info, color: _controller.model.primaryColor),
-                          SizedBox(width: 8),
-                          Text(
-                            'What is BEESED?',
-                            style: TextStyle(
-                              color: _controller.model.primaryColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Marking an item as BEESED means it is no longer available because it has been sold, rented, exchanged, or donated.',
-                            style: TextStyle(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: TextButton.styleFrom(
-                            foregroundColor: _controller.model.primaryColor,
-                          ),
-                          child: Text('Got it'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you sure you want to mark this item as BEESED?',
-              style: TextStyle(color: _controller.model.textColor),
-            ),
-            SizedBox(height: 12),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.amber[700], size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'This item will be removed from active listings on the home screen and from your "My Items" section.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.amber[800],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Row(
+        children: [
+          Text(
+            'Mark as BEESED',
+            style: TextStyle(
+              color: _controller.model.primaryColor,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _controller.model.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('Confirm'),
+          SizedBox(width: 8),
+          IconButton(
+            icon: Icon(Icons.info_outline, size: 18, color: _controller.model.primaryColor),
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
+            splashRadius: 20,
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Row(
+                      children: [
+                        Icon(Icons.info, color: _controller.model.primaryColor),
+                        SizedBox(width: 8),
+                        Text(
+                          'What is BEESED?',
+                          style: TextStyle(
+                            color: _controller.model.primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Marking an item as BEESED means it is no longer available because it has been sold, rented, exchanged, or donated.',
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: _controller.model.primaryColor,
+                        ),
+                        child: Text('Got it'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
-    );
-
-    if (confirmed == true) {
-      try {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(_controller.model.primaryColor),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Are you sure you want to mark this item as BEESED?',
+            style: TextStyle(color: _controller.model.textColor),
+          ),
+          SizedBox(height: 12),
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.amber.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.amber.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.amber[700], size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'This item will be removed from active listings on the home screen and from your "My Items" section.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.amber[800],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        );
+        ],
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _controller.model.primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text('Confirm'),
+        ),
+      ],
+    ),
+  );
 
-        bool success = await _controller.markItemAsBeesed(item);
-        
-        Navigator.of(context).pop();
-        
-        if (success) {
-          setState(() {
-            _controller.showActiveItems = true;
-            _controller.showRequests = false;
-          });
-          _showSnackBar('Item marked as BEESED and removed successfully');
-        } else {
-          _showSnackBar('Error updating item status', isError: true);
-        }
-      } catch (e) {
-        Navigator.of(context, rootNavigator: true).pop();
-        _showSnackBar('Error updating item status: ${e.toString()}', isError: true);
-      }
+  if (confirmed == true) {
+    try {
+      // Use the BeesedTransactionHandler to show the user selection dialog
+      final BeesedTransactionHandler beesedHandler = BeesedTransactionHandler();
+      await beesedHandler.showBeesedDialog(context, item);
+      
+      // Refresh the UI after the transaction is completed
+      setState(() {
+        _controller.showActiveItems = true;
+        _controller.showRequests = false;
+      });
+    } catch (e) {
+      _showSnackBar('Error updating item status: ${e.toString()}', isError: true);
     }
   }
+}
 
   Future<void> _showDeleteConfirmation(BuildContext context, Item item) async {
     final confirmed = await showDialog<bool>(
@@ -2150,8 +2136,11 @@ void _navigateToBlockedUsers() {
                         SizedBox(height: 24),
                         _buildInfoCard("Email", userData['emailAddress'] ?? 'Unknown', Icons.email_outlined),
                         SizedBox(height: 12, width: 10000),
-                        _buildInfoCard("Rating", (userData['userRating'] ?? 0).toString(), Icons.star_outline),
-                        
+_buildInfoCard(
+  "Rating", 
+  (userData['userRating'] ?? 0).toStringAsFixed(2), 
+  Icons.star_outline
+),
                         SizedBox(height: 24),
 
                         Center(

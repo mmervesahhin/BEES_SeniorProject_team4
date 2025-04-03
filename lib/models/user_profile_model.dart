@@ -317,7 +317,6 @@ Future<bool> checkAndUpdateEmailVerification(String uid) async {
       if (user != null) {
         await _firestore.collection('users').doc(user.uid).update({
           'activeItems': FieldValue.arrayRemove([item.itemId]),
-          'beesedItems': FieldValue.arrayUnion([item.itemId]),
         });
       }
 
