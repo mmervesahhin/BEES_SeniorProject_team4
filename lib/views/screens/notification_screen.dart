@@ -4,6 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:bees/views/screens/message_screen.dart';
+
+import 'package:bees/models/item_model.dart';
+import 'package:bees/models/request_model.dart';
+
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -16,6 +21,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationController _controller = NotificationController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? get userId => FirebaseAuth.instance.currentUser?.uid;
+  
+  Future<Map<String, dynamic>?> fetchEntity(String itemId, String entityType) async {
+                    try {
+                      final doc = await FirebaseFirestore.instance
+                          .collection(entityType == "Item" ? "items" : "requests")
+                          .doc(itemId)
+                          .get();
+
+                      return doc.data(); // `Map<String, dynamic>` döner
+                    } catch (e) {
+                      print("❌ Entity çekilemedi: $e");
+                      return null;
+                    }
+                  }
 
   @override
   Widget build(BuildContext context) {
@@ -191,10 +210,40 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           )
                         : null,
                     onTap: () async {
+                      
                       // Mark as read first
                       if (!isRead) {
                         await _controller.markAsRead(doc.id);
                       }
+                      
+
+                        if (type == 'message') {
+final rawEntity = await fetchEntity(data['itemId'], data['entityType']);
+
+dynamic entity;
+if (data['entityType'] == "Item") {
+  entity = Item.fromMap(rawEntity!); // Item modelini import et
+} else {
+  entity = Request.fromMap(rawEntity!); // Request modelini import et
+}                        
+                        if (entity != null) {
+                          Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MessageScreen(
+                              chatRoomId: null,
+                              entity: entity,
+                              entityType: data['entityType'],
+                              senderId: data['senderId'],
+                              receiverId: data['receiverId'],
+                            ),
+                          ),
+                        );
+
+                        }
+                      }
+
+
                       
                       // Handle different notification types
                       if (type == 'rate_seller' && !rated && sellerId != null && itemId != null) {

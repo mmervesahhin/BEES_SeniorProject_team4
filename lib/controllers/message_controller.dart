@@ -16,7 +16,7 @@ class MessageController {
     required dynamic entity,
     //String? imageUrl,
   }) async {
-    Map<String, dynamic> entityMap = entity.toMap();
+Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entity.toMap();
     final String currentUserID = _firebaseAuth.currentUser!.uid;
     final Timestamp timestamp = Timestamp.now();
 
@@ -27,6 +27,20 @@ class MessageController {
     String chatRoomId = "${itemReqId}_${ids.join("_")}";
     
     DocumentReference chatRoomRef = _firestore.collection('chatRooms').doc(chatRoomId);
+
+    if (receiverId != currentUserID) {  
+      await FirebaseFirestore.instance.collection('notifications').add({
+        //'recipientId': receiverId,
+        'receiverId': receiverId,
+        'senderId': currentUserID,
+        'itemId': itemReqId,         // ✅ bu çok önemli!
+        'entityType': entityType,    // ✅ "Item" veya "Request"
+        'message': 'You have received a new message',
+        'timestamp': FieldValue.serverTimestamp(),
+        'isRead': false,
+        'type': 'message',
+      });
+    }
 
     try {
     DocumentSnapshot chatRoomSnapshot = await chatRoomRef.get();
@@ -56,14 +70,7 @@ class MessageController {
     }
    
     
-    if (receiverId != currentUserID) {
-      await FirebaseFirestore.instance.collection('notifications').add({
-        'recipientId': receiverId,
-        'message': 'You have recieved a new message',
-        'timestamp': FieldValue.serverTimestamp(),
-        'isRead': false,
-      });
-    }
+
 
     DocumentReference newMessageRef = await chatRoomRef.collection('messages').add(newMessage.toMap());
     String newMessageId = newMessageRef.id;
