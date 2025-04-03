@@ -2,6 +2,8 @@ import 'package:bees/controllers/notification_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -15,75 +17,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? get userId => FirebaseAuth.instance.currentUser?.uid;
 
-  Future<void> _showRatingDialog(
-    BuildContext context, {
-    required String sellerId,
-    required String itemTitle,
-    required String notificationId,
-  }) async {
-    double rating = 0;
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Rate Your Experience"),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("How would you rate your transaction for '$itemTitle'?")
-,                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    return IconButton(
-                      icon: Icon(
-                        index < rating ? Icons.star : Icons.star_border,
-                        color: Colors.amber,
-                        size: 30,
-                      ),
-                      onPressed: () {
-                        setState(() => rating = index + 1.0);
-                      },
-                    );
-                  }),
-                ),
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: rating > 0
-                ? () async {
-                    Navigator.pop(context);
-                    await _controller.submitRating(
-                      sellerId: sellerId,
-                      rating: rating,
-                      notificationId: notificationId,
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Thank you for your rating!")),
-                    );
-                  }
-                : null,
-            child: const Text("Submit"),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Notifications"),
-        backgroundColor: const Color.fromARGB(255, 59, 137, 62),
+        title: Text(
+          "Notifications",
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: const Color(0xFF3B893E),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
@@ -93,15 +38,49 @@ class _NotificationScreenState extends State<NotificationScreen> {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B893E)),
+            ));
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: GoogleFonts.poppins(),
+              ),
+            );
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("No notifications found"));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.notifications_off_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "No notifications yet",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "We'll notify you when something happens",
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
 
           return ListView.builder(
@@ -112,7 +91,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
               final String type = (data['type'] ?? 'unknown') as String;
               final String message = (data['message'] ?? 'No message') as String;
-              final String? senderId = data['senderId'] as String?;
+              final String? sellerId = data['sellerId'] as String?;
+              final String? itemId = data['itemId'] as String?;
               final String? itemTitle = data['itemTitle'] as String?;
               final bool isRead = (data['isRead'] ?? false) as bool;
               final bool rated = (data['rated'] ?? false) as bool;
@@ -131,36 +111,97 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 child: Card(
                   margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   color: isRead ? Colors.grey[100] : Colors.white,
+                  elevation: isRead ? 0 : 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: isRead ? Colors.grey[300]! : Colors.grey[200]!,
+                      width: 1,
+                    ),
+                  ),
                   child: ListTile(
-                    leading: Icon(
-                      _getNotificationIcon(type),
-                      color: isRead ? Colors.grey : _getNotificationColor(type),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: _getNotificationColor(type).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        _getNotificationIcon(type),
+                        color: _getNotificationColor(type),
+                        size: 20,
+                      ),
                     ),
                     title: Text(
                       message,
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
                         fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (itemTitle != null)
-                          Text("Item: $itemTitle", style: const TextStyle(fontSize: 12)),
-                        Text(
-                          timestamp != null ? _formatTimestamp(timestamp) : "No timestamp",
-                          style: const TextStyle(fontSize: 12),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              "Item: $itemTitle",
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            timestamp != null ? _formatTimestamp(timestamp) : "No timestamp",
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
+                          ),
                         ),
                       ],
                     ),
+                    trailing: type == 'rate_seller' && !rated
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B893E).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Rate Now',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: const Color(0xFF3B893E),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : null,
                     onTap: () async {
+                      // Mark as read first
                       if (!isRead) {
                         await _controller.markAsRead(doc.id);
                       }
-                      if (type == 'item_beesed' && !rated) {
-                        _showRatingDialog(
+                      
+                      // Handle different notification types
+                      if (type == 'rate_seller' && !rated && sellerId != null && itemId != null) {
+                        _controller.showRatingDialog(
                           context,
-                          sellerId: senderId ?? "Unknown Seller",
+                          sellerId: sellerId,
+                          itemId: itemId,
                           itemTitle: itemTitle ?? "the item",
                           notificationId: doc.id,
                         );
@@ -180,8 +221,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
     switch (type) {
       case 'message':
         return Icons.message;
-      case 'item_beesed':
-        return Icons.thumb_up;
+      case 'rate_seller':
+        return Icons.star;
       default:
         return Icons.notifications;
     }
@@ -191,15 +232,29 @@ class _NotificationScreenState extends State<NotificationScreen> {
     switch (type) {
       case 'message':
         return Colors.blue;
-      case 'item_beesed':
-        return Colors.green;
+      case 'rate_seller':
+        return Colors.amber;
       default:
-        return Colors.orange;
+        return const Color(0xFF3B893E);
     }
   }
 
   String _formatTimestamp(Timestamp timestamp) {
     final date = timestamp.toDate();
-    return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays > 7) {
+      return DateFormat('MMM d, yyyy').format(date);
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+    } else {
+      return 'Just now';
+    }
   }
 }
+

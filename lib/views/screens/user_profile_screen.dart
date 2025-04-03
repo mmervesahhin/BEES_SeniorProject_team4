@@ -2136,11 +2136,11 @@ void _navigateToBlockedUsers() {
                         SizedBox(height: 24),
                         _buildInfoCard("Email", userData['emailAddress'] ?? 'Unknown', Icons.email_outlined),
                         SizedBox(height: 12, width: 10000),
-_buildInfoCard(
-  "Rating", 
-  (userData['userRating'] ?? 0).toStringAsFixed(2), 
-  Icons.star_outline
-),
+                        _buildInfoCard(
+                          "Rating", 
+                          (userData['userRating'] ?? 0).toStringAsFixed(2), 
+                          Icons.star_outline
+                        ),
                         SizedBox(height: 24),
 
                         Center(
