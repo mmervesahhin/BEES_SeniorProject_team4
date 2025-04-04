@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bees/models/user_profile_model.dart';
+import 'package:bees/views/screens/item_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -124,6 +125,41 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
     return false;
   }
 }
+
+  // Example method (replace with actual logic)
+  Future<String> getUserName() async {
+    // Simulate fetching user name
+    await Future.delayed(const Duration(seconds: 1));
+    return "John Doe";
+  }
+
+  // Add this method to the UserProfileController class
+
+  // Delete user account
+  Future<String?> deleteUserAccount(String password) async {
+    User? user = model.currentUser;
+    if (user == null) return "User not found";
+
+    try {
+      // Re-authenticate the user
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Delete the user account
+      return await model.deleteUserAccount();
+    } catch (e) {
+      if (e.toString().contains('wrong-password')) {
+        return "The password is incorrect";
+      } else if (e.toString().contains('requires-recent-login')) {
+        return "Please log out and log back in before trying again";
+      }
+      return "Error deleting account: ${e.toString()}";
+    }
+  }
+
 
 
   
@@ -255,6 +291,32 @@ Future<void> resendEmailVerification(String email) async {
   Future<bool> signOut() async {
     return await model.signOut();
   }
+
+  // Add these methods to the UserProfileController class
+
+// Get inactive items stream
+Stream<QuerySnapshot> getInactiveItemsStream(String userId) {
+  return model.getInactiveItems(userId);
+}
+
+// Get beesed items stream
+Stream<QuerySnapshot> getBeesedItemsStream(String userId) {
+  return model.getBeesedItems(userId);
+}
+
+// Restore an inactive item
+Future<bool> restoreInactiveItem(String itemId) async {
+  return await model.restoreInactiveItem(itemId);
+}
+
+// Navigate to item history screen
+void navigateToItemHistory(BuildContext context) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => ItemHistoryScreen(),
+    ),
+  );
+}
   
   // Navigate to different screens
   void navigateTo(BuildContext context, int index) {
@@ -300,28 +362,40 @@ Future<void> resendEmailVerification(String email) async {
     return await model.markItemAsInactive(item);
   }
   
-  // Mark request as solved
-  Future<bool> markRequestAsSolved(Request request) async {
-    return await model.markRequestAsSolved(request);
-  }
-  
-  // Update request content
-  Future<bool> updateRequestContent(String requestId, String newContent) async {
-    return await model.updateRequestContent(requestId, newContent);
-  }
-  
-  // Delete request
-  Future<bool> deleteRequest(String requestId) async {
-    return await model.deleteRequest(requestId);
-  }
-  
-  // Get active items stream
-  Stream<QuerySnapshot> getActiveItemsStream(String userId) {
-    return model.getActiveItems(userId);
-  }
-  
-  // Get requests stream
-  Stream<QuerySnapshot> getRequestsStream(String userId) {
-    return model.getUserRequests(userId);
-  }
+ // Mark request as solved
+Future<bool> markRequestAsSolved(Request request) async {
+  return await model.markRequestAsSolved(request);
+}
+
+// Delete request (mark as removed)
+Future<bool> deleteRequest(String requestId) async {
+  return await model.deleteRequest(requestId);
+}
+
+// Get active requests stream
+Stream<QuerySnapshot> getRequestsStream(String userId) {
+  return model.getUserRequests(userId);
+}
+
+// Get solved requests stream
+Stream<QuerySnapshot> getSolvedRequestsStream(String userId) {
+  return model.getUserSolvedRequests(userId);
+}
+
+
+// Update request content
+Future<bool> updateRequestContent(String requestId, String newContent) async {
+  return await model.updateRequestContent(requestId, newContent);
+}
+
+// Get active items stream
+Stream<QuerySnapshot> getActiveItemsStream(String userId) {
+  // Direct Firestore access approach
+  return FirebaseFirestore.instance
+      .collection('items')
+      .where('itemOwnerId', isEqualTo: userId)
+      .where('itemStatus', isEqualTo: 'active')
+      .snapshots();
+
+}
 }

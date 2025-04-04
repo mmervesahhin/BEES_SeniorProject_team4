@@ -1,6 +1,8 @@
 import 'package:bees/controllers/beesed_transaction_controller.dart';
 import 'package:bees/controllers/user_profile_controller.dart';
+import 'package:bees/views/screens/item_history_screen.dart';
 import 'package:bees/views/screens/blocked_users_screen.dart';
+import 'package:bees/views/screens/request_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -56,77 +58,343 @@ void initState() {
     );
   }
 
- // Update the _showSettingsMenu method in the _UserProfileScreenState class
+// Update the _showSettingsMenu method in your UserProfileScreen class
 
 void _showSettingsMenu() {
   showModalBottomSheet(
     context: context,
+    isScrollControlled: true,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     backgroundColor: _controller.model.cardColor,
     elevation: 8,
     builder: (context) {
-      return Container(
-        padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Account Settings",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: _controller.model.primaryColor,
-                letterSpacing: 0.5,
+      return SingleChildScrollView(
+        child: Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            top: 24,
+            left: 16,
+            right: 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Account Settings",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: _controller.model.primaryColor,
+                  letterSpacing: 0.5,
+                ),
               ),
-            ),
-            SizedBox(height: 24),
-            _buildSettingsListTile(
-              icon: Icons.lock,
-              title: "Change Password",
-              onTap: () {
-                Navigator.pop(context);
-                _showChangePasswordDialog();
-              },
-            ),
-            Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
-            _buildSettingsListTile(
-              icon: Icons.email,
-              title: "Change Email Address",
-              onTap: () {
-                Navigator.pop(context);
-                _showChangeEmailDialog();
-              },
-            ),
-            Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
-            _buildSettingsListTile(
-              icon: Icons.block,
-              title: "Blocked Users",
-              onTap: () {
-                Navigator.pop(context);
-                _navigateToBlockedUsers();
-              },
-            ),
-            Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
-            SizedBox(height: 8),
-            _buildSettingsListTile(
-              icon: Icons.exit_to_app,
-              title: "Log Out",
-              isDestructive: true,
-              onTap: () {
-                Navigator.pop(context);
-                _logout();
-              },
-            ),
-          ],
+              SizedBox(height: 24),
+              _buildSettingsListTile(
+                icon: Icons.lock,
+                title: "Change Password",
+                onTap: () {
+                  Navigator.pop(context);
+                  _showChangePasswordDialog();
+                },
+              ),
+              Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+              _buildSettingsListTile(
+                icon: Icons.email,
+                title: "Change Email Address",
+                onTap: () {
+                  Navigator.pop(context);
+                  _showChangeEmailDialog();
+                },
+              ),
+              Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+              _buildSettingsListTile(
+                icon: Icons.history,
+                title: "Item History",
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToItemHistory();
+                },
+              ),
+              Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+              _buildSettingsListTile(
+                icon: Icons.assignment_turned_in,
+                title: "Request History",
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToRequestHistory();
+                },
+              ),
+              Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+              _buildSettingsListTile(
+                icon: Icons.block,
+                title: "Blocked Users",
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToBlockedUsers();
+                },
+              ),
+              Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+              _buildSettingsListTile(
+                icon: Icons.delete_forever,
+                title: "Delete Account",
+                isDestructive: true,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showDeleteAccountDialog();
+                },
+              ),
+              Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+              SizedBox(height: 8),
+              _buildSettingsListTile(
+                icon: Icons.exit_to_app,
+                title: "Log Out",
+                isDestructive: true,
+                onTap: () {
+                  Navigator.pop(context);
+                  _logout();
+                },
+              ),
+              SizedBox(height: 16),
+            ],
+          ),
         ),
       );
     },
   );
 }
 
-// Add this method to the _UserProfileScreenState class if it's not already defined
+void _navigateToRequestHistory() {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => RequestHistoryScreen(),
+    ),
+  );
+}
+
+void _navigateToItemHistory() {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => ItemHistoryScreen(),
+    ),
+  );
+}
+// Add this method to your UserProfileScreen class
+
+Future<void> _showDeleteAccountDialog() async {
+  final passwordController = TextEditingController();
+  bool isLoading = false;
+  String? errorMessage;
+
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) {
+        return AlertDialog(
+          title: Text(
+            'Delete Account',
+            style: TextStyle(
+              color: _controller.model.errorColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _controller.model.errorColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _controller.model.errorColor.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: _controller.model.errorColor, size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Warning: This action cannot be undone!',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: _controller.model.errorColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Deleting your account will permanently remove all your data, including your profile, items, and requests. You won\'t be able to access your account and must register again to use the application.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Please enter your password to confirm:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: _controller.model.textColor,
+                  ),
+                ),
+                SizedBox(height: 8),
+                TextFormField(
+                  controller: passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: _controller.model.errorColor, width: 2),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: _controller.model.errorColor, width: 1),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
+                  ),
+                  obscureText: true,
+                  style: TextStyle(color: _controller.model.textColor),
+                ),
+                if (errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      errorMessage!,
+                      style: TextStyle(
+                        color: _controller.model.errorColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (passwordController.text.isEmpty) {
+                        setState(() {
+                          errorMessage = 'Please enter your password';
+                        });
+                        return;
+                      }
+
+                      setState(() {
+                        isLoading = true;
+                        errorMessage = null;
+                      });
+
+                      // Show loading indicator
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (BuildContext context) {
+                          return Dialog(
+                            backgroundColor: Colors.transparent,
+                            elevation: 0,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(_controller.model.primaryColor),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+
+                      String? error = await _controller.deleteUserAccount(passwordController.text);
+
+                      // Close loading dialog
+                      if (context.mounted) {
+                        Navigator.of(context, rootNavigator: true).pop();
+                      }
+
+                      if (error == null) {
+                        // Success - navigate to login screen
+                        if (context.mounted) {
+                          Navigator.of(context).pop(); // Close the delete account dialog
+                          _controller.navigateToLogin(context);
+
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Your account has been deleted successfully.',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.green,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              margin: EdgeInsets.all(16),
+                            ),
+                          );
+                        }
+                      } else {
+                        // Error
+                        setState(() {
+                          isLoading = false;
+                          errorMessage = error;
+                        });
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _controller.model.errorColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text('Delete Account'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+
+
+
 
 Widget _buildSettingsListTile({
   required IconData icon,
@@ -176,6 +444,8 @@ void _navigateToBlockedUsers() {
     ),
   );
 }
+
+
 
   Future<void> _showImagePickerOptions() async {
     showModalBottomSheet(
@@ -1025,60 +1295,61 @@ void _navigateToBlockedUsers() {
   }
 
   Future<void> _markRequestAsSolved(Request request) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Mark as Solved',
-          style: TextStyle(
-            color: _controller.model.primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(
+        'Mark as Solved',
+        style: TextStyle(
+          color: _controller.model.primaryColor,
+          fontWeight: FontWeight.bold,
         ),
-        content: Text(
-          'Are you sure you want to mark this request as solved? This will remove the request from your list.',
-          style: TextStyle(color: _controller.model.textColor),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _controller.model.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('Confirm'),
-          ),
-        ],
       ),
-    );
+      content: Text(
+        'Are you sure you want to mark this request as solved? It will be moved to your solved requests history.',
+        style: TextStyle(color: _controller.model.textColor),
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _controller.model.primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text('Confirm'),
+        ),
+      ],
+    ),
+  );
 
-    if (confirmed == true) {
-      try {
-        bool success = await _controller.markRequestAsSolved(request);
-        if (success) {
-          _showSnackBar('Request marked as solved and removed successfully');
-        } else {
-          _showSnackBar('Error processing request', isError: true);
-        }
-      } catch (e) {
+  if (confirmed == true) {
+    try {
+      bool success = await _controller.markRequestAsSolved(request);
+      if (success) {
+        _showSnackBar('Request marked as solved successfully');
+      } else {
         _showSnackBar('Error processing request', isError: true);
       }
+    } catch (e) {
+      _showSnackBar('Error processing request', isError: true);
     }
   }
+}
+
 
   Future<void> _showDeleteRequestConfirmation(BuildContext context, Request request) async {
     final confirmed = await showDialog<bool>(
@@ -2246,7 +2517,7 @@ void _navigateToBlockedUsers() {
                                   ),
                                   SizedBox(width: 12),
                                   Text(
-                                    "My Items",
+                                    "Active Items",
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -2333,7 +2604,7 @@ void _navigateToBlockedUsers() {
                                   ),
                                   SizedBox(width: 12),
                                   Text(
-                                    "My Requests",
+                                    "Active Requests",
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
