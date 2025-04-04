@@ -242,12 +242,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                         }
                       }
-
-                      if (type == 'item_removal') {
+                      if (type == 'item_beesed') {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text("Item Removed"),
+                            title: const Text("Item Beesed"),
                             content: Text(message),
                             actions: [
                               TextButton(
@@ -258,23 +257,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           ),
                         );
                       }
-
-                      if (type == 'request_removal') {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text("Request Removed"),
-                              content: Text(message),
-                              actions: [
-                                TextButton(
-                                  child: const Text("OK"),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
                       // Handle different notification types
                       if (type == 'rate_seller' && !rated && sellerId != null && itemId != null) {
                         _controller.showRatingDialog(
