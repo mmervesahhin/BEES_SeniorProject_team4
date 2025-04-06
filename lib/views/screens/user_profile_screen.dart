@@ -2714,6 +2714,7 @@ Widget _buildProfileStats(User user) {
             child: Column(
               children: [
                 AppBar(
+                  automaticallyImplyLeading: false,
                   backgroundColor: backgroundColor,
                   elevation: 0,
                   title: Text(
