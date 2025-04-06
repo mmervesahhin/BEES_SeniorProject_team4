@@ -227,7 +227,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with TickerProvid
                             },
                           ),
                           
-                          _buildSettingsCategory("Danger Zone", isDanger: true),
+                          _buildSettingsCategory("Account Actions", isDanger: true),
                           _buildSettingsListTile(
                             icon: Icons.delete_outline,
                             title: "Delete Account",
