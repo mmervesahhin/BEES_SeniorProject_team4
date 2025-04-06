@@ -300,9 +300,13 @@ Stream<QuerySnapshot> getInactiveItemsStream(String userId) {
 }
 
 // Get beesed items stream
-Stream<QuerySnapshot> getBeesedItemsStream(String userId) {
-  return model.getBeesedItems(userId);
-}
+ Stream<QuerySnapshot> getBeesedItemsStream(String userId) {
+    return FirebaseFirestore.instance
+        .collection('beesed_items')
+        .where('itemOwnerId', isEqualTo: userId)
+        .where('itemStatus', isEqualTo: 'beesed')
+        .snapshots();
+  }
 
 // Restore an inactive item
 Future<bool> restoreInactiveItem(String itemId) async {

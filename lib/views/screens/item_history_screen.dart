@@ -81,6 +81,249 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
     super.dispose();
   }
   
+  // Delete a single item
+  Future<void> _deleteItem(String itemId, String collectionName) async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      
+      // Update the item status to 'deleted'
+      await _firestore.collection(collectionName).doc(itemId).update({
+        'itemStatus': 'deleted',
+        'lastModifiedDate': FieldValue.serverTimestamp(),
+      });
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      _showSnackBar('Item deleted successfully', isSuccess: true);
+    } catch (e) {
+      print('Error deleting item: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar('Failed to delete item. Try again later.', isError: true);
+    }
+  }
+  
+  // Restore a deleted item
+  Future<void> _restoreItem(String itemId, String collectionName, String previousStatus) async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      
+      await _firestore.collection(collectionName).doc(itemId).update({
+        'itemStatus': previousStatus,
+        'lastModifiedDate': FieldValue.serverTimestamp(),
+      });
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      _showSnackBar('Item restored successfully', isSuccess: true);
+    } catch (e) {
+      print('Error restoring item: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar('Failed to restore item. Try again later.', isError: true);
+    }
+  }
+  
+  // Delete all items of a specific type
+  Future<void> _deleteAllItems() async {
+    final User? user = _auth.currentUser;
+    if (user == null) return;
+    
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      
+      final String collectionName = _selectedSegment == 0 ? 'items' : 'beesed_items';
+      final String statusField = _selectedSegment == 0 ? 'itemStatus' : 'beesedStatus';
+      final String statusValue = _selectedSegment == 0 ? 'inactive' : 'beesed';
+      
+      // Get all items with the current status
+      final QuerySnapshot querySnapshot = await _firestore
+          .collection(collectionName)
+          .where('itemOwnerId', isEqualTo: user.uid)
+          .where(statusField, isEqualTo: statusValue)
+          .get();
+      
+      if (querySnapshot.docs.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showSnackBar('No items to delete', isSuccess: true);
+        return;
+      }
+      
+      // Update all items to 'deleted' status
+      final batch = _firestore.batch();
+      
+      for (var doc in querySnapshot.docs) {
+        batch.update(doc.reference, {
+          'itemStatus': 'deleted',  // Ensure this is set to 'deleted'
+          'lastModifiedDate': FieldValue.serverTimestamp(),
+        });
+      }
+      
+      await batch.commit();
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      _showSnackBar('All ${_selectedSegment == 0 ? 'inactive' : 'beesed'} items have been deleted', isSuccess: true);
+    } catch (e) {
+      print('Error deleting all items: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar('Failed to delete items. Try again later.', isError: true);
+    }
+  }
+  
+  // Show delete confirmation dialog for a single item
+  void _showDeleteItemConfirmation(String itemId, String title, String collectionName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Delete Item',
+            style: GoogleFonts.nunito(
+              fontWeight: FontWeight.bold,
+              color: textDark,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to delete this item?',
+                style: GoogleFonts.nunito(
+                  color: textLight,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 12),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Text(
+                  title,
+                  style: GoogleFonts.nunito(
+                    color: textDark,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.nunito(
+                  color: textLight,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteItem(itemId, collectionName);
+              },
+              child: Text(
+                'Delete',
+                style: GoogleFonts.nunito(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 5,
+        );
+      },
+    );
+  }
+  
+  // Show delete confirmation dialog for all items
+  void _showDeleteAllConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Delete All Items',
+            style: GoogleFonts.nunito(
+              fontWeight: FontWeight.bold,
+              color: textDark,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete all ${_selectedSegment == 0 ? 'inactive' : 'beesed'} items? This action cannot be undone.',
+            style: GoogleFonts.nunito(
+              color: textLight,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.nunito(
+                  color: textLight,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteAllItems();
+              },
+              child: Text(
+                'Delete',
+                style: GoogleFonts.nunito(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 5,
+        );
+      },
+    );
+  }
+  
   @override
   Widget build(BuildContext context) {
     final User? user = _auth.currentUser;
@@ -122,7 +365,14 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: IconThemeData(color: textDark),
-        
+        actions: [
+          // Add trash icon for deleting all items
+          IconButton(
+            icon: Icon(Icons.delete_outline, color: textDark),
+            onPressed: _showDeleteAllConfirmation,
+            tooltip: 'Delete all',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -333,7 +583,11 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
           itemCount: items.length,
           itemBuilder: (context, index) {
             final itemData = items[index]!;
-            return _buildItemCard(itemData['item'] as Item, itemData['timestamp'] as Timestamp?);
+            return _buildItemCard(
+              itemData['item'] as Item, 
+              itemData['timestamp'] as Timestamp?,
+              collectionName: 'items'
+            );
           },
         );
       },
@@ -345,6 +599,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       future: _firestore
           .collection('beesed_items')
           .where('itemOwnerId', isEqualTo: userId)
+          .where('itemStatus', isNotEqualTo: 'deleted')  // Add this line to exclude deleted items
           .get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -437,7 +692,11 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
           itemCount: items.length,
           itemBuilder: (context, index) {
             final itemData = items[index]!;
-            return _buildItemCard(itemData['item'] as Item, itemData['timestamp'] as Timestamp?);
+            return _buildItemCard(
+              itemData['item'] as Item, 
+              itemData['timestamp'] as Timestamp?,
+              collectionName: 'beesed_items'
+            );
           },
         );
       },
@@ -527,7 +786,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
     }
   }
   
-  Widget _buildItemCard(Item item, Timestamp? timestamp) {
+  Widget _buildItemCard(Item item, Timestamp? timestamp, {required String collectionName}) {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -617,7 +876,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Status and Date
+                      // Status, Date, and Delete button
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -654,13 +913,39 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                               ],
                             ),
                           ),
-                          Text(
-                            _formatDate(timestamp),
-                            style: GoogleFonts.nunito(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: textLight,
-                            ),
+                          
+                          // Date and delete button
+                          Row(
+                            children: [
+                              Text(
+                                _formatDate(timestamp),
+                                style: GoogleFonts.nunito(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: textLight,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              // Delete button for individual item
+                              InkWell(
+                                onTap: () {
+                                  if (item.itemId != null) {
+                                    _showDeleteItemConfirmation(item.itemId!, item.title, collectionName);
+                                  } else {
+                                    _showSnackBar('Cannot delete item: Missing item ID', isError: true);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(4),
+                                child: Padding(
+                                  padding: EdgeInsets.all(4),
+                                  child: Icon(
+                                    Icons.delete_outline,
+                                    size: 13,
+                                    color: textLight,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -801,7 +1086,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
     );
   }
   
-  void _showSnackBar(String message, {bool isError = false}) {
+  void _showSnackBar(String message, {bool isError = false, bool isSuccess = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -811,14 +1096,20 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: isError ? Colors.red : Colors.grey[200],
+        backgroundColor: isError ? Colors.red : (isSuccess ? Colors.grey[200] : Colors.grey[200]),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
         margin: EdgeInsets.all(16),
         elevation: 2,
+        action: isSuccess ? SnackBarAction(
+          label: 'DISMISS',
+          textColor: primaryAccent,
+          onPressed: () {},
+        ) : null,
       ),
     );
   }
 }
+
