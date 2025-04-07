@@ -194,25 +194,131 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
     }
   }
   
-  // Change password
-  Future<String?> changePassword() async {
-    if (!passwordFormKey.currentState!.validate()) return "Validation failed";
-    
-    if (newPasswordController.text != confirmPasswordController.text) {
-      return "New passwords do not match";
-    }
-    
-    // Validate password strength
-    RegExp passwordRegex = RegExp("^(?=.*[A-Z])(?=.*\\d)(?=.*[!\"#\$%&'()*+,-./:;<=>?@[\\]^_`{|}~]).{8,}\$");
-    if (!passwordRegex.hasMatch(newPasswordController.text)) {
-      return "Password must be at least 8 characters and include an uppercase letter, a number, and a special character";
-    }
-    
-    return await model.changePassword(
-      currentPasswordController.text, 
-      newPasswordController.text
-    );
+  // Change password with email verification
+Future<String?> changePassword() async {
+  if (!passwordFormKey.currentState!.validate()) return "Validation failed";
+  
+  if (newPasswordController.text != confirmPasswordController.text) {
+    return "New passwords do not match";
   }
+  
+  // Validate password strength
+  RegExp passwordRegex = RegExp("^(?=.*[A-Z])(?=.*\\d)(?=.*[!\"#\$%&'()*+,-./:;<=>?@[\\]^_`{|}~]).{8,}\$");
+  if (!passwordRegex.hasMatch(newPasswordController.text)) {
+    return "Password must be at least 8 characters and include an uppercase letter, a number, and a special character";
+  }
+  
+  try {
+    User? user = model.currentUser;
+    if (user == null) return "User not found";
+    
+    // First, re-authenticate the user with their current password
+    AuthCredential credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPasswordController.text,
+    );
+    
+    try {
+      await user.reauthenticateWithCredential(credential);
+    } catch (e) {
+      if (e.toString().contains('wrong-password')) {
+        return "Current password is incorrect";
+      }
+      return "Authentication failed: ${e.toString()}";
+    }
+    
+    // Store the new password in Firestore as pending
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'pendingPasswordChange': newPasswordController.text,
+      'passwordChangeRequestTime': FieldValue.serverTimestamp(),
+    });
+    
+    // Send verification email
+    await user.sendEmailVerification();
+    
+    // Start checking for email verification
+    startPasswordVerificationCheck();
+    
+    return null; // Success
+  } catch (e) {
+    return "Error changing password: ${e.toString()}";
+  }
+}
+
+// Timer for checking password change verification
+Timer? _passwordVerificationTimer;
+
+// Start periodic check for password verification
+void startPasswordVerificationCheck() {
+  // Cancel any existing timer
+  _passwordVerificationTimer?.cancel();
+  
+  // Check immediately
+  _checkPasswordVerification();
+  
+  // Then check every 5 seconds
+  _passwordVerificationTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+    _checkPasswordVerification();
+  });
+}
+
+// Stop periodic check for password verification
+void stopPasswordVerificationCheck() {
+  _passwordVerificationTimer?.cancel();
+  _passwordVerificationTimer = null;
+}
+
+// Callback for when password is verified
+Function? onPasswordVerified;
+
+// Check for password verification
+Future<void> _checkPasswordVerification() async {
+  User? user = model.currentUser;
+  if (user == null) return;
+  
+  // Reload user to get latest verification status
+  await user.reload();
+  user = FirebaseAuth.instance.currentUser;
+  
+  if (user != null && user.emailVerified) {
+    // Get the pending password
+    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    Map<String, dynamic> userData = doc.data() as Map<String, dynamic>;
+    
+    if (userData.containsKey('pendingPasswordChange')) {
+      String newPassword = userData['pendingPasswordChange'];
+      
+      // Update the password
+      await user.updatePassword(newPassword);
+      
+      // Remove the pending password
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'pendingPasswordChange': FieldValue.delete(),
+        'passwordChangeRequestTime': FieldValue.delete(),
+      });
+      
+      // Stop checking
+      stopPasswordVerificationCheck();
+      
+      // Call the callback if it exists
+      if (onPasswordVerified != null) {
+        onPasswordVerified!();
+      }
+    }
+  }
+}
+
+// Resend password verification email
+Future<void> resendPasswordVerificationEmail() async {
+  User? user = model.currentUser;
+  if (user == null) return;
+  
+  try {
+    await user.sendEmailVerification();
+  } catch (e) {
+    print('Error resending verification: $e');
+  }
+}
 
   // Timer for checking email verification
 Timer? _emailVerificationTimer;
@@ -402,4 +508,5 @@ Stream<QuerySnapshot> getActiveItemsStream(String userId) {
       .snapshots();
 
 }
+
 }

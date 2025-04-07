@@ -6,16 +6,12 @@ import 'package:bees/views/screens/request_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:bees/models/item_model.dart';
 import 'package:bees/models/request_model.dart';
-import 'package:bees/views/screens/edit_item_screen.dart';
-import 'package:bees/views/screens/auth/login_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
-import 'dart:math' as math;
+
 
 class UserProfileScreen extends StatefulWidget {
   @override
@@ -1788,7 +1784,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with TickerProvid
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'A verification email will be sent to your email address. You must verify your email before the password change will take effect.',
+                                'This password will be used for future logins. Make sure to remember it or store it securely.',
                                 style: GoogleFonts.nunito(
                                   fontSize: 13,
                                   color: Colors.blue.shade700,
