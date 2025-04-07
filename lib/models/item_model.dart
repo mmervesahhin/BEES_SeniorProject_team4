@@ -74,6 +74,26 @@ class Item {
     );
   }
 
+  factory Item.fromMap(Map<String, dynamic> map) {
+  return Item(
+    itemId: map['itemId'],
+    itemOwnerId: map['itemOwnerId'],
+    title: map['title'],
+    description: map['description'],
+    category: map['category'],
+    condition: map['condition'],
+    itemType: map['itemType'],
+    departments: List<String>.from(map['departments'] ?? []),
+    price: (map['price'] as num).toDouble(),
+    paymentPlan: map['paymentPlan'],
+    photoUrl: map['photoUrl'] ?? map['photo'], // farklı isimlendirme kontrolü
+    additionalPhotos: List<String>.from(map['additionalPhotos'] ?? []),
+    favoriteCount: map['favoriteCount'] ?? 0,
+    itemStatus: map['itemStatus'] ?? 'active',
+  );
+}
+
+
   String toString() {
     return 'Item{itemId: $itemId, itemOwnerId: $itemOwnerId, title: $title, ...}';
   }

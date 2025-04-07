@@ -8,6 +8,7 @@ import 'package:bees/models/user_model.dart' as app_user;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:bees/controllers/notification_controller.dart'; // Import notification controller
+import 'package:bees/views/screens/user_profile_screen.dart';
 
 class BeesedTransactionHandler {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -198,74 +199,105 @@ class BeesedTransactionHandler {
     }
   }
 
-  // Mark item as BEESED and notify buyer to rate the seller
-Future<bool> completeTransaction(String? itemId, String buyerId) async {
-  if (itemId == null) {
-    print('Error: itemId is null');
-    return false;
-  }
-  
-  try {
-    String sellerId = _auth.currentUser!.uid;
-    
-    // Get item details for notification and beesed_items collection
-    DocumentSnapshot itemDoc = await _firestore.collection('items').doc(itemId).get();
-    if (!itemDoc.exists) {
-      print('Error: Item does not exist');
+  Future<bool> completeTransaction(String? itemId, String buyerId) async {
+    if (itemId == null) {
+      print('❌ itemId is null');
       return false;
     }
-    
-    Map<String, dynamic> itemData = itemDoc.data() as Map<String, dynamic>;
+
+    final itemSnapshot = await _firestore.collection('items').doc(itemId).get();
+    if (!itemSnapshot.exists) {
+      print('❌ Item does not exist in Firestore.');
+      return false;
+    }
+
+    final itemData = itemSnapshot.data()!;
     String itemTitle = itemData['title'] ?? "Item";
-    
-    // Update item status to "beesed"
-    await _firestore.collection('items').doc(itemId).update({
-      'itemStatus': 'beesed',
-      'buyerId': buyerId,
-      'transactionCompletedAt': FieldValue.serverTimestamp(),
-      'pendingSellerRating': true, // Flag to indicate seller needs to be rated
-    });
+    String sellerId = _auth.currentUser!.uid;
 
-    // Add item to beesed_items collection
-    await _firestore.collection('beesed_items').doc(itemId).set({
-      'additionalPhotos': itemData['additionalPhotos'] ?? [],
-      'beesedDate': FieldValue.serverTimestamp(),
-      'category': itemData['category'] ?? '',
-      'condition': itemData['condition'] ?? '',
-      'departments': itemData['departments'] ?? [],
-      'description': itemData['description'] ?? '',
-      'favoriteCount': itemData['favoriteCount'] ?? 0,
-      'itemId': itemId,
-      'itemOwnerId': sellerId,
-      'itemStatus': 'beesed',
-      'itemType': itemData['itemType'] ?? '',
-      'lastModifiedDate': FieldValue.serverTimestamp(),
-      'paymentPlan': itemData['paymentPlan'],
-      'photo': itemData['photo'] ?? itemData['images']?.first ?? '',
-      'price': itemData['price'] ?? 0,
-      'title': itemTitle,
-      // Copy any other relevant fields from the original item
-    });
+    print("✅ Başlıyoruz: itemId=$itemId, title=$itemTitle");
 
-    // Create a notification for the buyer to rate the seller
-    await _firestore.collection('notifications').add({
-      'receiverId': buyerId,
-      'sellerId': sellerId,
-      'itemId': itemId,
-      'itemTitle': itemTitle,
-      'type': 'rate_seller',
-      'message': 'Please rate your experience with the seller for the item "$itemTitle".',
-      'timestamp': FieldValue.serverTimestamp(),
-      'isRead': false,
-    });
-    
-    print('✅ Transaction completed successfully. Item added to beesed_items collection.');
-    return true;
-  } catch (e) {
-    print('❌ Error completing transaction: $e');
-    return false;
+    try {
+      QuerySnapshot usersSnapshot = await _firestore.collection('users').get();
+
+      for (var userDoc in usersSnapshot.docs) {
+        final userId = userDoc.id;
+        final userData = userDoc.data() as Map<String, dynamic>;
+        final favs = userData['favoriteItems'] ?? [];
+        final containsItem = favs.map((e) => e.toString()).contains(itemId.toString());
+
+
+        print("🟡 $userId kullanıcısının favorileri: $favs");
+
+      
+        print("🔍 $userId için eşleşme sonucu: $containsItem");
+
+        if (containsItem) {
+          print("✅ BEESED bildirimi ekleniyor → $userId");
+
+          await _firestore.collection('notifications').add({
+            'receiverId': userId,
+            'itemId': itemId,
+            'itemTitle': itemTitle,
+            'type': 'item_beesed',
+            'message': 'A favorite item "$itemTitle" has been marked as BEESED.',
+            'timestamp': FieldValue.serverTimestamp(),
+            'isRead': false,
+          });
+        }
+      }
+    } catch (e) {
+      print("❌ Bildirim eklerken hata: $e");
+    }
+
+    // Diğer işlemler (güncelleme ve rate_seller bildirimi)
+    try {
+      await _firestore.collection('items').doc(itemId).update({
+        'itemStatus': 'beesed',
+        'buyerId': buyerId,
+        'transactionCompletedAt': FieldValue.serverTimestamp(),
+        'pendingSellerRating': true,
+      });
+
+      await _firestore.collection('beesed_items').doc(itemId).set({
+        'additionalPhotos': itemData['additionalPhotos'] ?? [],
+        'beesedDate': FieldValue.serverTimestamp(),
+        'category': itemData['category'] ?? '',
+        'condition': itemData['condition'] ?? '',
+        'departments': itemData['departments'] ?? [],
+        'description': itemData['description'] ?? '',
+        'favoriteCount': itemData['favoriteCount'] ?? 0,
+        'itemId': itemId,
+        'itemOwnerId': sellerId,
+        'itemStatus': 'beesed',
+        'itemType': itemData['itemType'] ?? '',
+        'lastModifiedDate': FieldValue.serverTimestamp(),
+        'paymentPlan': itemData['paymentPlan'],
+        'photo': itemData['photo'] ?? itemData['images']?.first ?? '',
+        'price': itemData['price'] ?? 0,
+        'title': itemTitle,
+      });
+
+      await _firestore.collection('notifications').add({
+        'receiverId': buyerId,
+        'sellerId': sellerId,
+        'itemId': itemId,
+        'itemTitle': itemTitle,
+        'type': 'rate_seller',
+        'message': 'Please rate your experience with the seller for the item "$itemTitle".',
+        'timestamp': FieldValue.serverTimestamp(),
+        'isRead': false,
+      });
+
+      print("✅ Transaction tamamlandı.");
+      return true;
+    } catch (e) {
+      print("❌ Transaction işleminde hata: $e");
+      return false;
+    }
   }
-}
+
+
 
   // Update user's average rating
   Future<void> _updateUserRating(String userId) async {
@@ -338,6 +370,53 @@ Future<bool> completeTransaction(String? itemId, String buyerId) async {
     
     // Create a unique key for the loading dialog
     GlobalKey<State> loadingKey = GlobalKey<State>();
+      // 1. Mesajlaşmış kullanıcıları al
+      List<Map<String, dynamic>> users = [];
+      try {
+        users = await getUsersWithMessages(item.itemId); // Bu sana ait fonksiyon
+      } catch (e) {
+        print('❌ Hata oluştu: $e');
+      }
+      if (!context.mounted) return;
+
+      // 2. Hiç kullanıcı yoksa bilgi göster
+      if (users.isEmpty) {
+        _showNoUsersDialog(context);
+        return;
+      }
+
+    // 3. Kullanıcıyı seçtir
+  final selectedUser = await showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text('Select Buyer'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: users.length,
+            itemBuilder: (context, index) {
+              final user = users[index];
+              return ListTile(
+                title: Text(user['firstName'] ?? 'Unnamed'),
+                subtitle: Text(user['userId']),
+                onTap: () => Navigator.pop(context, user),
+              );
+            },
+          ),
+        ),
+      );
+    },
+  );
+
+
+    if (selectedUser == null) {
+    print("❌ Kullanıcı seçilmedi");
+    return;
+  }
+
+  print("👤 Seçilen kullanıcı: ${selectedUser['userId']}");
     
     // Show loading indicator
     if (context.mounted) {
@@ -358,8 +437,23 @@ Future<bool> completeTransaction(String? itemId, String buyerId) async {
         },
       );
     }
+
+      bool success = await completeTransaction(item.itemId, selectedUser['userId']);
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Item marked as BEESED!")),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("BEESED işlemi başarısız oldu"), backgroundColor: Colors.red),
+        );
+      }
+      
+    await completeTransaction(item.itemId, FirebaseAuth.instance.currentUser!.uid);
+
+
     
-    List<Map<String, dynamic>> users = [];
     try {
       users = await getUsersWithMessages(item.itemId);
     } catch (e) {
@@ -433,7 +527,10 @@ Future<bool> completeTransaction(String? itemId, String buyerId) async {
           ],
         );
       },
+
+      
     );
+    
   }
 
   // Show confirmation dialog after user selection

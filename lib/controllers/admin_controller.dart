@@ -288,6 +288,28 @@ void _showRequestConfirmationDialog(BuildContext context, String requestID, Stri
         'requestStatus': 'removed',
       });
 
+          DocumentSnapshot requestDoc = await FirebaseFirestore.instance
+        .collection('requests')
+        .doc(requestID)
+        .get();
+
+    if (!requestDoc.exists) return false;
+
+
+    final requestData = requestDoc.data() as Map<String, dynamic>;
+    final String ownerId = requestData['requestOwnerID'];
+
+
+       // Bildirim oluştur
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'receiverId': ownerId,
+      'message': 'Your request has been removed by admin. Reason: $reason',
+      'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,
+      'type': 'request_removal',
+      'requestId': requestID,
+    });
+
       await firestore.collection('removed_requests').add({
         'adminID': admin.uid,
         'requestID': requestID,
@@ -298,6 +320,8 @@ void _showRequestConfirmationDialog(BuildContext context, String requestID, Stri
       return true;
     } catch (e) {
       print("Error removing request: $e");
+      print("❌ Bildirim eklenemedi: $e");
+
       return false;
     }
   }
@@ -315,6 +339,36 @@ void _showRequestConfirmationDialog(BuildContext context, String requestID, Stri
       await firestore.collection('items').doc(itemId).update({
         'itemStatus': 'removed',
       });
+
+      // 🔍 Item bilgilerini al
+      DocumentSnapshot itemDoc = await firestore.collection('items').doc(itemId).get();
+      if (!itemDoc.exists) {
+        print("Item not found.");
+        return false;
+      }
+
+      final itemData = itemDoc.data() as Map<String, dynamic>;
+      final String? ownerId = itemData['itemOwnerId'];
+
+      if (ownerId == null) {
+        print("❌ Item'ın sahibi bulunamadı.");
+        return false;
+      }
+        // 🔄 Item'ı sil
+        await firestore.collection('items').doc(itemId).update({
+          'itemStatus': 'removed',
+        });
+
+        // 📩 Bildirim gönder
+        await firestore.collection('notifications').add({
+          'receiverId': ownerId,
+          'message': 'Your item has been removed by admin. Reason: $reason',
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+          'type': 'item_removal',
+          'itemId': itemId,
+        });
+
 
       await firestore.collection('removed_items').add({
         'adminID': admin.uid,

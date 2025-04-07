@@ -23,7 +23,19 @@ class Request {
       creationDate: DateTime.parse(json['creationDate']), // JSON dönüşümü
     );
   }
-  
+
+  factory Request.fromMap(Map<String, dynamic> map) {
+  return Request(
+    requestID: map['requestID'] ?? '',
+    requestOwnerID: map['requestOwnerID'] ?? '',
+    requestContent: map['requestContent'] ?? '',
+    requestStatus: map['requestStatus'] ?? 'active',
+    creationDate: map['creationDate'] is Timestamp
+        ? (map['creationDate'] as Timestamp).toDate()
+        : DateTime.parse(map['creationDate']),
+  );
+}
+
   factory Request.fromJson2(Map<String, dynamic> json) {
     return Request(
       requestID: json['requestID'],

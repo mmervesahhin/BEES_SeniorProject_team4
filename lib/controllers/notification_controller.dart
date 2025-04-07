@@ -20,6 +20,15 @@ class NotificationController {
             }).toList());
   }
 
+  Future<dynamic> fetchEntity(String itemId, String entityType) async {
+  final doc = await FirebaseFirestore.instance
+      .collection(entityType == "Item" ? "items" : "requests")
+      .doc(itemId)
+      .get();
+  return doc.data();
+}
+
+
   Future<void> markAsRead(String notificationId) async {
     try {
       await _firestore.collection('notifications').doc(notificationId).update({
