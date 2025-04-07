@@ -5,6 +5,9 @@ import 'package:bees/views/screens/admin_requests_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/data_analysis_controller.dart';
+import 'package:bees/views/widgets/bar_chart_widget.dart';
+import 'package:bees/views/widgets/pie_chart_widget.dart';
+import 'package:bees/views/widgets/line_chart_widget.dart';
 
 class AdminDataAnalysisScreen extends StatefulWidget {
   const AdminDataAnalysisScreen({super.key});
@@ -12,18 +15,53 @@ class AdminDataAnalysisScreen extends StatefulWidget {
   @override
   _AdminDataAnalysisScreenState createState() =>
       _AdminDataAnalysisScreenState();
+
+      
 }
 
+
 class _AdminDataAnalysisScreenState extends State<AdminDataAnalysisScreen> {
+  
+  // final GlobalKey barChartKey = GlobalKey(); //data analysis için deneme
+  // final GlobalKey pieChartKey = GlobalKey(); //data analysis için deneme
+  // final GlobalKey lineChartKey = GlobalKey(); //data analysis için deneme
+  final GlobalKey barChartKey = GlobalKey(); //data analysis için deneme
+  final GlobalKey pieChartKey = GlobalKey(); //data analysis için deneme
+  final GlobalKey lineChartKey = GlobalKey(); //data analysis için deneme
   int _selectedIndex = 3;
   bool isLoading = false;
   final DataAnalysisController _controller = DataAnalysisController();
 
-  List<String> itemTypes = ['Books', 'Notes', 'Stationery', 'Electronics', 'Others'];
-  List<String> categories = ['Sale', 'Rent', 'Exchange', 'Donation'];
+  List<String> itemTypes = ['Books', 'Notes', 'Stationary', 'Electronics', 'Other'];
+  List<String> categories = ['Sale', 'Rent', 'Exchange', 'Donate'];
 
   List<String> selectedItemTypes = [];
   List<String> selectedCategories = [];
+
+//   final Map<String, int> dummyBarData = {
+//   'Books': 12,
+//   'Notes': 8,
+//   'Stationery': 15,
+//   'Electronics': 6,
+//   'Others': 4,
+// };
+
+// final Map<String, int> dummyPieData = {
+//   'Sale': 10,
+//   'Donation': 6,
+//   'Exchange': 3,
+//   'Rent': 1,
+// };
+
+// final Map<String, int> dummyLineData = {
+//   '2025-03-01': 2,
+//   '2025-03-02': 4,
+//   '2025-03-03': 3,
+//   '2025-03-04': 7,
+// };
+Map<String, int> pieChartData = {};
+Map<String, int> barChartData = {};
+Map<String, int> lineChartData = {};
 
   @override
   Widget build(BuildContext context) {
@@ -142,22 +180,95 @@ class _AdminDataAnalysisScreenState extends State<AdminDataAnalysisScreen> {
             SizedBox(height: 20),
             // Create Report Button
             ElevatedButton(
-              onPressed: _controller.canCreateReport(selectedItemTypes, selectedCategories) ? _controller.createReport : null,
+              onPressed: _controller.canCreateReport(selectedItemTypes, selectedCategories)
+                    ? () async {
+                        setState(() {
+                          isLoading = true;
+                        });
+
+                        try {
+
+                          print('⏳ Start Date: ${_controller.startDate}');
+                          print('⏳ End Date: ${_controller.endDate}');
+
+
+                          // Firestore'dan filtreli veriyi al
+                          final items = await _controller.fetchFilteredItems(
+                            startDate: _controller.startDate!,
+                            endDate: _controller.endDate!,
+                            selectedItemTypes: selectedItemTypes,
+                            selectedCategories: selectedCategories,
+                          );
+                          
+                          // Konsola bastır
+                          for (var item in items) {
+                            print('📦 Item: $item');
+                          }
+
+                          // Veriyi grupla
+                          barChartData = _controller.groupByField(items, 'itemType');
+                          pieChartData = _controller.groupByField(items, 'category');
+                          lineChartData = _controller.groupByDate(items);
+
+                          setState(() {}); // Grafikler yeniden çizilsin
+
+                          // PNG'leri yakala
+                          final barChartBytes = await _controller.captureChart(barChartKey);
+                          final pieBytes = await _controller.captureChart(pieChartKey);
+                          final lineBytes = await _controller.captureChart(lineChartKey);
+
+                          // PDF oluştur
+                         await _controller.createReport(
+                            barChartBytes: barChartBytes,
+                            pieChartBytes: pieBytes,
+                            lineChartBytes: lineBytes,
+                            barChartData: barChartData,
+                            pieChartData: pieChartData,
+                            lineChartData: lineChartData,
+                            startDate: _controller.startDate!,
+                            endDate: _controller.endDate!,
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('PDF report created successfully!')),
+                          );
+                        } catch (e) {
+                          print("❌ Chart capture or PDF error: $e");
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error while creating report.')),
+                          );
+                        } finally {
+                          setState(() {
+                            isLoading = false;
+                          });
+                        }
+                      }
+                    : null,
+
               child: isLoading
-                  ? CircularProgressIndicator(
-                      color: const Color.fromARGB(255, 255, 255, 255),
-                    )
-                  : Text('Create Report',  style: TextStyle(color: Colors.white)),
+                  ? CircularProgressIndicator(color: Colors.white)
+                  : Text('Create Report', style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 minimumSize: Size(double.infinity, 50),
                 textStyle: TextStyle(fontSize: 18),
               ),
             ),
+// En alta, görünmeden render edilecek grafikler
+            Transform.translate(
+              offset: const Offset(0, -99999),
+              child: Column(
+                children: [
+                  CategoryPieChart(data: pieChartData, repaintKey: pieChartKey),
+                  ItemTypeBarChart(data: barChartData, repaintKey: barChartKey),
+                  ItemTrendLineChart(data: lineChartData, repaintKey: lineChartKey),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
+    
   }
 
 Widget _buildDatePickerField(String label, DateTime? date) {

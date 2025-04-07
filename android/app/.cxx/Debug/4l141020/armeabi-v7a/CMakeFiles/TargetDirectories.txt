@@ -1,0 +1,2 @@
+C:/suna_setups/BEES/BEES_SeniorProject_team4/android/app/.cxx/Debug/4l141020/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/suna_setups/BEES/BEES_SeniorProject_team4/android/app/.cxx/Debug/4l141020/armeabi-v7a/CMakeFiles/rebuild_cache.dir

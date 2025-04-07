@@ -54,19 +54,6 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
       appBar: AppBar(
         title: Text("Item Details", style: TextStyle(color: Colors.black)),
         backgroundColor: Color.fromARGB(255, 59, 137, 62),
-        actions: [
-          IconButton(
-        icon: Icon(Icons.more_vert, color: Colors.black),
-        onPressed: () async {
-         _controller1.showItemRemoveOptions(context, Item.fromJson(itemDetails!, widget.itemId), onSuccess: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => AdminHomeScreen()),
-          );
-        });
-      },
-          ),
-        ],
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -129,23 +116,65 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
                           ),
                           SizedBox(height: 10),
                         ],
-                        Text(itemDetails!["description"] ?? "No description available"),
-                        SizedBox(height: 10),
-                        if (itemDetails!["departments"] != null && (itemDetails!["departments"] as List).isNotEmpty)
-                          Wrap(
-                            spacing: 8.0,
-                            runSpacing: 4.0,
-                            children: List.generate(itemDetails!["departments"].length, (index) {
-                              return Chip(label: Text(itemDetails!["departments"][index]));
-                            }),
-                          ),
-                        Row(
-                          children: [
-                            Chip(label: Text(itemDetails!["category"])),
-                            SizedBox(width: 8),
-                            Chip(label: Text(itemDetails!["condition"])),
+                        if (itemDetails!["description"] != null && itemDetails!["description"].toString().trim().isNotEmpty) ...[
+                            Text("Description:", style: TextStyle(fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Text(itemDetails!["description"]),
+                            SizedBox(height: 10),
                           ],
-                        ),
+                          // Departman başlığı ve departman chipleri
+                          if (itemDetails!["departments"] != null && (itemDetails!["departments"] as List).isNotEmpty) ...[
+                            Text("Department(s):", style: TextStyle(fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Wrap(
+                              spacing: 8.0,
+                              runSpacing: 4.0,
+                              children: List.generate(itemDetails!["departments"].length, (index) {
+                                return SizedBox(
+                                  width: 80, // Sabit genişlik (gerekiyorsa ayarlarız)
+                                  child: Chip(
+                                    label: Center(
+                                      child: Text(
+                                        itemDetails!["departments"][index],
+                                        textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis, // Taşarsa 3 nokta koy
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                    backgroundColor: Colors.green.shade100,
+                                  ),
+                                );
+                              }),
+                            ),
+                          ],
+                          SizedBox(height: 10),
+                          // Category başlığı ve category chipi
+                          Text("Category:", style: TextStyle(fontWeight: FontWeight.bold)),
+                          SizedBox(height: 4),
+                          Chip(
+                            label: Text(itemDetails!["category"]),
+                            backgroundColor: const Color.fromARGB(255, 248, 248, 248), // Pastel yeşil tonu
+                          ),
+
+                          SizedBox(height: 10),
+
+                          // Condition başlığı ve condition chipi
+                          Text("Condition:", style: TextStyle(fontWeight: FontWeight.bold)),
+                          SizedBox(height: 4),
+                          Chip(
+                            label: Text(itemDetails!["condition"]),
+                            backgroundColor: Colors.green.shade100, // Pastel yeşil tonu
+                          ),
+                          // Item Type başlığı ve chip'i
+                          if (itemDetails!["itemType"] != null && itemDetails!["itemType"].toString().isNotEmpty) ...[
+                            Text("Item Type:", style: TextStyle(fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Chip(
+                              label: Text(itemDetails!["itemType"]),
+                              backgroundColor: const Color.fromARGB(255, 248, 248, 248),
+                            ),
+                            SizedBox(height: 10),
+                          ],
                         SizedBox(height: 10),
                         Row(
                           children: [
