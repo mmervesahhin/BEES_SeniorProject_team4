@@ -90,11 +90,11 @@ pdf.addPage(
             pw.Text(
                 'Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}'),
             pw.SizedBox(height: 20),
-            pw.Text('Item Type Chart (Bar):',
+            pw.Text('Category Distribution (Pie Chart):',
                 style: pw.TextStyle(
                     fontSize: 20, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 20),
-            pw.Image(barImage),
+            pw.Image(pieImage),
           ],
         );
       },
@@ -108,11 +108,11 @@ pdf.addPage(
         return pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Text('Category Distribution (Pie Chart):',
+            pw.Text('Item Type Chart (Bar):',
                 style: pw.TextStyle(
                     fontSize: 20, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 20),
-            pw.Image(pieImage),
+            pw.Image(barImage),
           ],
         );
       },
