@@ -37,6 +37,116 @@ class UserProfileModel {
       return null;
     }
   }
+
+  // Add these methods to the UserProfileModel class
+
+// Get user's inactive items
+Stream<QuerySnapshot> getInactiveItems(String userId) {
+  return _firestore
+      .collection('items')
+      .where('itemOwnerId', isEqualTo: userId)
+      .where('itemStatus', isEqualTo: 'inactive')
+      .orderBy('lastModifiedDate', descending: true)
+      .snapshots();
+}
+
+// Get user's beesed items
+Stream<QuerySnapshot> getBeesedItems(String userId) {
+  return _firestore
+      .collection('beesed_items')
+      .where('itemOwnerId', isEqualTo: userId)
+      .orderBy('beesedDate', descending: true)
+      .snapshots();
+}
+
+// Restore an inactive item to active status
+Future<bool> restoreInactiveItem(String itemId) async {
+  try {
+    await _firestore.collection('items').doc(itemId).update({
+      'itemStatus': 'active',
+      'lastModifiedDate': FieldValue.serverTimestamp(),
+    });
+    
+    // Update the user's inactiveItems list if needed
+    User? user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('items').doc(itemId).update({
+      'itemStatus': 'inactive',
+      });
+    }
+    
+    return true;
+  } catch (e) {
+    print('Error restoring item: $e');
+    return false;
+  }
+}
+
+
+  // Delete user account
+  Future<String?> deleteUserAccount() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) return "User not found";
+
+      String uid = user.uid;
+
+      // Delete user data from Firestore
+      // 1. Get user's items and delete them
+      QuerySnapshot itemsSnapshot = await _firestore
+          .collection('items')
+          .where('itemOwnerId', isEqualTo: uid)
+          .get();
+
+      for (var doc in itemsSnapshot.docs) {
+        await _firestore.collection('items').doc(doc.id).delete();
+      }
+
+      // 2. Get user's requests and delete them
+      QuerySnapshot requestsSnapshot = await _firestore
+          .collection('requests')
+          .where('requestOwnerID', isEqualTo: uid)
+          .get();
+
+      for (var doc in requestsSnapshot.docs) {
+        await _firestore.collection('requests').doc(doc.id).delete();
+      }
+
+      // 3. Delete user's profile picture from storage if it exists
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        String? profilePicture = userData['profilePicture'];
+
+        if (profilePicture != null && profilePicture.isNotEmpty) {
+          try {
+            Reference storageRef = _storage.refFromURL(profilePicture);
+            await storageRef.delete();
+          } catch (e) {
+            print('Error deleting profile picture: $e');
+          }
+        }
+      }
+
+      // 4. Delete user document from Firestore
+      await _firestore.collection('users').doc(uid).delete();
+
+      // 5. Delete user from blocked_users collection
+      try {
+        await _firestore.collection('blocked_users').doc(uid).delete();
+      } catch (e) {
+        print('Error deleting blocked users: $e');
+      }
+
+      // 6. Delete Firebase Auth user
+      await user.delete();
+
+      return null; // Success, no error message
+    } catch (e) {
+      print('Error deleting account: $e');
+      return e.toString();
+    }
+  }
   
   // Upload profile image to Firebase Storage
   Future<String?> uploadProfileImage(File image, String uid) async {
@@ -82,9 +192,9 @@ class UserProfileModel {
     }
   }
 
-  // Add this method to the UserProfileModel class
+  
 
-// Update these methods in the UserProfileModel class
+
 
 // Get blocked users
 Future<List<Map<String, dynamic>>> getBlockedUsers(String userId) async {
@@ -281,13 +391,7 @@ Future<bool> checkAndUpdateEmailVerification(String uid) async {
         .snapshots();
   }
   
-  // Get user's requests
-  Stream<QuerySnapshot> getUserRequests(String userId) {
-    return _firestore
-        .collection('requests')
-        .where('requestOwnerID', isEqualTo: userId)
-        .snapshots();
-  }
+ 
   
   // Mark item as BEESED
   Future<bool> markItemAsBeesed(Item item) async {
@@ -317,7 +421,6 @@ Future<bool> checkAndUpdateEmailVerification(String uid) async {
       if (user != null) {
         await _firestore.collection('users').doc(user.uid).update({
           'activeItems': FieldValue.arrayRemove([item.itemId]),
-          'beesedItems': FieldValue.arrayUnion([item.itemId]),
         });
       }
 
@@ -351,39 +454,67 @@ Future<bool> checkAndUpdateEmailVerification(String uid) async {
     }
   }
   
-  // Mark request as solved (delete it)
-  Future<bool> markRequestAsSolved(Request request) async {
-    try {
-      await _firestore.collection('requests').doc(request.requestID).delete();
-      return true;
-    } catch (e) {
-      print('Error marking request as solved: $e');
-      return false;
-    }
+// Mark request as solved (update status instead of deleting)
+Future<bool> markRequestAsSolved(Request request) async {
+  try {
+    // Update the request status to "solved" instead of deleting it
+    await _firestore.collection('requests').doc(request.requestID).update({
+      'requestStatus': 'solved',
+      'lastModifiedDate': FieldValue.serverTimestamp(),
+    });
+    return true;
+  } catch (e) {
+    print('Error marking request as solved: $e');
+    return false;
   }
-  
-  // Update request content
-  Future<bool> updateRequestContent(String requestId, String newContent) async {
-    try {
-      await _firestore.collection('requests').doc(requestId).update({
-        'requestContent': newContent,
-        'lastModifiedDate': DateTime.now(),
-      });
-      return true;
-    } catch (e) {
-      print('Error updating request: $e');
-      return false;
-    }
+}
+
+// Delete request (mark as removed instead of actually deleting)
+Future<bool> deleteRequest(String requestId) async {
+  try {
+    // Update the request status to "removed" instead of deleting it
+    await _firestore.collection('requests').doc(requestId).update({
+      'requestStatus': 'removed',
+      'lastModifiedDate': FieldValue.serverTimestamp(),
+    });
+    return true;
+  } catch (e) {
+    print('Error marking request as removed: $e');
+    return false;
   }
-  
-  // Delete request
-  Future<bool> deleteRequest(String requestId) async {
-    try {
-      await _firestore.collection('requests').doc(requestId).delete();
-      return true;
-    } catch (e) {
-      print('Error deleting request: $e');
-      return false;
-    }
+}
+
+// Get user's active requests (filter out solved and removed)
+Stream<QuerySnapshot> getUserRequests(String userId) {
+  return _firestore
+      .collection('requests')
+      .where('requestOwnerID', isEqualTo: userId)
+      .where('requestStatus', isEqualTo: 'active') // Only show active requests
+      .snapshots();
+}
+
+// Get user's solved requests
+Stream<QuerySnapshot> getUserSolvedRequests(String userId) {
+  return _firestore
+      .collection('requests')
+      .where('requestOwnerID', isEqualTo: userId)
+      .where('requestStatus', isEqualTo: 'solved')
+      .snapshots();
+}
+
+// Add this method to your UserProfileModel class
+
+// Update request content
+Future<bool> updateRequestContent(String requestId, String newContent) async {
+  try {
+    await _firestore.collection('requests').doc(requestId).update({
+      'requestContent': newContent,
+      'lastModifiedDate': FieldValue.serverTimestamp(),
+    });
+    return true;
+  } catch (e) {
+    print('Error updating request content: $e');
+    return false;
   }
+}
 }

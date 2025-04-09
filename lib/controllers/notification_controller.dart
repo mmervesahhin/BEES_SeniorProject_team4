@@ -1,81 +1,139 @@
-// 📍 notification_controller.dart
+import 'package:bees/views/screens/rating_dialog_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Genel yapı: Bildirim Firestore'da 'notifications' koleksiyonuna kaydedilir
-  Future<void> _sendNotification({
-    required String receiverId,
-    required String message,
-    required String type,
-  }) async {
+  Stream<List<Map<String, dynamic>>> getUserNotifications(String userId) {
+    return _firestore
+        .collection('notifications')
+        .where('receiverId', isEqualTo: userId)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              return {
+                'id': doc.id,
+                ...doc.data(),
+              };
+            }).toList());
+  }
+
+  Future<dynamic> fetchEntity(String itemId, String entityType) async {
+  final doc = await FirebaseFirestore.instance
+      .collection(entityType == "Item" ? "items" : "requests")
+      .doc(itemId)
+      .get();
+  return doc.data();
+}
+
+
+  Future<void> markAsRead(String notificationId) async {
     try {
-      await _firestore.collection('notifications').add({
-        'receiverId': receiverId,
-        'message': message,
-        'type': type,
-        'timestamp': DateTime.now(),
-        'isRead': false,
+      await _firestore.collection('notifications').doc(notificationId).update({
+        'isRead': true,
       });
-      print("📩 Bildirim gönderildi: $message");
     } catch (e) {
-      print("❌ Bildirim gönderilemedi: $e");
+      print("❌ Failed to mark notification as read: $e");
+      rethrow;
     }
   }
 
-  /// 🎯 Favoriye eklendiğinde çağır
-  Future<void> sendFavoriteNotification(String itemOwnerId, String itemTitle) async {
-    await _sendNotification(
-      receiverId: itemOwnerId,
-      message: "Your item '$itemTitle' has been added to favorites.",
-      type: 'favorite',
-    );
-  }
+  Future<void> submitRating({
+    required String sellerId,
+    required double rating,
+    required String notificationId,
+    required String itemId,
+  }) async {
+    try {
+      final userRef = _firestore.collection('users').doc(sellerId);
+      
+      // Add the rating to the seller's ratings subcollection
+      await _firestore
+          .collection('users')
+          .doc(sellerId)
+          .collection('ratings')
+          .add({
+        'rating': rating,
+        'itemId': itemId,
+        'buyerId': FirebaseAuth.instance.currentUser!.uid,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      
+      // Update the seller's average rating
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userRef);
+        
+        // Check if the user document has the rating fields
+        double currentRating = 0.0;
+        int ratingCount = 0;
+        
+        if (snapshot.exists) {
+          if (snapshot.data()!.containsKey('userRating')) {
+            currentRating = (snapshot.data()!['userRating'] as num).toDouble();
+          }
+          if (snapshot.data()!.containsKey('ratingCount')) {
+            ratingCount = (snapshot.data()!['ratingCount'] as num).toInt();
+          }
+        }
+        
+        final newCount = ratingCount + 1;
+        final newRating = ((currentRating * ratingCount) + rating) / newCount;
 
-  /// 💬 Yeni mesaj geldiğinde çağır
-  Future<void> sendMessageNotification(String receiverId, String senderName) async {
-    await _sendNotification(
-      receiverId: receiverId,
-      message: "You have a new message from $senderName.",
-      type: 'message',
-    );
-  }
+        transaction.update(userRef, {
+          'userRating': newRating,
+          'ratingCount': newCount,
+        });
+      });
 
-  /// 💸 Favori item fiyatı düştüğünde
-  Future<void> sendPriceDropNotification(String userId, String itemTitle) async {
-    await _sendNotification(
-      receiverId: userId,
-      message: "Price dropped for item '$itemTitle'.",
-      type: 'price_drop',
-    );
-  }
+      // Update the notification as read and rated
+      await _firestore.collection('notifications').doc(notificationId).update({
+        'isRead': true,
+        'rated': true,
+      });
+      
+      // Update the item to remove the pending rating flag
+      await _firestore.collection('items').doc(itemId).update({
+        'pendingSellerRating': false,
+      });
+      
+      // Also update in beesed_items collection if it exists
+      final beesedItemDoc = await _firestore.collection('beesed_items').doc(itemId).get();
+      if (beesedItemDoc.exists) {
+        await _firestore.collection('beesed_items').doc(itemId).update({
+          'pendingSellerRating': false,
+        });
+      }
 
-  /// ✅ Item BEESED olduğunda favori kullanıcıya bildir
-  Future<void> sendBeeesedNotification(String userId, String itemTitle) async {
-    await _sendNotification(
-      receiverId: userId,
-      message: "The item '$itemTitle' has been BEESED.",
-      type: 'item_beesed',
-    );
+      print("⭐ Rating submitted for seller $sellerId");
+    } catch (e) {
+      print("❌ Failed to submit rating: $e");
+      rethrow;
+    }
   }
-
-  /// 📅 30 gündür etkileşim olmayan item için hatırlatma
-  Future<void> sendInactivityReminder(String ownerId, String itemTitle) async {
-    await _sendNotification(
-      receiverId: ownerId,
-      message: "Reminder: No interaction with your item '$itemTitle' for 30 days.",
-      type: 'reminder',
-    );
-  }
-
-  /// ⭐ Değerlendirme bildirimi
-  Future<void> sendRatingReminder(String buyerId, String itemTitle) async {
-    await _sendNotification(
-      receiverId: buyerId,
-      message: "Please rate your experience for the item '$itemTitle'.",
-      type: 'rating',
+  
+  // Show rating dialog when a notification is tapped
+  void showRatingDialog(
+    BuildContext context, {
+    required String sellerId,
+    required String itemId,
+    required String itemTitle,
+    required String notificationId,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return RatingDialog(
+          sellerId: sellerId,
+          itemId: itemId,
+          itemTitle: itemTitle,
+          notificationId: notificationId,
+          primaryColor: const Color(0xFF3B893E),
+        );
+      },
     );
   }
 }
+

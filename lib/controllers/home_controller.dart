@@ -145,10 +145,11 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
     // 🛎️ Bildirim gönder
     if (ownerId != userId) {
       await FirebaseFirestore.instance.collection('notifications').add({
-        'recipientId': ownerId,
-        'message': 'Your item has been added to another user\'s favorites.',
+        'receiverId': ownerId, // ✅ doğru alan adı
+        'message': 'Your item is added to Favorites',
         'timestamp': FieldValue.serverTimestamp(),
         'isRead': false,
+        'type': 'message', // type eklemek iyi olur, ikon ve renk için
       });
     }
   } else {

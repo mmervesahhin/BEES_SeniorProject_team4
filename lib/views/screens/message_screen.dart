@@ -159,7 +159,7 @@ class MessageScreen extends StatelessWidget {
 Widget messageStatusIcon(String status) {
   if (status == 'sent') {
     return Icon(
-      Icons.check_circle, // Tek onay işareti
+      Icons.check_circle_outline, // Tek onay işareti
       color: Colors.green,
     );
   } else if (status == 'delivered') {
@@ -179,7 +179,7 @@ Widget messageStatusIcon(String status) {
     );
   } else if (status == 'read') {
     return Icon(
-      Icons.check_circle_outline, // Çift onay işareti okundu
+      Icons.check_circle, // Çift onay işareti okundu
       color: Colors.green, // Okunduysa farklı renkli
     );
   } else {
@@ -276,40 +276,36 @@ Widget _buildVideoPlayer(String videoUrl) {
   );
 }
 Widget _buildMessageItem(DocumentSnapshot document) {
-  Map<String, dynamic>? data = document.data() as Map<String, dynamic>?; // Null olursa hata vermez
-  if (data == null) return SizedBox.shrink(); // Boş bir widget döndür
+  Map<String, dynamic>? data = document.data() as Map<String, dynamic>?;
+  if (data == null) return SizedBox.shrink();
 
   auth_user.User firebaseUser = auth_user.FirebaseAuth.instance.currentUser!;
   var alignment = (data['senderId'] == firebaseUser.uid) ? Alignment.centerRight : Alignment.centerLeft;
+  bool isSentMessage = alignment == Alignment.centerRight;
   String status = data['status'];
 
   return FutureBuilder<User?>(
-    future: _getUserDetails(data['senderId']),  // Gönderenin bilgilerini getir
+    future: _getUserDetails(data['senderId']),
     builder: (context, snapshot) {
-      String senderName = "Unknown";  // Varsayılan isim
+      String senderName = "Unknown";
       if (snapshot.connectionState == ConnectionState.waiting) {
-        senderName = "Loading...";  // Yükleniyor göster
+        senderName = "Loading...";
       } else if (snapshot.hasData && snapshot.data != null) {
         senderName = "${snapshot.data!.firstName} ${snapshot.data!.lastName}";
       }
 
       Widget messageContent;
       if (data['content'].startsWith('http')) {
-        // Eğer içerik bir URL ise ve video ise
         if (data['content'].endsWith('.mp4')) {
-          // Video URL'si olduğunda VideoPlayer widget'ını kullan
-          //print("video test"+data['content']);
           messageContent = _buildVideoPlayer(data['content']);
         } else {
-          // Resim URL'si olduğunda Image widget'ını kullan
           messageContent = Image.network(data['content'], width: 200, height: 200, fit: BoxFit.cover);
         }
       } else {
-        // Mesaj metni
         messageContent = Text(data['content'], style: TextStyle(fontSize: 16));
       }
 
-      Widget statusIcon = messageStatusIcon(status);
+      Widget statusIcon = isSentMessage ? messageStatusIcon(status) : SizedBox.shrink();
 
       return Container(
         alignment: alignment,
@@ -331,11 +327,11 @@ Widget _buildMessageItem(DocumentSnapshot document) {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisSize: MainAxisSize.min, // Yatayda minimum alanı kaplamasına izin verir
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      messageContent, // Mesaj içeriği
-                      SizedBox(width: 8), // Mesaj ile ikon arasında boşluk
-                      statusIcon, // Duruma göre ikon
+                      messageContent,
+                      if (isSentMessage) SizedBox(width: 8),
+                      if (isSentMessage) statusIcon,
                     ],
                   ),
                 ],
