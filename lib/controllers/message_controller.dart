@@ -25,17 +25,15 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
     List<String> ids = [currentUserID, receiverId];
     ids.sort();
     String chatRoomId = "${itemReqId}_${ids.join("_")}";
-    
     DocumentReference chatRoomRef = _firestore.collection('chatRooms').doc(chatRoomId);
 
-    if (receiverId != currentUserID) {  
+    if (receiverId != currentUserID) {
       await FirebaseFirestore.instance.collection('notifications').add({
         //'recipientId': receiverId,
         'receiverId': receiverId,
         'senderId': currentUserID,
-        'itemId': itemReqId,         // ✅ bu çok önemli!
-        'entityType': entityType,    // ✅ "Item" veya "Request"
-        'message': 'You have received a new message',
+        'itemId': itemReqId,
+        'entityType': entityType,
         'timestamp': FieldValue.serverTimestamp(),
         'isRead': false,
         'type': 'message',
@@ -46,7 +44,6 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
     DocumentSnapshot chatRoomSnapshot = await chatRoomRef.get();
 
     if (!chatRoomSnapshot.exists) {
-      // 🔸 Yeni ChatRoom oluştur
       ChatRoom newChatRoom = ChatRoom(
         chatRoomId: chatRoomId,
         itemReqId: itemReqId,
@@ -57,27 +54,24 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
         entityType: entityType,
         entity: entityMap,
       );
-      
+
       await chatRoomRef.set(newChatRoom.toMap());
 
 
     } else {
-      // 🔸 Var olan ChatRoom'un son mesajını güncelle
       await chatRoomRef.update({
         'lastMessage': content,
         'lastMessageTimestamp': timestamp,
+        'removedUserIds': ids,
       });
     }
-   
-    
-
 
     DocumentReference newMessageRef = await chatRoomRef.collection('messages').add(newMessage.toMap());
     String newMessageId = newMessageRef.id;
     print("Mesaj ID'si: $newMessageId");
     await updateMessageStatus(chatRoomId, newMessageId, 'sent');
 
-     } catch (e) {
+    } catch (e) {
     print("Mesaj gönderme başarısız oldu! Hata: $e");
   }
   }
@@ -113,14 +107,36 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
     });
 }
 
-Stream<QuerySnapshot> getMessagesWithStatus(String itemReqId, String userId, String otherUserId, String status) {
+Stream<QuerySnapshot> getMessagesWithStatus(
+    String itemReqId, String userId, String otherUserId, String status) {
+  String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
   List<String> ids = [userId, otherUserId];
   ids.sort();
   String chatRoomId = "${itemReqId}_${ids.join("_")}";
 
   return _firestore
+      .collection('chatRooms')
+      .doc(chatRoomId)
+      .collection('messages')
+      .where('status', isEqualTo: status)
+      .where('senderId', isNotEqualTo: currentUserId) // userId dışında olanlar
+      .orderBy('senderId') // isNotEqualTo için zorunlu
+      .orderBy('timestamp', descending: false)
+      .snapshots()
+    ..listen((snapshot) {
+      for (var doc in snapshot.docs) {
+        print("📩 Mesaj (status:$status, not from $userId): ${doc.data()}");
+      }
+    });
+}
+
+Stream<QuerySnapshot> getMessagesWithStatuswithChatRoom(String chatRoomId, String status) {
+  String chatRoomId2 = chatRoomId;
+
+  return _firestore
     .collection('chatRooms')
-    .doc(chatRoomId)
+    .doc(chatRoomId2)
     .collection('messages')
     .where('status', isEqualTo: status)  // Filter messages by status
     .orderBy('timestamp', descending: false)
@@ -132,30 +148,65 @@ Stream<QuerySnapshot> getMessagesWithStatus(String itemReqId, String userId, Str
     });
 }
 
-Future<int> getSentMessagesCount(String chatRoomId, String currentUserId, String receiverId) async {
-  try {
-    // 'status' = 'sent' olan ve currentUserId ile receiverId'yi eşleştiren mesajları filtrele
-    QuerySnapshot snapshot = await _firestore
-        .collection('chatRooms')
-        .doc(chatRoomId)
-        .collection('messages')
-        .where('status', isEqualTo: 'sent')
-        .where('receiverId', isEqualTo: currentUserId)
-        .get();
-
-    // Mesaj sayısını döndür
-    int messageCount = snapshot.docs.length;
-    print("Sent message count: $messageCount");
-
-    return messageCount;
-  } catch (e) {
-    print("Mesaj sayısını alırken hata oluştu: $e");
-    return 0; // Hata durumunda 0 döndürüyoruz
-  }
+Stream<int> getSentMessagesCount(String chatRoomId, String currentUserId, String receiverId) {
+  return _firestore
+      .collection('chatRooms')
+      .doc(chatRoomId)
+      .collection('messages')
+      .where('status', isEqualTo: 'sent')
+      .where('receiverId', isEqualTo: currentUserId)
+      .where('senderId', isEqualTo: receiverId)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length);
 }
 
+Stream<int> getTotalUnreadMessagesCount(String currentUserId) {
+  return FirebaseFirestore.instance
+      .collection('chatRooms')
+      .where('userIds', arrayContains: currentUserId)
+      .snapshots()
+      .asyncMap((snapshot) async {
+    int totalUnreadCount = 0;
 
+    for (var doc in snapshot.docs) {
+      var chatRoom = ChatRoom.fromFirestore(doc);
+      String otherUserId = chatRoom.userIds.firstWhere((id) => id != currentUserId, orElse: () => '');
 
+      // Entity durumunu kontrol et (doğrudan Firestore'dan)
+      String entityStatus = await _getEntityStatus(chatRoom.entityType, chatRoom.entity);
+      
+      // Sadece aktif entity'ler için say
+      if (entityStatus == 'active') {
+        int unreadCount = await getSentMessagesCount(chatRoom.chatRoomId, currentUserId, otherUserId).first;
+        totalUnreadCount += unreadCount;
+      }
+    }
+
+    return totalUnreadCount;
+  });
+}
+
+Future<String> _getEntityStatus(String entityType, dynamic entity) async {
+  try {
+    if (entityType == "Item") {
+      String itemId = entity['itemId'];
+      DocumentSnapshot itemDoc = await FirebaseFirestore.instance.collection('items').doc(itemId).get();
+      if (!itemDoc.exists) return 'inactive';
+      var itemData = itemDoc.data() as Map<String, dynamic>;
+      return itemData['itemStatus'] ?? 'inactive';
+    } else if (entityType == "Request") {
+      String requestId = entity['requestID'];
+      DocumentSnapshot requestDoc = await FirebaseFirestore.instance.collection('requests').doc(requestId).get();
+      if (!requestDoc.exists) return 'inactive';
+      var requestData = requestDoc.data() as Map<String, dynamic>;
+      return requestData['requestStatus'] ?? 'inactive';
+    }
+    return 'inactive';
+  } catch (e) {
+    print('Error checking entity status: $e');
+    return 'inactive'; // Hata durumunda inactive kabul et
+  }
+}
 
   // Stream<QuerySnapshot> getMessages2(String? chatRoomId) {
   //   print("🟢 Mesajlar getiriliyor: ChatRoomId = $chatRoomId");

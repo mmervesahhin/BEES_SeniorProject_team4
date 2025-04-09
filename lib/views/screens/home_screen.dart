@@ -1,3 +1,4 @@
+import 'package:bees/controllers/message_controller.dart';
 import 'package:bees/views/screens/favorites_screen.dart';
 import 'package:bees/views/screens/item_upload_screen.dart';
 import 'package:bees/views/screens/requests_screen.dart';
@@ -38,7 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> selectedDepartments = [];
                   
   String? userId = FirebaseAuth.instance.currentUser?.uid;
-  
+  String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
   final HomeController _controller = HomeController();
   final TextEditingController _searchController = TextEditingController();
   Map<String, bool> _favorites = {};
@@ -68,18 +70,49 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.message, size: 24),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MessageListScreen(),
-                ),
-              );
+        StreamBuilder<int>(
+            stream: MessageController().getTotalUnreadMessagesCount(currentUserId), // Stream tüm chat room'lar için toplamı döndürecek
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              }
+
+              if (snapshot.hasData) {
+                int unreadMessages = snapshot.data ?? 0;
+
+                return IconButton(
+                  icon: badges.Badge(
+                    showBadge: unreadMessages > 0,
+                    badgeContent: Text(
+                      unreadMessages.toString(),
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                    child: const Icon(Icons.message, size: 24),
+                    badgeStyle: const badges.BadgeStyle(
+                      badgeColor: Colors.red,
+                    ),
+                  ),
+                  color: Color(0xFF333333), // textDark
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MessageListScreen(),
+                      ),
+                    ).then((_) {
+                      // Geri dönüldüğünde verileri yenilemek için Stream yeniden çalıştırılır
+                      setState(() {});
+                    });
+                  },
+                );
+              } else {
+                return Container(); // Eğer data yoksa boş bir widget döndür
+              }
             },
-            color: textDark,
           ),
+
+
+
           StreamBuilder<QuerySnapshot>(
   stream: FirebaseFirestore.instance
       .collection('notifications')
