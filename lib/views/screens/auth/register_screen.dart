@@ -18,6 +18,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _termsAccepted = false;
+  bool _obscurePassword = true;
+
 
   late RegisterController _controller;
 
@@ -156,20 +158,29 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     validator: _controller.validateEmail,
                   ),
                   SizedBox(height: 10),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        errorMaxLines: 3,
                       ),
-                      errorMaxLines: 3, // Hata mesajını 3 satıra kadar uzat
+                      validator: _controller.validatePassword,
                     ),
-                    validator: _controller.validatePassword,
-                  ),
-
                   SizedBox(height: 20),
                   Row(
                     children: [

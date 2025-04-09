@@ -80,24 +80,28 @@ class _OthersUserProfileScreenState extends State<AdminOthersUserProfileScreen> 
     );
   }
 
-  Widget _buildDepartmentsTag(List<dynamic> departments) {
-    return Wrap(
-      children: departments.map((department) {
-        return Chip(
-          label: Text(department),
-          backgroundColor: const Color.fromARGB(255, 229, 231, 234),
-          labelStyle: TextStyle(color: const Color.fromARGB(255, 15, 14, 14)),
-        );
-      }).toList(),
-    );
+ List<Widget> _buildDepartmentsTag(List<dynamic> departments) {
+  if (departments.isEmpty) return [];
+
+  List<String> visibleDepartments = departments.map((e) => e.toString()).take(1).toList();
+
+  if (departments.length > 1) {
+    visibleDepartments.add('...');
   }
+
+  return visibleDepartments
+      .map((department) => _buildTag(department, const Color.fromARGB(255, 139, 197, 151)))
+      .toList();
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-         title: Text("Profile", style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0))),
-        backgroundColor: Color.fromARGB(255, 59, 137, 62),
+         title: Text('Profile', style: TextStyle(color: Colors.black)),
+                backgroundColor: const Color.fromARGB(255, 248, 250, 248),
+                elevation: 1,
+                iconTheme: IconThemeData(color: Colors.black),
       ),
       body: FutureBuilder<User>(
         future: userProfileData,
@@ -121,29 +125,36 @@ class _OthersUserProfileScreenState extends State<AdminOthersUserProfileScreen> 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    backgroundImage: userProfilePicture.isNotEmpty
-                        ? NetworkImage(userProfilePicture)
-                        : null,
-                    radius: 50,
-                    child: userProfilePicture.isEmpty
-                        ? Icon(Icons.person, size: 50)
-                        : null,
+                                  Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  margin: EdgeInsets.only(bottom: 16),
+                  color: Color.fromARGB(255, 197, 227, 197),
+                  child: Container(
+                    width: double.infinity, // 💥 sayfa genişliği kadar genişlet
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: userProfilePicture.isNotEmpty
+                              ? NetworkImage(userProfilePicture)
+                              : null,
+                          radius: 40,
+                          child: userProfilePicture.isEmpty ? Icon(Icons.person, size: 40) : null,
+                        ),
+                        SizedBox(height: 12),
+                        Text(userName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 6),
+                        Text(userEmail, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                        SizedBox(height: 6),
+                        Text('Rating: ${userRatingDouble.toDouble()}', style: TextStyle(fontSize: 14)),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 16),
-                  Text(userName,
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
-                  Text(userEmail,
-                      style: TextStyle(fontSize: 16, color: Colors.grey)),
-                  SizedBox(height: 8),
-                  Text('Rating: ${userRatingDouble.toDouble()}',
-                      style: TextStyle(fontSize: 16)),
-                  SizedBox(height: 16),
-                  Text('Active Items:',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                Text("Active Items", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Divider(),
                   FutureBuilder<List<Item>>(
                     future: activeItems,
                     builder: (context, itemsSnapshot) {
@@ -225,17 +236,16 @@ class _OthersUserProfileScreenState extends State<AdminOthersUserProfileScreen> 
                                             ),
                                         ],
                                       ),
-                                      Row(
-                                        children: [
-                                          _buildTag(item.category, Colors.green),
-                                          _buildTag(
-                                              item.condition,
-                                              const Color.fromARGB(
-                                                  255, 154, 197, 147)),
-                                          if (item.departments is List)
-                                            _buildDepartmentsTag(item.departments),
-                                        ],
-                                      ),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 4,
+                                          children: [
+                                            _buildTag(item.category, Colors.green),
+                                            _buildTag(item.condition, const Color.fromARGB(255, 154, 197, 147)),
+                                            if (item.departments is List)
+                                              ..._buildDepartmentsTag(item.departments),
+                                          ],
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -247,41 +257,58 @@ class _OthersUserProfileScreenState extends State<AdminOthersUserProfileScreen> 
                     },
                   ),
                   // Tek buton: Ban/Unban dinamik olarak stream üzerinden kontrol ediliyor
-                  Center(
-                    child: StreamBuilder<QuerySnapshot>(
-                      stream: _adminController.getBannedUsers(),
-                      builder: (context, banSnapshot) {
-                        bool isBanned = false;
-                        if (banSnapshot.hasData) {
-                          isBanned = banSnapshot.data!.docs.any((doc) {
-                            // Kullanıcı id'sinin, Firestore'daki 'userID' alanıyla eşleşip eşleşmediğine bakıyoruz
-                            return doc['userID'] == user.userID;
-                          });
-                        }
-                        return ElevatedButton(
-                          onPressed: () {
-                            if (isBanned) {
-                              _showUnbanDialog(user.userID);
-                            } else {
-                              _showBanDialog(user.userID);
+                      Center(
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: _adminController.getBannedUsers(),
+                          builder: (context, banSnapshot) {
+                            bool isBanned = false;
+                            if (banSnapshot.hasData) {
+                              isBanned = banSnapshot.data!.docs.any((doc) {
+                                return doc['userID'] == user.userID;
+                              });
                             }
+
+                            return Tooltip(
+                              message: isBanned
+                                  ? "Lift ban from user"
+                                  : "Permanently/temporarily ban this user",
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  if (isBanned) {
+                                    _showUnbanDialog(user.userID);
+                                  } else {
+                                    _showBanDialog(user.userID);
+                                  }
+                                },
+                                icon: Icon(
+                                  isBanned ? Icons.lock_open : Icons.block,
+                                  color: isBanned ? Colors.green : Colors.red,
+                                ),
+                                label: Text(
+                                  isBanned ? 'Unban User' : 'Ban User',
+                                  style: TextStyle(
+                                    color: isBanned ? Colors.green : Colors.red,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: isBanned ? Colors.green : Colors.red,
+                                  ),
+                                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                                  textStyle: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            );
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                isBanned ? Colors.green : Colors.red,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 50, vertical: 15),
-                            textStyle: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          child: Text(
-                            isBanned ? 'Unban User' : 'Ban User',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+                      ),
+
                 ],
               ),
             );
@@ -305,7 +332,7 @@ class _OthersUserProfileScreenState extends State<AdminOthersUserProfileScreen> 
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.report),
-              label: 'Reports',
+              label: 'Complaints',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.bar_chart),

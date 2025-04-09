@@ -47,7 +47,7 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 59, 137, 62),
-        title: const Text('Item Reports', style: TextStyle(fontSize: 24, color: Colors.black)),
+        title: const Text('Item Complaints', style: TextStyle(fontSize: 24, color: Colors.black)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -108,7 +108,7 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
         items: const [
           BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
           BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
-          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Reports'),
+          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Complaints'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analysis'),
           BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
         ],
