@@ -1,5 +1,6 @@
 import 'package:bees/controllers/admin_controller.dart';
 import 'package:bees/views/screens/admin_data_analysis_screen.dart';
+import 'package:bees/views/screens/admin_others_user_profile_screen.dart';
 import 'package:bees/views/screens/admin_profile_screen.dart';
 import 'package:bees/views/screens/admin_reports_screen.dart';
 import 'package:bees/views/screens/admin_home_screen.dart';
@@ -57,6 +58,20 @@ import 'package:bees/models/user_model.dart' as bees;
             break;
       }
     }
+
+ void _navigateToProfile(String userId) {
+  if (userId == currentUser?.uid) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AdminProfileScreen()),
+    );
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AdminOthersUserProfileScreen(userId: userId)),
+    );
+  }
+}
 
     @override
     Widget build(BuildContext context) {
@@ -220,20 +235,26 @@ Widget _buildRequestCard(Request request) {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: const Color(0xFF3B893E),
-                    backgroundImage: user.profilePicture.isNotEmpty
-                        ? NetworkImage(user.profilePicture)
-                        : null,
-                    child: user.profilePicture.isEmpty
-                        ? const Icon(Icons.person, color: Colors.white)
-                        : null,
+                  GestureDetector(
+                    onTap: () => _navigateToProfile(user.userID),
+                    child: CircleAvatar(
+                      backgroundColor: const Color(0xFF3B893E),
+                      backgroundImage: user.profilePicture.isNotEmpty
+                          ? NetworkImage(user.profilePicture)
+                          : null,
+                      child: user.profilePicture.isEmpty
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      "${user.firstName} ${user.lastName}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    child: GestureDetector(
+                      onTap: () => _navigateToProfile(user.userID),
+                      child: Text(
+                        "${user.firstName} ${user.lastName}",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                   IconButton(
@@ -244,6 +265,7 @@ Widget _buildRequestCard(Request request) {
                   ),
                 ],
               ),
+
               const SizedBox(height: 8),
               Text(
                 request.requestContent,

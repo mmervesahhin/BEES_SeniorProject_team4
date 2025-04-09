@@ -2,7 +2,6 @@ class ReportedItem {
   final String reportReason;
   final String complaintDetails;
   final String reportedBy;
-  final String reportedObjectType;
   final int complaintID;
   final String itemId; // itemID parametresi
 
@@ -10,7 +9,6 @@ class ReportedItem {
     required this.reportReason,
     required this.complaintDetails,
     required this.reportedBy,
-    required this.reportedObjectType,
     required this.complaintID,
     required this.itemId, // itemID parametresi alınıyor
   });
@@ -21,7 +19,6 @@ class ReportedItem {
       'reportReason': reportReason,
       'complaintDetails': complaintDetails,
       'reportedBy': reportedBy,
-      'reportedObjectType': reportedObjectType,
       'complaintID': complaintID,
       'itemId': itemId, // itemID map'e ekleniyor
     };
@@ -33,7 +30,6 @@ class ReportedItem {
       reportReason: data['reportReason'],
       complaintDetails: data['complaintDetails'],
       reportedBy: data['reportedBy'],
-      reportedObjectType: data['reportedObjectType'],
       complaintID: data['complaintID'],
       itemId: data['itemId'], // itemID Firestore'dan alınacak
     );
