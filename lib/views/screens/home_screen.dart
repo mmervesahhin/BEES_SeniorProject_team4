@@ -53,6 +53,29 @@ class _HomeScreenState extends State<HomeScreen> {
     'departments' : [],
   };
 
+    @override
+   void initState() {
+     super.initState();
+     // Favori öğeleri alıyoruz
+     fetchAndSetFavorites();
+   }
+ 
+   Future<void> fetchAndSetFavorites() async {
+     try {
+       // HomeController'dan fetchFavorites çağrılır
+       List<DocumentSnapshot> favoriteItems = await _controller.fetchFavorites();
+ 
+       // Favori öğeleri Map'e dolduruyoruz, her öğe 'true' olarak işaretlenir
+       setState(() {
+         _favorites = {
+           for (var doc in favoriteItems) doc.id: true
+         };
+       });
+     } catch (e) {
+       print('Hata: $e');
+     }
+   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
