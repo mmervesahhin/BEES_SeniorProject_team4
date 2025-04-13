@@ -348,7 +348,7 @@ Widget build(BuildContext context) {
                         SizedBox(height: 6),
                         Text(userEmail, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                         SizedBox(height: 6),
-                        Text('Rating: ${userRatingDouble.toDouble()}', style: TextStyle(fontSize: 14)),
+                        Text('Rating: ${userRatingDouble.toStringAsFixed(2)}',style: TextStyle(fontSize: 14)),
                       ],
                     ),
                   ),

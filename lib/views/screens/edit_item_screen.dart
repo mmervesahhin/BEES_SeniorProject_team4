@@ -1,10 +1,8 @@
+import 'package:bees/controllers/edit_item_controller.dart';
+import 'package:bees/models/edit_item_model.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/models/item_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/services.dart';
+
 
 class EditItemScreen extends StatefulWidget {
   final Item item;
@@ -16,10 +14,9 @@ class EditItemScreen extends StatefulWidget {
 }
 
 class _EditItemScreenState extends State<EditItemScreen> {
-  final _formKey = GlobalKey<FormState>();
-  late Item _editedItem;
-  bool _isLoading = false;
-
+  late EditItemModel _model;
+  late EditItemController _controller;
+  
   // Updated color palette
   final Color primaryColor = const Color(0xFFFFD700); // Vibrant yellow
   final Color secondaryColor = const Color(0xFFFFF8E1); // Light yellow
@@ -27,53 +24,11 @@ class _EditItemScreenState extends State<EditItemScreen> {
   final Color errorColor = const Color(0xFFFF5252); // Red for errors
   final Color accentColor = const Color(0xFF333333); // Dark gray
 
-  final ImagePicker _picker = ImagePicker();
-  List<String> _photoUrls = []; // Existing photo URLs from Firestore
-  List<File> _newPhotos = []; // New photos selected by the user
-  List<String> _deletedPhotoUrls = []; // URLs of photos to be deleted
-
-  // Available options for dropdowns
-  final List<String> _conditions = ['New', 'Lightly Used', 'Moderately Used', 'Heavily Used'];
-  final List<String> _categories = ['Sale', 'Rent', 'Exchange', 'Donate'];
-  final List<String> _itemTypes = ['Notes', 'Books', 'Electronics', 'Stationary', 'Other'];
-  final List<String> _departments = ['AMER', 'ARCH', 'CHEM', 'COMD', 'CS', 'CTIS', 'ECON', 'EDU', 'EEE', 'ELIT', 'FA', 'GRA', 'HART', 'IAED', 'IE', 'IR', 'LAUD', 'LAW', 'MAN', 'MATH', 'MBG', 'ME', 'MSC', 'PHIL', 'PHYS', 'POLS', 'PREP', 'PSYC', 'THM','THR','TRIN'];
-  final List<String> _paymentPlan = ['Per Hour', 'Per Day', 'Per Month'];
-String _selectedPaymentPlan = 'Per Month'; // Default
-
-  // Selected departments
-  List<String> _selectedDepartments = [];
-
   @override
   void initState() {
     super.initState();
-    _editedItem = Item(
-      itemId: widget.item.itemId,
-      itemOwnerId: widget.item.itemOwnerId,
-      title: widget.item.title,
-      description: widget.item.description,
-      category: widget.item.category,
-      condition: widget.item.condition,
-      itemType: widget.item.itemType,
-      departments: widget.item.departments,
-      price: widget.item.price,
-      paymentPlan: widget.item.paymentPlan,
-      photoUrl: widget.item.photoUrl,
-      additionalPhotos: widget.item.additionalPhotos,
-      favoriteCount: widget.item.favoriteCount,
-      itemStatus: widget.item.itemStatus,
-    );
-    
-    // Initialize with existing photos
-    if (widget.item.photoUrl != null && widget.item.photoUrl!.isNotEmpty) {
-      _photoUrls = [widget.item.photoUrl!];
-    }
-    
-    if (widget.item.additionalPhotos != null) {
-      _photoUrls.addAll(widget.item.additionalPhotos!);
-    }
-    
-    // Initialize selected departments
-    _selectedDepartments = List.from(widget.item.departments ?? []);
+    _model = EditItemModel(originalItem: widget.item);
+    _controller = EditItemController(model: _model);
   }
 
   @override
@@ -85,12 +40,12 @@ String _selectedPaymentPlan = 'Per Month'; // Default
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black), // Black icons for contrast
       ),
-      body: _isLoading 
+      body: _controller.isLoading 
         ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700))) 
         : SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Form(
-            key: _formKey,
+            key: _controller.formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -106,20 +61,20 @@ String _selectedPaymentPlan = 'Per Month'; // Default
                 
                 // Title Field
                 _buildFormField(
-                  initialValue: _editedItem.title,
+                  initialValue: _model.editedItem.title,
                   labelText: 'Title',
                   validator: (value) => value?.isEmpty ?? true ? 'Title is required' : null,
-                  onChanged: (value) => _editedItem.title = value,
+                  onChanged: (value) => setState(() => _model.editedItem.title = value),
                 ),
                 const SizedBox(height: 16),
 
                 // Description Field
                 _buildFormField(
-                  initialValue: _editedItem.description,
+                  initialValue: _model.editedItem.description,
                   labelText: 'Description',
                   maxLines: 3,
                   validator: (value) => value?.isEmpty ?? true ? null : null,
-                  onChanged: (value) => _editedItem.description = value,
+                  onChanged: (value) => setState(() => _model.editedItem.description = value),
                 ),
                 const SizedBox(height: 24),
 
@@ -129,100 +84,91 @@ String _selectedPaymentPlan = 'Per Month'; // Default
 
                 // Item Type (Sale/Rent/Exchange/Donate)
                 _buildDropdownField(
-                  value: _editedItem.category ?? _categories[0],
+                  value: _model.editedItem.category ?? _model.categories[0],
                   labelText: 'Category',
-                  items: _categories,
+                  items: _model.categories,
                   onChanged: (value) {
-  if (value != null) {
-    setState(() {
-      _editedItem.category = value;
-      
-      // Set price to 0 if category is "Donate" or "Exchange"
-      if (value == 'Donate' || value == 'Exchange') {
-        _editedItem.price = 0;
-      }
-    });
-  }
-},
-
+                    setState(() {
+                      _controller.updateCategory(value);
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
 
-                if (_editedItem.category == 'Sale' || _editedItem.category == 'Rent')
-  Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          // Price Input Field
-          Expanded(
-            child: _buildFormField(
-              initialValue: _editedItem.price.toString(),
-              labelText: 'Price',
-              keyboardType: TextInputType.number,
-              prefixIcon: const Icon(Icons.currency_lira, color: Colors.black),
-              validator: (value) {
-                if (value?.isEmpty ?? true) return 'Price is required';
-                if (double.tryParse(value!) == null) return 'Invalid price';
-                return null;
-              },
-              onChanged: (value) => _editedItem.price = double.tryParse(value) ?? _editedItem.price,
-            ),
-          ),
+                if (_model.editedItem.category == 'Sale' || _model.editedItem.category == 'Rent')
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          // Price Input Field
+                          Expanded(
+                            child: _buildFormField(
+                              initialValue: _model.editedItem.price.toString(),
+                              labelText: 'Price',
+                              keyboardType: TextInputType.number,
+                              prefixIcon: const Icon(Icons.currency_lira, color: Colors.black),
+                              validator: (value) {
+                                if (value?.isEmpty ?? true) return 'Price is required';
+                                if (double.tryParse(value!) == null) return 'Invalid price';
+                                return null;
+                              },
+                              onChanged: (value) => setState(() => _model.editedItem.price = double.tryParse(value) ?? _model.editedItem.price),
+                            ),
+                          ),
 
-          // Show payment plan dropdown if category is Rent
-          if (_editedItem.category == 'Rent')
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Row(
-                children: [
-                  Text("/", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  DropdownButton<String>(
-                    value: _selectedPaymentPlan,
-                    items: _paymentPlan.map((String duration) {
-                      return DropdownMenuItem<String>(
-                        value: duration,
-                        child: Text(duration),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _selectedPaymentPlan = value;
-                          _editedItem.paymentPlan = value; // Save selection
-                        });
-                      }
-                    },
+                          // Show payment plan dropdown if category is Rent
+                          if (_model.editedItem.category == 'Rent')
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Row(
+                                children: [
+                                  Text("/", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  DropdownButton<String>(
+                                    value: _model.selectedPaymentPlan,
+                                    items: _model.paymentPlan.map((String duration) {
+                                      return DropdownMenuItem<String>(
+                                        value: duration,
+                                        child: Text(duration),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _controller.updatePaymentPlan(value);
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
-                ],
-              ),
-            ),
-        ],
-      ),
-      const SizedBox(height: 16),
-    ],
-  ),
-
-
 
                 // Condition Dropdown
                 _buildDropdownField(
-                  value: _editedItem.condition,
+                  value: _model.editedItem.condition,
                   labelText: 'Condition',
-                  items: _conditions,
+                  items: _model.conditions,
                   onChanged: (value) {
-                    if (value != null) _editedItem.condition = value;
+                    setState(() {
+                      if (value != null) _model.editedItem.condition = value;
+                    });
                   },
                 ),
                 const SizedBox(height: 16),
 
                 // ItemType Dropdown
                 _buildDropdownField(
-                  value: _editedItem.itemType,
+                  value: _model.editedItem.itemType,
                   labelText: 'Item Type',
-                  items: _itemTypes,
+                  items: _model.itemTypes,
                   onChanged: (value) {
-                    if (value != null) _editedItem.itemType = value;
+                    setState(() {
+                      if (value != null) _model.editedItem.itemType = value;
+                    });
                   },
                 ),
                 const SizedBox(height: 24),
@@ -238,7 +184,7 @@ String _selectedPaymentPlan = 'Per Month'; // Default
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _saveItem,
+                    onPressed: _controller.isLoading ? null : _saveItem,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       shape: RoundedRectangleBorder(
@@ -246,7 +192,7 @@ String _selectedPaymentPlan = 'Per Month'; // Default
                       ),
                       elevation: 2,
                     ),
-                    child: _isLoading
+                    child: _controller.isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text(
                             'Save Changes',
@@ -264,6 +210,29 @@ String _selectedPaymentPlan = 'Per Month'; // Default
           ),
         ),
     );
+  }
+
+  Future<void> _saveItem() async {
+    setState(() {
+      _controller.isLoading = true;
+    });
+    
+    final success = await _controller.saveItem(context);
+    
+    setState(() {
+      _controller.isLoading = false;
+    });
+    
+    if (success) {
+      // Show success message and close screen
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Item updated successfully'),
+          backgroundColor: primaryColor,
+        ),
+      );
+    }
   }
 
   Widget _buildSectionTitle(String title) {
@@ -307,24 +276,27 @@ String _selectedPaymentPlan = 'Per Month'; // Default
                 runSpacing: 12,
                 children: [
                   // Display existing photos
-                  for (int i = 0; i < _photoUrls.length; i++)
+                  for (int i = 0; i < _model.photoUrls.length; i++)
                     _buildPhotoTile(
                       isNetwork: true,
-                      source: _photoUrls[i],
-                      onDelete: () => _deletePhoto(i),
+                      source: _model.photoUrls[i],
+                      onDelete: () => setState(() => _controller.deletePhoto(i)),
                     ),
 
                   // Display new photos
-                  for (int i = 0; i < _newPhotos.length; i++)
+                  for (int i = 0; i < _model.newPhotos.length; i++)
                     _buildPhotoTile(
                       isNetwork: false,
-                      source: _newPhotos[i],
-                      onDelete: () => _deletePhoto(_photoUrls.length + i),
+                      source: _model.newPhotos[i],
+                      onDelete: () => setState(() => _controller.deletePhoto(_model.photoUrls.length + i)),
                     ),
 
                   // Add Photo Button
                   GestureDetector(
-                    onTap: _pickPhotos,
+                    onTap: () async {
+                      await _controller.pickPhotos();
+                      setState(() {});
+                    },
                     child: Container(
                       width: 100,
                       height: 100,
@@ -361,7 +333,7 @@ String _selectedPaymentPlan = 'Per Month'; // Default
             ],
           ),
         ),
-        if (_photoUrls.isEmpty && _newPhotos.isEmpty)
+        if (_model.photoUrls.isEmpty && _model.newPhotos.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
@@ -536,228 +508,62 @@ String _selectedPaymentPlan = 'Per Month'; // Default
     );
   }
 
- Widget _buildDepartmentsSelector() {
-  return Container(
-    padding: const EdgeInsets.all(10),
-    decoration: BoxDecoration(
-      color: secondaryColor,
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.grey.shade300),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Select departments relevant to this item:',
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.w500,
+  Widget _buildDepartmentsSelector() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: secondaryColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Select departments relevant to this item:',
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        const SizedBox(height: 12, width: 10,),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _departments.map((department) {
-            final isSelected = _selectedDepartments.contains(department);
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (isSelected) {
-                    _selectedDepartments.remove(department);
-                  } else {
-                    _selectedDepartments.add(department);
-                  }
-                  _editedItem.departments = _selectedDepartments;
-                });
-              },
-              child: Container(
-                width: 70, // Set a fixed width
-                height: 30, // Set a fixed height
-                alignment: Alignment.center, // Center the text
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? primaryColor : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected ? primaryColor : Colors.grey.shade300,
+          const SizedBox(height: 12, width: 10,),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _model.departments.map((department) {
+              final isSelected = _model.selectedDepartments.contains(department);
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _controller.toggleDepartment(department);
+                  });
+                },
+                child: Container(
+                  width: 70, // Set a fixed width
+                  height: 30, // Set a fixed height
+                  alignment: Alignment.center, // Center the text
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? primaryColor : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? primaryColor : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Text(
+                    department,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : textColor,
+                      fontSize: 10,
+                    ),
+                    overflow: TextOverflow.ellipsis, // Handle overflow
                   ),
                 ),
-                child: Text(
-                  department,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : textColor,
-                    fontSize: 10,
-                  ),
-                  overflow: TextOverflow.ellipsis, // Handle overflow
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    ),
-  );
-}
-
-  // Pick new photos from the gallery or camera
-  Future<void> _pickPhotos() async {
-    final List<XFile>? pickedFiles = await _picker.pickMultiImage();
-    if (pickedFiles != null && pickedFiles.isNotEmpty) {
-      setState(() {
-        _newPhotos.addAll(pickedFiles.map((file) => File(file.path)).toList());
-      });
-    }
-  }
-
-  // Delete an existing photo
-  void _deletePhoto(int index) {
-    setState(() {
-      if (index < _photoUrls.length) {
-        _deletedPhotoUrls.add(_photoUrls[index]); // Add to deleted list
-        _photoUrls.removeAt(index); // Remove from displayed list
-      } else {
-        _newPhotos.removeAt(index - _photoUrls.length); // Remove from new photos
-      }
-    });
-  }
-
-  // Upload new photos to Firebase Storage
-  Future<List<String>> _uploadPhotos(List<File> photos) async {
-    List<String> uploadedUrls = [];
-    for (var photo in photos) {
-      final String fileName = '${_editedItem.itemId}_${DateTime.now().millisecondsSinceEpoch}';
-      final Reference storageRef = FirebaseStorage.instance.ref().child('item_photos/$fileName.jpg');
-      
-      // Compress image before uploading
-      final Uint8List compressedImage = await compressImage(photo);
-      
-      // Upload compressed image
-      await storageRef.putData(
-        compressedImage,
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-      
-      final String downloadUrl = await storageRef.getDownloadURL();
-      uploadedUrls.add(downloadUrl);
-    }
-    return uploadedUrls;
-  }
-
-  // Compress image to reduce storage usage and improve loading speed
-  Future<Uint8List> compressImage(File imageFile) async {
-    final Uint8List bytes = await imageFile.readAsBytes();
-    // Here you would typically use a package like flutter_image_compress
-    // For simplicity, we're just returning the bytes directly
-    return bytes;
-  }
-
-  // Delete photos from Firebase Storage
-  Future<void> _deletePhotos(List<String> photoUrls) async {
-    for (var url in photoUrls) {
-      try {
-        final Reference storageRef = FirebaseStorage.instance.refFromURL(url);
-        await storageRef.delete();
-      } catch (e) {
-        print('Error deleting photo: $e');
-        // Continue with other deletions even if one fails
-      }
-    }
-  }
-
-  // Validate form before saving
-  bool _validateForm() {
-    // Check if form is valid
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      return false;
-    }
-    
-    // Check if at least one photo is present
-    if (_photoUrls.isEmpty && _newPhotos.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please add at least one photo'),
-          backgroundColor: errorColor,
-        ),
-      );
-      return false;
-    }
-    
-    // Check if at least one department is selected
-    if (_selectedDepartments.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select at least one department'),
-          backgroundColor: errorColor,
-        ),
-      );
-      return false;
-    }
-    
-    return true;
-  }
-
-  Future<void> _saveItem() async {
-    if (!_validateForm()) return;
-    
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Upload new photos
-      List<String> newPhotoUrls = await _uploadPhotos(_newPhotos);
-      
-      // Delete removed photos
-      if (_deletedPhotoUrls.isNotEmpty) {
-        await _deletePhotos(_deletedPhotoUrls);
-      }
-      
-      // Update item with new photo URLs
-      if (_photoUrls.isEmpty && newPhotoUrls.isNotEmpty) {
-        // If there are no existing photos but new ones were added,
-        // set the first new photo as the main photo
-        _editedItem.photoUrl = newPhotoUrls.first;
-        newPhotoUrls.removeAt(0);
-      }
-      
-      // Combine existing and new additional photos
-      List<String> allAdditionalPhotos = [..._photoUrls];
-      if (_editedItem.photoUrl != null && _photoUrls.contains(_editedItem.photoUrl)) {
-        // Remove main photo from additional photos if it exists there
-        allAdditionalPhotos.remove(_editedItem.photoUrl);
-      }
-      allAdditionalPhotos.addAll(newPhotoUrls);
-      
-      // Update the item with all photos
-      _editedItem.additionalPhotos = allAdditionalPhotos.isEmpty ? null : allAdditionalPhotos;
-      
-      // Update item in Firestore
-      await FirebaseFirestore.instance
-          .collection('items')
-          .doc(_editedItem.itemId)
-          .update(_editedItem.toJson());
-      
-      // Show success message and close screen
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Item updated successfully'),
-          backgroundColor: primaryColor,
-        ),
-      );
-    } catch (e) {
-      print('Error updating item: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating item: ${e.toString()}'),
-          backgroundColor: errorColor,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
   }
 }
