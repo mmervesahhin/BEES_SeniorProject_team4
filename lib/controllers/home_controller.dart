@@ -178,8 +178,13 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
     Map<String, dynamic> filters,
   ) {
     bool priceValid = true;
-    if (filters['minPrice'] != null && filters['maxPrice'] != null) {
-      priceValid = price >= filters['minPrice']! && price <= filters['maxPrice']!;
+
+    if (filters['minPrice'] != null) {
+      priceValid = priceValid && price >= filters['minPrice'];
+    }
+
+    if (filters['maxPrice'] != null) {
+      priceValid = priceValid && price <= filters['maxPrice'];
     }
 
     bool departmentValid = true;

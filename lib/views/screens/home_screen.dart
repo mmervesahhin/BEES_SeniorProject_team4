@@ -789,7 +789,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     onChanged: (value) {
                                       setDialogState(() {
-                                        _filters['minPrice'] = value.isEmpty ? null : double.tryParse(value);
+                                        String formatted = value.replaceAll(',', '.');
+                                        double? parsed = double.tryParse(formatted);
+
+                                        _filters['minPrice'] = value.isEmpty ? null : parsed;
+
+                                        if (value.isNotEmpty && parsed == null) {
+                                          errorMessage = 'Please enter a valid number for Min Price.';
+                                        } else {
+                                          errorMessage = '';
+                                        }
                                       });
                                     },
                                     enabled: _filters['category'] != 'Donation' && _filters['category'] != 'Exchange',
@@ -818,7 +827,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     onChanged: (value) {
                                       setDialogState(() {
-                                        _filters['maxPrice'] = value.isEmpty ? null : double.tryParse(value);
+                                        String formatted = value.replaceAll(',', '.');
+                                        double? parsed = double.tryParse(formatted);
+
+                                        _filters['maxPrice'] = value.isEmpty ? null : parsed;
+
+                                        if (value.isNotEmpty && parsed == null) {
+                                          errorMessage = 'Please enter a valid number for Max Price.';
+                                        } else {
+                                          errorMessage = '';
+                                        }
                                       });
                                     },
                                     enabled: _filters['category'] != 'Donation' && _filters['category'] != 'Exchange',
