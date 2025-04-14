@@ -442,130 +442,147 @@ class _HomeScreenState extends State<HomeScreen> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             SizedBox(height: 4), // Reduced spacing
-                                            if (!hidePrice)
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    '₺${data['price']}',
-                                                    style: GoogleFonts.nunito(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14, // Smaller font
-                                                      color: primaryYellow,
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: 4), // Reduced spacing
-                                                  if (data['paymentPlan'] != null)
-                                                    Expanded(
-                                                      child: Text(
-                                                        data['paymentPlan'],
+                                            SizedBox(
+                                            height: 20,
+                                            child: hidePrice
+                                                ? SizedBox.shrink()
+                                                : Row(
+                                                    children: [
+                                                      Text(
+                                                        '₺${data['price']}',
                                                         style: GoogleFonts.nunito(
-                                                          fontSize: 10, // Smaller font
-                                                          color: textLight,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 14,
+                                                          color: primaryYellow,
                                                         ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
                                                       ),
-                                                    ),
-                                                ],
-                                              ),
+                                                      SizedBox(width: 4),
+                                                      if (data['paymentPlan'] != null)
+                                                        Expanded(
+                                                          child: Text(
+                                                            data['paymentPlan'],
+                                                            style: GoogleFonts.nunito(
+                                                              fontSize: 10,
+                                                              color: textLight,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                          ),
                                             SizedBox(height: 4), // Reduced spacing
                                             
                                             // Tags
                                             Expanded(
                                               child: SingleChildScrollView(
-                                                child: Wrap(
-                                                  spacing: 2, // Reduced spacing
-                                                  runSpacing: 2, // Reduced spacing
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
-                                                    // Category tag
-                                                    Container(
-                                                      margin: EdgeInsets.only(bottom: 2, right: 2),
-                                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Reduced padding
-                                                      decoration: BoxDecoration(
-                                                        color: primaryYellow.withOpacity(0.2),
-                                                        borderRadius: BorderRadius.circular(8), // Smaller radius
-                                                        border: Border.all(
-                                                          color: primaryYellow,
-                                                          width: 1,
+                                                    // Category & Condition Tags
+                                                    Wrap(
+                                                      spacing: 4,
+                                                      runSpacing: 4,
+                                                      children: [
+                                                        // Category tag
+                                                        Container(
+                                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                          decoration: BoxDecoration(
+                                                            color: primaryYellow.withOpacity(0.2),
+                                                            borderRadius: BorderRadius.circular(10),
+                                                            border: Border.all(color: primaryYellow),
+                                                          ),
+                                                          child: Text(
+                                                            category,
+                                                            style: GoogleFonts.nunito(
+                                                              fontSize: 10,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: textDark,
+                                                            ),
+                                                          ),
                                                         ),
-                                                      ),
-                                                      child: Text(
-                                                        category,
-                                                        style: GoogleFonts.nunito(
-                                                          fontSize: 8, // Smaller font
-                                                          fontWeight: FontWeight.bold,
-                                                          color: textDark,
+                                                        // Condition tag
+                                                        Container(
+                                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                          decoration: BoxDecoration(
+                                                            color: lightYellow.withOpacity(0.3),
+                                                            borderRadius: BorderRadius.circular(10),
+                                                            border: Border.all(color: lightYellow),
+                                                          ),
+                                                          child: Text(
+                                                            condition,
+                                                            style: GoogleFonts.nunito(
+                                                              fontSize: 10,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: textDark,
+                                                            ),
+                                                          ),
                                                         ),
-                                                      ),
+                                                      ],
                                                     ),
-                                                    
-                                                    // Condition tag
-                                                    Container(
-                                                      margin: EdgeInsets.only(bottom: 2, right: 2),
-                                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Reduced padding
-                                                      decoration: BoxDecoration(
-                                                        color: lightYellow.withOpacity(0.3),
-                                                        borderRadius: BorderRadius.circular(8), // Smaller radius
-                                                        border: Border.all(
-                                                          color: lightYellow,
-                                                          width: 1,
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        condition,
-                                                        style: GoogleFonts.nunito(
-                                                          fontSize: 8, // Smaller font
-                                                          fontWeight: FontWeight.bold,
-                                                          color: textDark,
-                                                        ),
-                                                      ),
+                                                    SizedBox(height: 4),
+
+                                                    // Department Tags (alt satırda)
+                                                    Wrap(
+                                                      spacing: 4,
+                                                      runSpacing: 4,
+                                                      children: [
+                                                        if (departments.length == 31)
+                                                          Container(
+                                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                            decoration: BoxDecoration(
+                                                              color: backgroundColor,
+                                                              borderRadius: BorderRadius.circular(10),
+                                                              border: Border.all(color: textLight.withOpacity(0.3)),
+                                                            ),
+                                                            child: Text(
+                                                              'All Departments',
+                                                              style: GoogleFonts.nunito(
+                                                                fontSize: 10,
+                                                                fontWeight: FontWeight.bold,
+                                                                color: textDark,
+                                                              ),
+                                                            ),
+                                                          )
+                                                        else ...[
+                                                          if (departments.isNotEmpty)
+                                                            Container(
+                                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                              decoration: BoxDecoration(
+                                                                color: backgroundColor,
+                                                                borderRadius: BorderRadius.circular(10),
+                                                                border: Border.all(color: textLight.withOpacity(0.3)),
+                                                              ),
+                                                              child: Text(
+                                                                departments[0],
+                                                                style: GoogleFonts.nunito(
+                                                                  fontSize: 10,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: textDark,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          if (departments.length > 1)
+                                                            Container(
+                                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                              decoration: BoxDecoration(
+                                                                color: backgroundColor,
+                                                                borderRadius: BorderRadius.circular(10),
+                                                                border: Border.all(color: textLight.withOpacity(0.3)),
+                                                              ),
+                                                              child: Text(
+                                                                '+${departments.length - 1}',
+                                                                style: GoogleFonts.nunito(
+                                                                  fontSize: 10,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: textDark,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                        ],
+                                                      ],
                                                     ),
-                                                    
-                                                    // Department tag (first one only)
-                                                    if (departments.isNotEmpty)
-                                                      Container(
-                                                        margin: EdgeInsets.only(bottom: 2, right: 2),
-                                                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Reduced padding
-                                                        decoration: BoxDecoration(
-                                                          color: backgroundColor,
-                                                          borderRadius: BorderRadius.circular(8), // Smaller radius
-                                                          border: Border.all(
-                                                            color: textLight.withOpacity(0.3),
-                                                            width: 1,
-                                                          ),
-                                                        ),
-                                                        child: Text(
-                                                          departments[0],
-                                                          style: GoogleFonts.nunito(
-                                                            fontSize: 8, // Smaller font
-                                                            fontWeight: FontWeight.bold,
-                                                            color: textDark,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      
-                                                    // More departments indicator
-                                                    if (departments.length > 1)
-                                                      Container(
-                                                        margin: EdgeInsets.only(bottom: 2),
-                                                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Reduced padding
-                                                        decoration: BoxDecoration(
-                                                          color: backgroundColor,
-                                                          borderRadius: BorderRadius.circular(8), // Smaller radius
-                                                          border: Border.all(
-                                                            color: textLight.withOpacity(0.3),
-                                                            width: 1,
-                                                          ),
-                                                        ),
-                                                        child: Text(
-                                                          '+${departments.length - 1}',
-                                                          style: GoogleFonts.nunito(
-                                                            fontSize: 8, // Smaller font
-                                                            fontWeight: FontWeight.bold,
-                                                            color: textDark,
-                                                          ),
-                                                        ),
-                                                      ),
                                                   ],
                                                 ),
                                               ),

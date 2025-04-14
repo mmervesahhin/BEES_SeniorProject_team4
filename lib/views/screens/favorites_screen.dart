@@ -198,7 +198,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                       runSpacing: 4,
                                       children: [
                                         if (departments.length == 31) // Tüm departmanlar seçiliyse
-                                          _buildTag('All Departments', textDark)
+                                          _buildTag('All Departments', textLight)
                                         else ...[
                                           if (departments.isNotEmpty) _buildTag(departments[0], textDark),
                                           if (departments.length > 1)
