@@ -78,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    int activeFilterCount = getActiveFilterCount();
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -93,6 +94,39 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          StreamBuilder<QuerySnapshot>(
+  stream: FirebaseFirestore.instance
+      .collection('notifications')
+      .where('receiverId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+      .where('isRead', isEqualTo: false)
+      .snapshots(),
+  builder: (context, snapshot) {
+    int unreadCount = snapshot.data?.docs.length ?? 0;
+
+    return IconButton(
+      icon: badges.Badge(
+        showBadge: unreadCount > 0,
+        badgeContent: Text(
+          unreadCount.toString(),
+          style: const TextStyle(color: Colors.white, fontSize: 10),
+        ),
+        child: const Icon(Icons.notifications),
+        badgeStyle: const badges.BadgeStyle(
+          badgeColor: Colors.red,
+        ),
+      ),
+      color: textDark,
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationScreen()),
+        );
+      },
+    );
+  },
+),
+
+
         StreamBuilder<int>(
             stream: MessageController().getTotalUnreadMessagesCount(currentUserId), // Stream tüm chat room'lar için toplamı döndürecek
             builder: (context, snapshot) {
@@ -133,40 +167,6 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
           ),
-
-
-
-          StreamBuilder<QuerySnapshot>(
-  stream: FirebaseFirestore.instance
-      .collection('notifications')
-      .where('receiverId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-      .where('isRead', isEqualTo: false)
-      .snapshots(),
-  builder: (context, snapshot) {
-    int unreadCount = snapshot.data?.docs.length ?? 0;
-
-    return IconButton(
-      icon: badges.Badge(
-        showBadge: unreadCount > 0,
-        badgeContent: Text(
-          unreadCount.toString(),
-          style: const TextStyle(color: Colors.white, fontSize: 10),
-        ),
-        child: const Icon(Icons.notifications),
-        badgeStyle: const badges.BadgeStyle(
-          badgeColor: Colors.red,
-        ),
-      ),
-      color: textDark,
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const NotificationScreen()),
-        );
-      },
-    );
-  },
-),
 
         ],
       ),
@@ -223,11 +223,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: primaryYellow,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: IconButton(
-                      icon: Icon(Icons.filter_list, color: Colors.white),
-                      onPressed: () {
-                        _showFiltersDialog();
-                      },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: primaryYellow,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: badges.Badge(
+                        showBadge: activeFilterCount > 0,
+                        badgeContent: Text(
+                          activeFilterCount.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 10),
+                        ),
+                        position: badges.BadgePosition.topEnd(top: -6, end: -6),
+                        badgeStyle: const badges.BadgeStyle(
+                          badgeColor: Colors.red,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.filter_list, color: Colors.white),
+                          onPressed: () {
+                            _showFiltersDialog();
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -727,6 +744,20 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  int getActiveFilterCount() {
+  int count = 0;
+
+  if (_filters['minPrice'] != null) count++;
+  if (_filters['maxPrice'] != null) count++;
+  if (_filters['condition'] != null && _filters['condition'] != 'All') count++;
+  if (_filters['itemType'] != null && _filters['itemType'] != 'All') count++;
+  if (_filters['category'] != null && _filters['category'] != 'All') count++;
+  if ((_filters['departments'] as List).isNotEmpty) count++;
+
+  return count;
+}
+
 
 void _showDepartmentDialog(StateSetter setDialogState) {
   showDialog(
