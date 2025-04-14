@@ -165,6 +165,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                   children: [
                                     Text(
                                       data['title'],
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.nunito(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,

@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/home_controller.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -19,6 +20,13 @@ class AdminHomeScreen extends StatefulWidget {
 }
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
+  // Color scheme
+  final Color primaryYellow = Color(0xFFFFC857);
+  final Color lightYellow = Color(0xFFFFE3A9);
+  final Color backgroundColor = Color(0xFFF8F8F8);
+  final Color textDark = Color(0xFF333333);
+  final Color textLight = Color(0xFF8A8A8A);
+  
   List<String> departmentList = [
       'All Departments', 'AMER', 'ARCH', 'CHEM', 'COMD', 'CS', 'CTIS', 'ECON', 'EDU', 'EEE', 'ELIT', 'FA', 'GRA',
       'HART', 'IAED', 'IE', 'IR', 'LAUD', 'LAW', 'MAN', 'MATH', 'MBG', 'ME', 'MSC', 'PHIL', 'PHYS', 'POLS', 'PREP',
@@ -125,6 +133,38 @@ Widget build(BuildContext context) {
 
                 return matchesSearch && matchesFilters;
               }).toList();
+
+                                if (items.isEmpty) {
+                     return Center(
+                       child: Column(
+                         mainAxisAlignment: MainAxisAlignment.center,
+                         children: [
+                           Icon(
+                             Icons.search_off,
+                             size: 64,
+                             color: textLight,
+                           ),
+                           SizedBox(height: 16),
+                           Text(
+                             'No items found',
+                             style: GoogleFonts.nunito(
+                               fontSize: 18,
+                               fontWeight: FontWeight.bold,
+                               color: textDark,
+                             ),
+                           ),
+                           SizedBox(height: 8),
+                           Text(
+                             'Try adjusting your search or filters',
+                             style: GoogleFonts.nunito(
+                               fontSize: 16,
+                               color: textLight,
+                             ),
+                           ),
+                         ],
+                       ),
+                     );
+                   }
 
               items.sort((a, b) {
                 var titleA = (a['title'] ?? '').toString().toLowerCase();
@@ -410,7 +450,16 @@ void _showFiltersDialog() {
                           ),
                           onChanged: (value) {
                             setDialogState(() {
-                              _filters['minPrice'] = value.isEmpty ? null : double.tryParse(value);
+                               String formatted = value.replaceAll(',', '.');
+                                         double? parsed = double.tryParse(formatted);
+ 
+                                         _filters['minPrice'] = value.isEmpty ? null : parsed;
+ 
+                                         if (value.isNotEmpty && parsed == null) {
+                                           errorMessage = 'Please enter a valid number for Min Price.';
+                                         } else {
+                                           errorMessage = '';
+                                         }
                             });
                           },
                           enabled: _filters['category'] != 'Donation' && _filters['category'] != 'Exchange',
@@ -426,7 +475,16 @@ void _showFiltersDialog() {
                           ),
                           onChanged: (value) {
                             setDialogState(() {
-                              _filters['maxPrice'] = value.isEmpty ? null : double.tryParse(value);
+                              String formatted = value.replaceAll(',', '.');
+                                         double? parsed = double.tryParse(formatted);
+ 
+                                         _filters['maxPrice'] = value.isEmpty ? null : parsed;
+ 
+                                         if (value.isNotEmpty && parsed == null) {
+                                           errorMessage = 'Please enter a valid number for Max Price.';
+                                         } else {
+                                           errorMessage = '';
+                                         }
                             });
                           },
                           enabled: _filters['category'] != 'Donation' && _filters['category'] != 'Exchange',
