@@ -134,7 +134,7 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete),
-                                  onPressed: () => _adminController.ignoreUserReport(doc['complaintID']),
+                                  onPressed: () => _adminController.ignoreUserReport(doc.id),
                                 ),
                               ],
                             ),
