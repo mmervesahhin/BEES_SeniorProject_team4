@@ -300,6 +300,38 @@ class _HomeScreenState extends State<HomeScreen> {
                     return matchesSearch && matchesFilters;
                   }).toList();
 
+                  if (items.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: textLight,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No items found',
+                            style: GoogleFonts.nunito(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textDark,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Try adjusting your search or filters',
+                            style: GoogleFonts.nunito(
+                              fontSize: 16,
+                              color: textLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
                   items.sort((a, b) {
                     var dataA = a.data() as Map<String, dynamic>? ?? {};
                     var dataB = b.data() as Map<String, dynamic>? ?? {};
