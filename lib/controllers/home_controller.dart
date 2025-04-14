@@ -188,9 +188,14 @@ Stream<List<DocumentSnapshot<Map<String, dynamic>>>> getItems({
     }
 
     bool departmentValid = true;
+
+print('🔥 FILTER DEBUG => Item Departments: $selectedDepartments');
+print('🎯 FILTER CONDITIONS => Filtered Departments: ${filters['departments']}');
+
     if (filters['departments'] != null && filters['departments'].isNotEmpty) {
-      departmentValid = selectedDepartments.any((dept) => filters['departments']!.contains(dept)) || filters['departments']!.contains('All Departments');
+      departmentValid = selectedDepartments.any((dept) => filters['departments'].contains(dept));
     }
+print('✅ DEPARTMENT MATCH RESULT: $departmentValid');
 
     return priceValid &&
         (condition == filters['condition'] || filters['condition'] == 'All') &&

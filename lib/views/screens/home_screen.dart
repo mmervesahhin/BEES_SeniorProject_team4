@@ -728,6 +728,112 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+void _showDepartmentDialog(StateSetter setDialogState) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      List<String> tempSelection = selectedDepartments.contains('All Departments')
+          ? List.from(departmentList)
+          : List.from(selectedDepartments);
+
+      return StatefulBuilder(
+        builder: (context, innerSetState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Select Departments',
+              style: GoogleFonts.nunito(fontWeight: FontWeight.bold, color: primaryYellow),
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                children: [
+                  CheckboxListTile(
+                    value: tempSelection.contains('All Departments'),
+                    title: Text('All Departments', style: GoogleFonts.nunito()),
+                    onChanged: (bool? value) {
+                      innerSetState(() {
+                        if (value == true) {
+                          tempSelection = List.from(departmentList);
+                        } else {
+                          tempSelection.clear();
+                        }
+                      });
+                    },
+                  ),
+                  ...departmentList.where((dept) => dept != 'All Departments').map((dept) {
+                    return CheckboxListTile(
+                      value: tempSelection.contains(dept),
+                      title: Text(dept, style: GoogleFonts.nunito()),
+                      onChanged: (bool? value) {
+                        innerSetState(() {
+                          if (value == true) {
+                            tempSelection.add(dept);
+                          } else {
+                            tempSelection.remove(dept);
+                          }
+
+                          // 🔥 All Departments mantığını her değişimden SONRA kontrol et
+                          bool isAllSelected = tempSelection.contains('All Departments');
+                          int normalDeptCount = departmentList.length - 1;
+                          int selectedNormal = tempSelection
+                              .where((e) => e != 'All Departments')
+                              .length;
+
+                          if (selectedNormal == normalDeptCount && !isAllSelected) {
+                            tempSelection.add('All Departments');
+                          } else if (selectedNormal < normalDeptCount && isAllSelected) {
+                            tempSelection.remove('All Departments');
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: primaryYellow,
+                  textStyle: GoogleFonts.nunito(fontWeight: FontWeight.bold),
+                ),
+                child: Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                setDialogState(() {
+                  selectedDepartments = tempSelection;
+                  // UI'da 'All Departments' görünmeye devam etsin ama filtreye gitmesin:
+                  _filters['departments'] = selectedDepartments.where((d) => d != 'All Departments').toList();
+                });
+                Navigator.of(context).pop();
+              },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryYellow,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Apply',
+                  style: GoogleFonts.nunito(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
   void _showFiltersDialog() {
     // Create controllers only once for the dialog
     TextEditingController minPriceController =
@@ -874,7 +980,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             SizedBox(height: 20),
                             
-                            // Departments Section
                             Text(
                               'Departments',
                               style: GoogleFonts.nunito(
@@ -884,74 +989,102 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             SizedBox(height: 8),
-                            Theme(
-                              data: Theme.of(context).copyWith(
-                                textTheme: TextTheme(
-                                  titleMedium: GoogleFonts.nunito(
-                                    color: textDark,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              child: MultiSelectDialogField(
-                                title: Text(
-                                  'Select Departments',
-                                  style: GoogleFonts.nunito(
-                                    fontWeight: FontWeight.bold,
-                                    color: textDark,
-                                  ),
-                                ),
-                                buttonText: Text(
-                                  'Select Departments',
-                                  style: GoogleFonts.nunito(
-                                    color: textLight,
-                                  ),
-                                ),
-                                buttonIcon: Icon(Icons.arrow_drop_down, color: primaryYellow),
+                            GestureDetector(
+                              onTap: () => _showDepartmentDialog(setDialogState),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
                                   color: backgroundColor,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                selectedColor: primaryYellow,
-                                checkColor: Colors.white,
-                                unselectedColor: textLight,
-                                items: departmentList.map((e) => MultiSelectItem(e, e)).toList(),
-                                initialValue: selectedDepartments.where((dept) => dept != 'All Departments').toList(),
-                                onConfirm: (values) {
-                                  setDialogState(() {
-                                    selectedDepartments = values;
-
-                                    // If 'All Departments' is selected, select all departments and remove 'All Departments' from the list
-                                    if (selectedDepartments.contains('All Departments')) {
-                                      selectedDepartments = List.from(departmentList);
-                                      // selectedDepartments.remove('All Departments');
-                                    }
-
-                                    // If no departments are selected, add 'All Departments' to the list
-                                    if (selectedDepartments.isEmpty) {
-                                      selectedDepartments.add('All Departments');
-                                    }
-
-                                    // Update the _filters['departments'] with the selected departments
-                                    _filters['departments'] = selectedDepartments;
-                                  });
-                                },
-                                onSelectionChanged: (selectedList) {
-                                  setDialogState(() {
-                                    if (selectedList.contains('All Departments') && selectedList.length == departmentList.length) {
-                                      // Keep 'All Departments' selected if all are selected
-                                      selectedDepartments = List.from(departmentList);
-                                    } else if (!selectedList.contains('All Departments')) {
-                                      // Uncheck 'All Departments' if not all are selected
-                                      selectedDepartments = selectedList;
-                                    }
-
-                                    // Update _filters['departments'] whenever selection changes
-                                    _filters['departments'] = selectedDepartments;
-                                  });
-                                },
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    isExpanded: true,
+                                    value: selectedDepartments.contains('All Departments')
+                                        ? 'All Departments'
+                                        : selectedDepartments.isEmpty
+                                            ? null
+                                            : '${selectedDepartments.length} selected',
+                                    hint: Text(
+                                      'Select Departments',
+                                      style: GoogleFonts.nunito(color: textLight),
+                                    ),
+                                    icon: Icon(Icons.arrow_drop_down, color: primaryYellow),
+                                    style: GoogleFonts.nunito(
+                                      color: textDark,
+                                      fontSize: 14,
+                                    ),
+                                    onChanged: (_) {
+                                      // override dropdown behavior: always open the dialog
+                                      _showDepartmentDialog(setDialogState);
+                                    },
+                                    items: [], // dropdown'u boş bırakıyoruz, çünkü dialog açılacak
+                                  ),
+                                ),
                               ),
                             ),
+
+                            SizedBox(height: 8),
+if (selectedDepartments.isNotEmpty)
+  Wrap(
+    spacing: 6,
+    runSpacing: 6,
+    children: [
+      if (selectedDepartments.contains('All Departments'))
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: textLight.withOpacity(0.3)),
+          ),
+          child: Text(
+            'All Departments',
+            style: GoogleFonts.nunito(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: textDark,
+            ),
+          ),
+        )
+      else ...[
+        ...selectedDepartments.take(3).map((dept) => Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: textLight.withOpacity(0.3)),
+              ),
+              child: Text(
+                dept,
+                style: GoogleFonts.nunito(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+            )),
+        if (selectedDepartments.length > 3)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: textLight.withOpacity(0.3)),
+            ),
+            child: Text(
+              '+${selectedDepartments.length - 3} more',
+              style: GoogleFonts.nunito(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: textDark,
+              ),
+            ),
+          ),
+      ],
+    ],
+  ),
+
                             SizedBox(height: 20),
 
                             // Condition Section
@@ -1116,8 +1249,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   'condition': 'All',
                                   'itemType': 'All',
                                   'category': 'All',
-                                  'selectedDepartments': [],
+                                  'departments': [],
                                 };
+                                selectedDepartments = [];
                                 minPriceController.clear();
                                 maxPriceController.clear();
                                 errorMessage = ''; // Clear error when filters are cleared
