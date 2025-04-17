@@ -172,33 +172,39 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                           String userName = '${userSnapshot.data?['firstName'] ?? 'Unknown User'} ${userSnapshot.data?['lastName'] ?? ''}';
                           String? profileImageUrl = userSnapshot.data?['profilePicture'];
 
-                          return ListTile(
-                            leading: profileImageUrl != null
+                         return ListTile(
+                          leading: GestureDetector(
+                            onTap: () => _navigateToProfile(doc.id),
+                            child: profileImageUrl != null
                                 ? CircleAvatar(
                                     backgroundImage: NetworkImage(profileImageUrl),
                                   )
                                 : const CircleAvatar(child: Icon(Icons.person)),
-                            title: Text(
+                          ),
+                          title: GestureDetector(
+                            onTap: () => _navigateToProfile(doc.id),
+                            child: Text(
                               userName,
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            subtitle: RichText(
-                              text: TextSpan(
+                          ),
+                          subtitle: RichText(
+                            text: TextSpan(
                               style: DefaultTextStyle.of(context).style,
-                                children: [
+                              children: [
                                 const TextSpan(
                                   text: 'Expiration: ',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 TextSpan(text: (userSnapshot.data?['banEndDate'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? 'Permanent'),
                               ],
-                              ),
                             ),
-                            trailing: ElevatedButton(
-                              onPressed: () => _showUnbanDialog(doc.id), // Show the unban confirmation dialog
-                              child: const Text('Unban'),
-                            ),
-                          );
+                          ),
+                          trailing: ElevatedButton(
+                            onPressed: () => _showUnbanDialog(doc.id),
+                            child: const Text('Unban'),
+                          ),
+                        );
                         },
                       );
                     }).toList(),
