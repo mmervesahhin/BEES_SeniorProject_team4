@@ -144,7 +144,7 @@ pdf.addPage(
     ),
   );
 
-  // Sayfa 2: Pie Chart
+  // Sayfa 2: Bar Chart
   pdf.addPage(
     pw.Page(
       build: (pw.Context context) {
