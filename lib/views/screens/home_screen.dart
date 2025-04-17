@@ -612,6 +612,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 
                                 // Favorite button
+                                // Favorite button (only if not the owner)
+                                if (data['itemOwnerId'] != currentUserId)...[
                                 Positioned(
                                   top: 8,
                                   right: 8,
@@ -645,6 +647,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ),
+                                ],
                               ],
                             ),
                           ),

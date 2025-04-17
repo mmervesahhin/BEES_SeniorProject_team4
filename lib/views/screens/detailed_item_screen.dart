@@ -291,6 +291,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                               )
                             else if (itemDetails!["photo"] != null)
                               Image.network(itemDetails!["photo"], height: 250, width: double.infinity, fit: BoxFit.cover),
+                            if (itemDetails!["itemOwnerId"] != FirebaseAuth.instance.currentUser!.uid) ...[
                             Positioned(
                               top: 8,
                               right: 8,
@@ -322,6 +323,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                                 ),
                               ),
                             ),
+                            ],
                           ],
                         ),
                         SizedBox(height: 10),
@@ -451,12 +453,14 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                                     style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                   SizedBox(width: 10),
+                                  if (itemDetails!["itemOwnerId"] != FirebaseAuth.instance.currentUser!.uid) ...[
                                   IconButton(
                                     onPressed: () {
                                       _navigateToMessageScreen(item, "Item");
                                     },
                                     icon: Icon(Icons.message, color: Color.fromARGB(255, 59, 137, 62), size: 30),
                                     ),
+                                  ],
                                 ],
                               ),
                             ),

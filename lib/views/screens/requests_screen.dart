@@ -274,18 +274,22 @@ Widget _buildRequestCard(Request request) {
                       ),
                     ),
                   ),
+                  if (request.requestOwnerID != currentUserId) ...[
                   IconButton(
                     icon: const Icon(Icons.message, color: Colors.black),
                     onPressed: () {
                       _navigateToMessageScreen(request, "Request");
                     },
                   ),
+                  ],
+                  if (request.requestOwnerID != currentUserId) ...[
                   IconButton(
                     icon: const Icon(Icons.more_vert, color: Colors.black),
                     onPressed: () {
                       _showReportOptions(context, request);
                     },
                   ),
+                  ],
                 ],
               ),
               const SizedBox(height: 8),
