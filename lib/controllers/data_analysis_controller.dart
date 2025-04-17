@@ -59,6 +59,49 @@ Future<void> createReport({
   required DateTime startDate,
   required DateTime endDate,
 }) async {
+    if (barChartData.isEmpty && pieChartData.isEmpty && lineChartData.isEmpty) {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('BEES Data Report',
+                  style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 10),
+              pw.Text(
+                'Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}',
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'No data available for the selected filters in this date range.',
+                style: pw.TextStyle(fontSize: 16, fontStyle: pw.FontStyle.italic),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    if (selectedDirectory == null) return;
+
+    final now = DateTime.now();
+    final formattedTime = '${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
+    final formattedStart = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+    final formattedEnd = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+    final fileName = 'DataReport[${formattedStart}_to_${formattedEnd}]_at_$formattedTime.pdf';
+    final filePath = path.join(selectedDirectory, fileName);
+
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+
+    print('✅ PDF saved with no-data message at: $filePath');
+    return; // ⛔ STOP processing, don't continue
+  }
+
   final pdf = pw.Document();
 
   final barImage = pw.MemoryImage(barChartBytes);
