@@ -52,9 +52,27 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Item Details", style: TextStyle(color: Colors.black)),
-        backgroundColor: Color.fromARGB(255, 59, 137, 62),
+  title: Text("Item Details", style: TextStyle(color: Colors.black)),
+  backgroundColor: Color.fromARGB(255, 59, 137, 62),
+  actions: [
+    if (!isLoading && itemDetails != null)
+      IconButton(
+        icon: Icon(Icons.more_vert, color: Colors.black),
+        onPressed: () {
+          _controller1.showItemRemoveOptions(
+            context,
+            Item.fromJson(itemDetails!, widget.itemId),
+            onSuccess: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => AdminHomeScreen()),
+                (route) => false,
+              );
+            },
+          );
+        },
       ),
+  ],
+),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : itemDetails == null
