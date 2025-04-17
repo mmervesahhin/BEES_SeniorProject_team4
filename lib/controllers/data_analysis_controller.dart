@@ -166,8 +166,9 @@ for (var chunk in summaryChunks) {
     return;
   }
 
-  final fileName =
-      'DataReport[${startDate.toString().split(' ').first}_${endDate.toString().split(' ').first}].pdf';
+  final now = DateTime.now();
+  final formattedNow = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
+  final fileName = 'DataReport[${startDate.toString().split(' ').first}_${endDate.toString().split(' ').first}]_$formattedNow.pdf';
   final filePath = path.join(selectedDirectory, fileName);
 
   final file = File(filePath);
