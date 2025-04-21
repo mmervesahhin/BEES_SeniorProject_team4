@@ -8,6 +8,16 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/home_controller.dart';
 import 'message_list_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+// Define theme colors
+class AppColors {
+  static const Color primaryYellow = Color(0xFFFFC857);
+  static const Color lightYellow = Color(0xFFFFE3A9);
+  static const Color backgroundColor = Color(0xFFF8F8F8);
+  static const Color textDark = Color(0xFF333333);
+  static const Color textLight = Color(0xFF8A8A8A);
+}
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -29,16 +39,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     fetchFavorites();
   }
 
-void fetchFavorites() async {
-  setState(() => isLoading = true);
-  final allFavorites = await _controller.fetchFavorites();
-  favoriteItems = allFavorites.where((doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return data['itemStatus'] != null && data['itemStatus'].toLowerCase() == 'active';
-  }).toList();
-  setState(() => isLoading = false);
-}
-
+  void fetchFavorites() async {
+    setState(() => isLoading = true);
+    final allFavorites = await _controller.fetchFavorites();
+    favoriteItems = allFavorites.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['itemStatus'] != null && data['itemStatus'].toLowerCase() == 'active';
+    }).toList();
+    setState(() => isLoading = false);
+  }
 
   void _toggleFavorite(String itemId, bool isFavorited) async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -49,20 +58,22 @@ void fetchFavorites() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 59, 137, 62),
+        backgroundColor: Colors.white,
+        elevation: 1,
         automaticallyImplyLeading: false,
-        title: const Text(
-          'BEES',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.yellow,
+        title: Text(
+            'BEES',
+            style: GoogleFonts.nunito(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryYellow,
+            ),
           ),
-        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.message),
+            icon: const Icon(Icons.message),
             onPressed: () {
               Navigator.push(
                 context,
@@ -71,29 +82,32 @@ void fetchFavorites() async {
                 ),
               );
             },
-            color: Colors.black,
+            color: AppColors.textDark,
           ),
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryYellow))
           : favoriteItems.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.favorite_border, size: 80, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'No favorite items found',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                        textAlign: TextAlign.center,
-                      ),
+                      Icon(Icons.favorite_border, size: 80, color: AppColors.textLight),
+                      const SizedBox(height: 16),
+                                          Text(
+                                'No favorite items found',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 18,
+                                  color: AppColors.textLight,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                     ],
                   ),
                 )
               : Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(12.0),
                   child: ListView.builder(
                     itemCount: favoriteItems.length,
                     itemBuilder: (context, index) {
@@ -108,26 +122,27 @@ void fetchFavorites() async {
                           );
                         },
                         child: Card(
-                          elevation: 3,
-                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                          elevation: 2,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
+                          color: Colors.white,
                           child: Padding(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(14),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(12),
                                   child: Image.network(
                                     item['photo'],
-                                    width: 90,
-                                    height: 90,
+                                    width: 100,
+                                    height: 100,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,33 +150,46 @@ void fetchFavorites() async {
                                     children: [
                                       Text(
                                         item['title'],
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                        style: GoogleFonts.nunito(
+                                          fontWeight: FontWeight.bold, 
+                                          fontSize: 16,
+                                          color: AppColors.textDark,
+                                        ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 6),
                                       Row(
                                         children: [
                                           Text(
                                             '₺${item['price']}',
-                                            style: TextStyle(fontSize: 20),
+                                            style: GoogleFonts.nunito(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.textDark,
+                                            ),
                                           ),
                                           if (item['category'] == 'Rent')
                                             Padding(
                                               padding: const EdgeInsets.only(left: 8.0),
-                                              child: Text(item['paymentPlan']),
+                                              child: Text(
+                                              item['paymentPlan'],
+                                              style: GoogleFonts.nunito(
+                                                color: AppColors.textLight,
+                                              ),
+                                            ),
                                             ),
                                         ],
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 8),
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             children: [
-                                              _buildTag(item['category'], Colors.green),
-                                              _buildTag(item['condition'], Colors.yellow),
+                                              _buildTag(item['category'], AppColors.lightYellow),
+                                              _buildTag(item['condition'], AppColors.lightYellow),
                                             ],
                                           ),
-                                          const SizedBox(height: 4),
+                                          const SizedBox(height: 6),
                                           Row(
                                             children: [
                                               _buildDepartmentsTag(item['departments']),
@@ -193,7 +221,9 @@ void fetchFavorites() async {
                 ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color.fromARGB(255, 59, 137, 62),
+        backgroundColor: Colors.white,
+        selectedItemColor: AppColors.primaryYellow,
+        unselectedItemColor: AppColors.textLight,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
@@ -208,16 +238,21 @@ void fetchFavorites() async {
 
   Widget _buildTag(String text, Color color) {
     return Container(
-      margin: EdgeInsets.only(right: 4),
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        text,
-        style: TextStyle(color: Colors.black),
-      ),
+  text,
+  style: GoogleFonts.nunito(
+    color: AppColors.textDark,
+    fontWeight: FontWeight.w500,
+    fontSize: 12,
+  ),
+),
+
     );
   }
 
@@ -232,7 +267,7 @@ void fetchFavorites() async {
 
     return Row(
       children: visibleDepartments.map((department) {
-        return _buildTag(department, Colors.orange);
+        return _buildTag(department, AppColors.primaryYellow);
       }).toList(),
     );
   }

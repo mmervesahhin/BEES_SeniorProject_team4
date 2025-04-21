@@ -8,10 +8,10 @@ import 'package:bees/views/screens/admin_others_user_profile_screen.dart';
 import 'package:bees/views/screens/admin_profile_screen.dart';
 import 'package:bees/views/screens/admin_reports_screen.dart';
 import 'package:bees/views/screens/admin_requests_screen.dart';
-import 'package:bees/views/screens/others_user_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class RequestReportsScreen extends StatefulWidget {
   const RequestReportsScreen({super.key});
@@ -27,6 +27,19 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
   final RequestController _requestController = RequestController();
   final AdminController _adminController = AdminController();
   String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
+  
+  // Modern trading app color palette
+  final Color primaryYellow = Color(0xFFFFC857);
+  final Color secondaryYellow = Color(0xFFFFD166);
+  final Color accentColor = Color(0xFF06D6A0);
+  final Color backgroundColor = Colors.white;
+  final Color cardColor = Colors.white;
+  final Color textDark = Color(0xFF1F2937);
+  final Color textMedium = Color(0xFF6B7280);
+  final Color textLight = Color(0xFF8A8A8A);
+  final Color errorColor = Color(0xFFEF4444);
+  final Color successColor = Color(0xFF10B981);
+  final Color borderColor = Color(0xFFE5E7EB);
 
   @override
   void initState() {
@@ -64,6 +77,315 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
     });
   }
 
+  void _navigateToProfile(String userId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AdminOthersUserProfileScreen(userId: userId)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textDark, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Request Complaints',
+          style: GoogleFonts.nunito(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: textDark,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh_outlined, color: primaryYellow),
+            onPressed: _loadReports,
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Reported Requests",
+                style: GoogleFonts.nunito(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "Review and manage reported requests",
+                style: GoogleFonts.nunito(
+                  fontSize: 16,
+                  color: textMedium,
+                ),
+              ),
+              SizedBox(height: 16),
+              Expanded(
+                child: isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+                      ),
+                    )
+                  : reports.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 64,
+                              color: Colors.grey.shade300,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              "No reported requests",
+                              style: GoogleFonts.nunito(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textMedium,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              "There are no reported requests at this time",
+                              style: GoogleFonts.nunito(
+                                fontSize: 14,
+                                color: textMedium,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: reports.length,
+                        itemBuilder: (context, index) {
+                          final report = reports[index];
+                          return _buildReportCard(report);
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: primaryYellow,
+          unselectedItemColor: textLight,
+          selectedLabelStyle: GoogleFonts.nunito(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: GoogleFonts.nunito(
+            fontSize: 12,
+          ),
+          iconSize: 22,
+          elevation: 0,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.shop),
+              label: 'Items',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.assignment),
+              label: 'Requests',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.report),
+              label: 'Complaints',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Analysis',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.account_circle),
+              label: 'Profile',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReportCard(Map<String, dynamic> report) {
+    final requestOwnerName = report['requestOwnerName'] ?? 'Unknown';
+    final requestOwnerSurname = report['requestOwnerSurname'] ?? '';
+    final requestOwnerPhotoUrl = report['requestOwnerProfilePhoto'];
+    final Request? requestObj = report['requestObject'];
+    final String reportReason = report['reportReason'] ?? 'No reason provided';
+    final String reporterName = report['reporterName'] ?? 'Unknown';
+    final String requestContent = report['requestContent'] ?? 'No content available';
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () => _navigateToProfile(report['requestOwnerID']),
+                  child: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey.shade200,
+                    backgroundImage: requestOwnerPhotoUrl != null
+                        ? NetworkImage(requestOwnerPhotoUrl)
+                        : null,
+                    child: requestOwnerPhotoUrl == null
+                        ? Icon(Icons.person, color: Colors.grey.shade400)
+                        : null,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _navigateToProfile(report['requestOwnerID']),
+                    child: Text(
+                      '$requestOwnerName $requestOwnerSurname',
+                      style: GoogleFonts.nunito(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textDark,
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.more_vert, color: textDark),
+                  onPressed: requestObj != null
+                      ? () {
+                          _adminController.showRequestRemoveOptions(
+                            context,
+                            requestObj,
+                            onSuccess: _loadReports,
+                          );
+                        }
+                      : null,
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: borderColor),
+              ),
+              child: Text(
+                requestContent,
+                style: GoogleFonts.nunito(
+                  fontSize: 16,
+                  color: textDark,
+                ),
+              ),
+            ),
+            SizedBox(height: 12),
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: errorColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: errorColor.withOpacity(0.2), width: 1),
+                  ),
+                  child: Text(
+                    reportReason,
+                    style: GoogleFonts.nunito(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: errorColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Reported by: $reporterName",
+              style: GoogleFonts.nunito(
+                fontSize: 14,
+                color: textMedium,
+              ),
+            ),
+            SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: requestObj != null
+                      ? () {
+                          _adminController.showRequestRemoveOptions(
+                            context,
+                            requestObj,
+                            onSuccess: _loadReports,
+                          );
+                        }
+                      : null,
+                  icon: Icon(Icons.flag, size: 18, color: primaryYellow),
+                  label: Text(
+                    "Take Action",
+                    style: GoogleFonts.nunito(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: primaryYellow,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _onItemTapped(int index) {
     if (index == _selectedIndex) return;
     switch (index) {
@@ -83,119 +405,6 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminProfileScreen()));
         break;
     }
-  }
-
-  void _navigateToProfile(String userId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => AdminOthersUserProfileScreen(userId: userId)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 59, 137, 62),
-        title: const Text(
-          'Request Complaints',
-          style: TextStyle(fontSize: 24, color: Colors.black),
-        ),
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : reports.isEmpty
-              ? const Center(child: Text("No reported requests found"))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: reports.length,
-                  itemBuilder: (context, index) {
-                    final report = reports[index];
-                    return _buildReportCard(report);
-                  },
-                ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color.fromARGB(255, 59, 137, 62),
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
-          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
-          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Complaints'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analysis'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReportCard(Map<String, dynamic> report) {
-    final requestOwnerName = report['requestOwnerName'] ?? 'Unknown';
-    final requestOwnerSurname = report['requestOwnerSurname'] ?? '';
-    final requestOwnerPhotoUrl = report['requestOwnerProfilePhoto'];
-    final Request? requestObj = report['requestObject'];
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => _navigateToProfile(report['requestOwnerID']),
-                  child: CircleAvatar(
-                    radius: 24,
-                    backgroundImage: requestOwnerPhotoUrl != null
-                        ? NetworkImage(requestOwnerPhotoUrl)
-                        : const AssetImage('assets/default_profile.png') as ImageProvider,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _navigateToProfile(report['requestOwnerID']),
-                    child: Text(
-                      '$requestOwnerName $requestOwnerSurname',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.more_vert, color: Colors.black),
-                  onPressed: requestObj != null
-                      ? () {
-                          _adminController.showRequestRemoveOptions(
-                            context,
-                            requestObj,
-                            onSuccess: _loadReports, // <-- reload reports automatically
-                          );
-                        }
-                      : null,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text("${report['requestContent']}", style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 4),
-            Text(
-              "Report Reason: ${report['reportReason'] ?? 'No reason provided'}",
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Reported by: ${report['reporterName'] ?? 'Unknown'}",
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   String _formatDate(DateTime date) {
