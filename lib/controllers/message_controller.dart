@@ -37,6 +37,8 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
         'timestamp': FieldValue.serverTimestamp(),
         'isRead': false,
         'type': 'message',
+        'message': 'You have a new message', // ✅ bu satır eksik
+
       });
     }
 
