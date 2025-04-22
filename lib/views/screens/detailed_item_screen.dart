@@ -34,6 +34,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   Map<String, dynamic>? itemDetails;
   bool isLoading = true;
   bool isFavorited = false;
+  bool hasFavoriteChanged = false;
 
   @override
   void initState() {
@@ -248,10 +249,15 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text('Item Details', style: TextStyle(color: Colors.black)),
-                backgroundColor: const Color.fromARGB(255, 248, 250, 248),
-                elevation: 1,
-                iconTheme: IconThemeData(color: Colors.black),
+        title: Text('Item Details', style: TextStyle(color: Colors.black)),
+        backgroundColor: const Color.fromARGB(255, 248, 250, 248),
+        elevation: 1,
+        iconTheme: IconThemeData(color: Colors.black),
+        leading: BackButton(
+          onPressed: () {
+            Navigator.pop(context, hasFavoriteChanged);
+          },
+        ),
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -317,6 +323,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                                   onPressed: () async {
                                     setState(() {
                                       isFavorited = !isFavorited;
+                                      hasFavoriteChanged = true;
                                     });
                                     _homeController.updateFavoriteCount(widget.itemId, isFavorited, FirebaseAuth.instance.currentUser!.uid);
                                   },

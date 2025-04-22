@@ -381,13 +381,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
 
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            bool? updated = await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => DetailedItemScreen(itemId: data['itemId']),
                               ),
                             );
+
+                            if (updated == true) {
+                              await fetchAndSetFavorites(); // Favorileri tekrar al
+                              setState(() {});              // UI'ı güncelle
+                            }
                           },
                           child: Container(
                             decoration: BoxDecoration(
