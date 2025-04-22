@@ -18,7 +18,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
   late EditItemController _controller;
   
   // Updated color palette
-  final Color primaryColor = const Color(0xFFFFD700); // Vibrant yellow
+  final Color primaryColor = Color(0xFFFFC857); // Vibrant yellow
   final Color secondaryColor = const Color(0xFFFFF8E1); // Light yellow
   final Color textColor = const Color(0xFF000000); // Black
   final Color errorColor = const Color(0xFFFF5252); // Red for errors
@@ -199,7 +199,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black, // Black text for contrast
+                              color: Colors.white, // Black text for contrast
                             ),
                           ),
                   ),
@@ -229,7 +229,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Item updated successfully'),
-          backgroundColor: primaryColor,
+          backgroundColor:  Color(0xFFFFE3A9),
         ),
       );
     }

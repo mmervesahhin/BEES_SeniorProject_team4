@@ -6,7 +6,8 @@ import 'package:bees/views/screens/admin_requests_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/admin_controller.dart';
-import 'package:bees/views/screens/admin_detailed_item_screen.dart'; // Import your item details screen
+import 'package:bees/views/screens/admin_detailed_item_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ItemReportsScreen extends StatefulWidget {
   const ItemReportsScreen({super.key});
@@ -20,6 +21,19 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
   bool isLoading = true;
   List<Map<String, dynamic>> reports = [];
   final AdminController _adminController = AdminController();
+  
+  // Modern trading app color palette
+  final Color primaryYellow = Color(0xFFFFC857);
+  final Color secondaryYellow = Color(0xFFFFD166);
+  final Color accentColor = Color(0xFF06D6A0);
+  final Color backgroundColor = Colors.white;
+  final Color cardColor = Colors.white;
+  final Color textDark = Color(0xFF1F2937);
+  final Color textMedium = Color(0xFF6B7280);
+  final textLight = Color(0xFF8A8A8A);
+  final Color errorColor = Color(0xFFEF4444);
+  final Color successColor = Color(0xFF10B981);
+  final Color borderColor = Color(0xFFE5E7EB);
 
   @override
   void initState() {
@@ -45,72 +59,290 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 59, 137, 62),
-        title: const Text('Item Complaints', style: TextStyle(fontSize: 24, color: Colors.black)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textDark, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Item Complaints',
+          style: GoogleFonts.nunito(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: textDark,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh_outlined, color: primaryYellow),
+            onPressed: () {
+              setState(() {
+                isLoading = true;
+              });
+              _fetchReports();
+            },
+            tooltip: 'Refresh',
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : reports.isEmpty
-                ? const Center(child: Text("No reports found"))
-                : ListView.builder(
-                    itemCount: reports.length,
-                    itemBuilder: (context, index) {
-                      final report = reports[index];
-                      return FutureBuilder<Map<String, dynamic>>(
-                        future: _adminController.getItemDetails(report['itemId'] ?? ''),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Reported Items",
+                style: GoogleFonts.nunito(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "Review and manage reported items",
+                style: GoogleFonts.nunito(
+                  fontSize: 16,
+                  color: textMedium,
+                ),
+              ),
+              SizedBox(height: 16),
+              Expanded(
+                child: isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+                      ),
+                    )
+                  : reports.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 64,
+                              color: Colors.grey.shade300,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              "No reports found",
+                              style: GoogleFonts.nunito(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textMedium,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              "There are no reported items at this time",
+                              style: GoogleFonts.nunito(
+                                fontSize: 14,
+                                color: textMedium,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: reports.length,
+                        itemBuilder: (context, index) {
+                          final report = reports[index];
+                          return FutureBuilder<Map<String, dynamic>>(
+                            future: _adminController.getItemDetails(report['itemId'] ?? ''),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return _buildLoadingCard();
+                              }
 
-                          if (snapshot.hasError) {
-                            return const Center(child: Text("Error fetching item details"));
-                          }
+                              if (snapshot.hasError) {
+                                return _buildErrorCard("Error fetching item details");
+                              }
 
-                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                            return const Center(child: Text("Item details not found"));
-                          }
+                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                return _buildErrorCard("Item details not found");
+                              }
 
-                          final itemDetails = snapshot.data!;
-                          final complaintDetails = report['complaintDetails'] ?? 'No complaint details provided'; // Handle complaint details
+                              final itemDetails = snapshot.data!;
+                              final complaintDetails = report['complaintDetails'] ?? 'No complaint details provided';
 
-                          return GestureDetector(
-                            onTap: () {
-                              // Navigate to the detailed item screen
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AdminDetailedItemScreen(itemId: itemDetails['itemId']),
-                                ),
+                              return _buildReportCard(
+                                itemTitle: itemDetails['title'] ?? 'Unknown Item',
+                                reportReason: report['reportReason'] ?? 'No reason provided',
+                                reporterName: report['reporterName'] ?? 'Unknown',
+                                photoUrl: itemDetails['photo'] ?? '',
+                                complaintDetails: complaintDetails,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AdminDetailedItemScreen(itemId: itemDetails['itemId']),
+                                    ),
+                                  );
+                                },
                               );
                             },
-                            child: _buildReportCard(
-                              itemTitle: itemDetails['title'] ?? 'Unknown Item',
-                              reportReason: report['reportReason'] ?? 'No reason provided',
-                              reporterName: report['reporterName'] ?? 'Unknown',
-                              photoUrl: itemDetails['photo'] ?? '',
-                              complaintDetails: complaintDetails, // Pass complaint details
-                            ),
                           );
                         },
-                      );
-                    },
-                  ),
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color.fromARGB(255, 59, 137, 62),
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
-          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
-          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Complaints'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analysis'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
+      bottomNavigationBar: Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: primaryYellow,
+          unselectedItemColor: textLight,
+          selectedLabelStyle: GoogleFonts.nunito(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: GoogleFonts.nunito(
+            fontSize: 12,
+          ),
+          iconSize: 22,
+          elevation: 0,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.shop),
+              label: 'Items',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.assignment),
+              label: 'Requests',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.report),
+              label: 'Complaints',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Analysis',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.account_circle),
+              label: 'Profile',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingCard() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+                strokeWidth: 2,
+              ),
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 20,
+                  width: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  height: 16,
+                  width: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  height: 16,
+                  width: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(String message) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: errorColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: errorColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: errorColor, size: 24),
+          SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.nunito(
+                fontSize: 14,
+                color: errorColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -121,46 +353,124 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
     required String reportReason,
     required String reporterName,
     required String photoUrl,
-    required String complaintDetails, // Add complaintDetails parameter
+    required String complaintDetails,
+    required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                photoUrl,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Icon(Icons.image_not_supported, size: 80, color: Colors.grey),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                  itemTitle,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text("Report Reason: $reportReason", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54)),
-                  const SizedBox(height: 4),
-                  Text("Reported by: $reporterName", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 4),
-                  if (complaintDetails.isNotEmpty)
-                  Text("Description: $complaintDetails", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54)),
-                ],
-              ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  photoUrl,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 80,
+                    height: 80,
+                    color: Colors.grey.shade200,
+                    child: Icon(Icons.image_not_supported, size: 32, color: Colors.grey),
+                  ),
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      itemTitle,
+                      style: GoogleFonts.nunito(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textDark,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: errorColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: errorColor.withOpacity(0.2), width: 1),
+                          ),
+                          child: Text(
+                            reportReason,
+                            style: GoogleFonts.nunito(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: errorColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Reported by: $reporterName",
+                      style: GoogleFonts.nunito(
+                        fontSize: 14,
+                        color: textMedium,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    if (complaintDetails.isNotEmpty)
+                      Text(
+                        complaintDetails,
+                        style: GoogleFonts.nunito(
+                          fontSize: 14,
+                          color: textMedium,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          "View Details",
+                          style: GoogleFonts.nunito(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: primaryYellow,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 12,
+                          color: primaryYellow,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

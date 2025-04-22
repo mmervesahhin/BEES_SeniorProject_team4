@@ -364,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 0.75, // Adjusted for more height
+                        childAspectRatio: 0.70, // Adjusted for more height
                       ),
                       itemCount: items.length,
                       itemBuilder: (context, index) {
@@ -390,8 +390,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
 
                             if (updated == true) {
-                              await fetchAndSetFavorites(); // Favorileri tekrar al
-                              setState(() {});              // UI'ı güncelle
+                              await fetchAndSetFavorites();
+                              setState(() {});
                             }
                           },
                           child: Container(
@@ -498,115 +498,135 @@ class _HomeScreenState extends State<HomeScreen> {
                                             
                                             // Tags
                                             Expanded(
-                                              child: SingleChildScrollView(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    // Category & Condition Tags
-                                                    Wrap(
-                                                      spacing: 4,
-                                                      runSpacing: 4,
-                                                      children: [
-                                                        // Category tag
-                                                        Container(
-                                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  // Category & Condition Tags
+                                                  Row(
+                                                    children: [
+                                                      // Category tag
+                                                      Flexible(
+                                                        child: Container(
+                                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                                           decoration: BoxDecoration(
                                                             color: primaryYellow.withOpacity(0.2),
-                                                            borderRadius: BorderRadius.circular(10),
+                                                            borderRadius: BorderRadius.circular(8),
                                                             border: Border.all(color: primaryYellow),
                                                           ),
                                                           child: Text(
                                                             category,
                                                             style: GoogleFonts.nunito(
-                                                              fontSize: 10,
+                                                              fontSize: 9,
                                                               fontWeight: FontWeight.bold,
                                                               color: textDark,
                                                             ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
                                                           ),
                                                         ),
-                                                        // Condition tag
-                                                        Container(
-                                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                      ),
+                                                      SizedBox(width: 4),
+                                                      // Condition tag
+                                                      Flexible(
+                                                        child: Container(
+                                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                                           decoration: BoxDecoration(
                                                             color: lightYellow.withOpacity(0.3),
-                                                            borderRadius: BorderRadius.circular(10),
+                                                            borderRadius: BorderRadius.circular(8),
                                                             border: Border.all(color: lightYellow),
                                                           ),
                                                           child: Text(
                                                             condition,
                                                             style: GoogleFonts.nunito(
-                                                              fontSize: 10,
+                                                              fontSize: 9,
                                                               fontWeight: FontWeight.bold,
                                                               color: textDark,
                                                             ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
                                                           ),
                                                         ),
-                                                      ],
-                                                    ),
-                                                    SizedBox(height: 4),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 4),
 
-                                                    // Department Tags (alt satırda)
-                                                    Wrap(
-                                                      spacing: 4,
-                                                      runSpacing: 4,
-                                                      children: [
-                                                        if (departments.length == 31)
-                                                          Container(
-                                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  // Department Tags
+                                                  Row(
+                                                    children: [
+                                                      if (departments.length == 31)
+                                                        Flexible(
+                                                          child: Container(
+                                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                                             decoration: BoxDecoration(
                                                               color: backgroundColor,
-                                                              borderRadius: BorderRadius.circular(10),
+                                                              borderRadius: BorderRadius.circular(8),
                                                               border: Border.all(color: textLight.withOpacity(0.3)),
                                                             ),
                                                             child: Text(
                                                               'All Departments',
                                                               style: GoogleFonts.nunito(
-                                                                fontSize: 10,
+                                                                fontSize: 9,
                                                                 fontWeight: FontWeight.bold,
                                                                 color: textDark,
                                                               ),
+                                                              maxLines: 1,
+                                                              overflow: TextOverflow.ellipsis,
                                                             ),
-                                                          )
-                                                        else ...[
-                                                          if (departments.isNotEmpty)
-                                                            Container(
-                                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                          ),
+                                                        )
+                                                      else ...[
+                                                        if (departments.isNotEmpty)
+                                                          Flexible(
+                                                            flex: 2,
+                                                            child: Container(
+                                                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                                               decoration: BoxDecoration(
                                                                 color: backgroundColor,
-                                                                borderRadius: BorderRadius.circular(10),
+                                                                borderRadius: BorderRadius.circular(8),
                                                                 border: Border.all(color: textLight.withOpacity(0.3)),
                                                               ),
                                                               child: Text(
                                                                 departments[0],
                                                                 style: GoogleFonts.nunito(
-                                                                  fontSize: 10,
+                                                                  fontSize: 9,
                                                                   fontWeight: FontWeight.bold,
                                                                   color: textDark,
                                                                 ),
+                                                                maxLines: 1,
+                                                                overflow: TextOverflow.ellipsis,
                                                               ),
                                                             ),
-                                                          if (departments.length > 1)
-                                                            Container(
-                                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                              decoration: BoxDecoration(
-                                                                color: backgroundColor,
-                                                                borderRadius: BorderRadius.circular(10),
-                                                                border: Border.all(color: textLight.withOpacity(0.3)),
-                                                              ),
-                                                              child: Text(
-                                                                '+${departments.length - 1}',
-                                                                style: GoogleFonts.nunito(
-                                                                  fontSize: 10,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  color: textDark,
+                                                          ),
+                                                        if (departments.length > 1)
+                                                          Flexible(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding: const EdgeInsets.only(left: 4.0),
+                                                              child: Container(
+                                                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                                decoration: BoxDecoration(
+                                                                  color: backgroundColor,
+                                                                  borderRadius: BorderRadius.circular(8),
+                                                                  border: Border.all(color: textLight.withOpacity(0.3)),
+                                                                ),
+                                                                child: Text(
+                                                                  '+${departments.length - 1}',
+                                                                  style: GoogleFonts.nunito(
+                                                                    fontSize: 9,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: textDark,
+                                                                  ),
+                                                                  maxLines: 1,
+                                                                  overflow: TextOverflow.ellipsis,
                                                                 ),
                                                               ),
                                                             ),
-                                                        ],
+                                                          ),
                                                       ],
-                                                    ),
-                                                  ],
-                                                ),
+                                                    ],
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ],

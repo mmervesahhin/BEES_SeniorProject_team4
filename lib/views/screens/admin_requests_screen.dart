@@ -110,19 +110,13 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> with SingleTi
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            Icon(
-              Icons.assignment_rounded,
-              color: primaryYellow,
-              size: 28,
-            ),
-            const SizedBox(width: 10),
             Text.rich(
               TextSpan(
                 children: [
                   TextSpan(
                     text: 'BEES ',
                     style: GoogleFonts.nunito(
-                      fontSize: 24,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
                       color: primaryYellow,
                     ),
