@@ -74,6 +74,32 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                 Padding(
+                  padding: const EdgeInsets.only(left: 8.0, bottom: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Complaint Management",
+                        style: GoogleFonts.nunito(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: textDark,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        "Select a category to view and manage complaints",
+                        style: GoogleFonts.nunito(
+                          fontSize: 16,
+                          color: textMedium,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                  SizedBox(height: 24),
                   Expanded(
                     child: Center(
                       child: SingleChildScrollView(
