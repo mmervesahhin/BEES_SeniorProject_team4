@@ -318,7 +318,7 @@ void showSuccessPopup(BuildContext context, String email) {
                                     ),
                                     SizedBox(width: 8),
                                     Text(
-                                      "Remember me",
+                                      "Stay Logged In",
                                       style: GoogleFonts.nunito(
                                         fontSize: 14,
                                         color: textLight,
