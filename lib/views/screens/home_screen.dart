@@ -131,8 +131,11 @@ class _HomeScreenState extends State<HomeScreen> {
             stream: MessageController().getTotalUnreadMessagesCount(currentUserId), // Stream tüm chat room'lar için toplamı döndürecek
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              }
+              return CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+              );
+            }
+
 
               if (snapshot.hasData) {
                 int unreadMessages = snapshot.data ?? 0;
@@ -381,18 +384,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         bool hidePrice = category.toLowerCase() == 'donate' || category.toLowerCase() == 'exchange';
 
                         return GestureDetector(
-                          onTap: () async {
-                            bool? updated = await Navigator.push(
+                          onTap: () {
+                            Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => DetailedItemScreen(itemId: data['itemId']),
                               ),
                             );
-
-                            if (updated == true) {
-                              await fetchAndSetFavorites();
-                              setState(() {});
-                            }
                           },
                           child: Container(
                             decoration: BoxDecoration(

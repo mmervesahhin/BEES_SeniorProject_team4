@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:bees/views/screens/auth/register_screen.dart';
 import 'package:bees/controllers/auth/login_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -20,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   String email = '';
   String password = '';
   bool _isPasswordVisible = false;
+  bool _rememberMe = false; // Added for remember me functionality
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -39,6 +41,30 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
     _animationController.forward();
+    _loadRememberMeStatus(); // Load saved remember me status
+  }
+
+  // Load saved remember me status and credentials
+  Future<void> _loadRememberMeStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMe = prefs.getBool('rememberMe') ?? false;
+      if (_rememberMe) {
+        _emailController.text = prefs.getString('email') ?? '';
+        email = _emailController.text;
+      }
+    });
+  }
+
+  // Save remember me status and credentials
+  Future<void> _saveRememberMeStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('rememberMe', _rememberMe);
+    if (_rememberMe) {
+      await prefs.setString('email', email);
+    } else {
+      await prefs.remove('email');
+    }
   }
 
   @override
@@ -269,7 +295,38 @@ void showSuccessPopup(BuildContext context, String email) {
                                   onChanged: (value) => password = value,
                                   validator: _validatePassword,
                                 ),
-                                SizedBox(height: 30),
+                                SizedBox(height: 20),
+                                
+                                // Remember me checkbox
+                                Row(
+                                  children: [
+                                    SizedBox(
+                                      height: 24,
+                                      width: 24,
+                                      child: Checkbox(
+                                        value: _rememberMe,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _rememberMe = value ?? false;
+                                          });
+                                        },
+                                        activeColor: primaryYellow,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      "Remember me",
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 14,
+                                        color: textLight,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 20),
                                 
                                 // Login button
                                 Align(
@@ -362,12 +419,19 @@ void showSuccessPopup(BuildContext context, String email) {
     return Container(
       height: 44,
       child: ElevatedButton(
-        onPressed: () => _loginController.handleLogin(
-          emailAddress: email,
-          password: password,
-          formKey: _formKey,
-          context: context,
-        ),
+        onPressed: () async {
+          // Save remember me status before login
+          await _saveRememberMeStatus();
+          
+          // Proceed with login
+          _loginController.handleLogin(
+            emailAddress: email,
+            password: password,
+            formKey: _formKey,
+            context: context,
+            rememberMe: _rememberMe, // Pass remember me status to controller
+          );
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryYellow,
           foregroundColor: Colors.white,
