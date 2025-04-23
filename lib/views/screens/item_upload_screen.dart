@@ -149,26 +149,13 @@ bool showCoverError = false;
         category: category,
         condition: condition,
         itemType: itemType,
+        paymentPlan: paymentPlan,
         coverImage: _imageCover,
         additionalImages: _additionalImages,
         selectedDepartments: selectedDepartments,
         context: context,
       );
     }
-
-
-  if (_formKey.currentState?.validate() ?? false) {
-    // Proceed with upload only if form is valid
-    await itemController.validateAndUploadItem(
-      category: category,
-      condition: condition,
-      itemType: itemType,
-      coverImage: _imageCover,
-      additionalImages: _additionalImages,
-      selectedDepartments: selectedDepartments,
-      context: context,
-    );
-  }
 }
 
 
@@ -229,14 +216,16 @@ Column(
     ),
 
     Row(
-      children: [
-        _imageCover == null
-            ? Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                child: uploadCoverImagePlaceholder(),
-              )
-            : Card(
+  children: [
+    _imageCover == null
+        ? Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: uploadCoverImagePlaceholder(),
+          )
+        : Stack(
+            children: [
+              Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 child: ClipRRect(
@@ -249,14 +238,29 @@ Column(
                   ),
                 ),
               ),
-        const SizedBox(width: 16),
-        Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          child: addMorePhotosPlaceholder(),
-        ),
-      ],
+              Positioned(
+                top: -7,
+                right: -7,
+                child: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                  onPressed: () {
+                    setState(() {
+                      _imageCover = null;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+    const SizedBox(width: 16),
+    Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: addMorePhotosPlaceholder(),
     ),
+  ],
+),
+
 
     // Hata mesajını buraya taşıdık (fotoğrafların altına)
     Visibility(
@@ -429,9 +433,6 @@ const SizedBox(height: 20),
                     ),
                 ],
               ),
-
-        // Şart Dropdown
-
                 const Text('Condition', style: TextStyle(color: Colors.black)),
                 DropdownButton<String>(
                   value: condition,
@@ -492,7 +493,7 @@ const SizedBox(height: 20),
                         const Text('Payment Plan', style: TextStyle(color: Colors.black)),
                         Opacity(
                           opacity: category == 'Rent' ? 1.0 : 0.5,  // Adjust opacity based on category
-                          child: DropdownButton<String>(
+                          child: DropdownButtonFormField<String>(
                             value: paymentPlan,
                             isExpanded: true,
                             items: ['Per Hour', 'Per Day', 'Per Month']
@@ -505,6 +506,7 @@ const SizedBox(height: 20),
                                 ? (newValue) {
                                     setState(() {
                                       paymentPlan = newValue!;
+                                      //print('Selected payment plan: $paymentPlan');
                                     });
                                   }
                                 : null, // Disable when Rent is not selected
