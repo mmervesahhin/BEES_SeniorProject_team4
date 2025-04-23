@@ -72,6 +72,7 @@ class UploadSuccessPage extends StatelessWidget {
                     ),
                     ElevatedButton.icon(
                       onPressed: () {
+                        //print("Navigating to DetailedItemScreen with itemId: $itemId");
                         // Navigate to DetailedItemScreen
                         Navigator.push(
                           context,
