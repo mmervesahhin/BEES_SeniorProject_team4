@@ -315,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     var departments = data['departments'] ?? [];
 
                     bool matchesSearch = title.contains(_searchQuery);
-                    bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
+                    bool matchesFilters = _controller.applyFilters(price.toDouble(), condition, category, itemType, departments, _filters);
 
                     return matchesSearch && matchesFilters;
                   }).toList();

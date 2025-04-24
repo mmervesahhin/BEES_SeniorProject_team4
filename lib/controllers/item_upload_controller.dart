@@ -189,7 +189,7 @@ class ItemController {
 
   /// **Resim Boyutu Doğrulama (5MB sınırı)**
   bool isImageSizeValid(File imageFile) {
-    const maxSizeInBytes = 10 * 1024 * 1024; // 5MB
+    const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
     final fileSize = imageFile.lengthSync();
     return fileSize <= maxSizeInBytes;
   }

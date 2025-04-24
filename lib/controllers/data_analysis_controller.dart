@@ -59,9 +59,10 @@ Future<void> createReport({
   required DateTime startDate,
   required DateTime endDate,
 }) async {
-    if (barChartData.isEmpty && pieChartData.isEmpty && lineChartData.isEmpty) {
+  if (barChartData.isEmpty && pieChartData.isEmpty && lineChartData.isEmpty) {
+    // No data case - unchanged
     final pdf = pw.Document();
-
+    
     pdf.addPage(
       pw.Page(
         build: (pw.Context context) {
@@ -85,8 +86,11 @@ Future<void> createReport({
       ),
     );
 
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-    if (selectedDirectory == null) return;
+    // Get directory path for saving the PDF
+    String? selectedDirectory = await getDirectoryPath();
+    if (selectedDirectory == null) {
+      throw Exception("No directory selected for saving the PDF");
+    }
 
     final now = DateTime.now();
     final formattedTime = '${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
@@ -103,110 +107,224 @@ Future<void> createReport({
   }
 
   final pdf = pw.Document();
-
-  final barImage = pw.MemoryImage(barChartBytes);
-  final pieImage = pw.MemoryImage(pieChartBytes);
-  final lineImage = pw.MemoryImage(lineChartBytes);
-
-  // 📌 AI Yorum Promptu oluştur
+  
+  // AI Prompt generation
   final aiPrompt = generateAIPrompt(
     itemTypeData: barChartData,
     categoryData: pieChartData,
     trendData: lineChartData,
   );
 
-  // 🧠 AI'dan canlı yorum al (Cloud Run fonksiyonuna istek)
-  final aiResponse = await fetchAISummaryFromFunction(aiPrompt);
-  print("🧠 AI Prompt:\n$aiPrompt");
-  print("🤖 AI Response from server: $aiResponse");
+  // AI summary fetch
+  String? aiResponse;
+  try {
+    aiResponse = await fetchAISummaryFromFunction(aiPrompt);
+    print("🧠 AI Prompt:\n$aiPrompt");
+    print("🤖 AI Response from server: $aiResponse");
+  } catch (e) {
+    print("⚠️ Failed to fetch AI summary: $e");
+    aiResponse = "Unable to generate AI summary at this time.";
+  }
 
-pdf.addPage(
+  // Title page
+  pdf.addPage(
     pw.Page(
       build: (pw.Context context) {
         return pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text('BEES Data Report',
-                style: pw.TextStyle(
-                    fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 10),
             pw.Text(
                 'Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}'),
             pw.SizedBox(height: 20),
-            pw.Text('Category Distribution (Pie Chart):',
-                style: pw.TextStyle(
-                    fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 20),
-            pw.Image(pieImage),
           ],
         );
       },
     ),
   );
 
-  // Sayfa 2: Bar Chart
-  pdf.addPage(
-    pw.Page(
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('Item Type Chart (Bar):',
-                style: pw.TextStyle(
-                    fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 20),
-            pw.Image(barImage),
-          ],
-        );
-      },
-    ),
-  );
+  // Category Distribution (Pie Chart)
+  if (pieChartData.isNotEmpty) {
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Category Distribution:',
+                  style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              
+              // Add image if available, otherwise add table
+              pieChartBytes.isNotEmpty 
+                ? pw.Image(pw.MemoryImage(pieChartBytes))
+                : pw.Table(
+                    border: pw.TableBorder.all(),
+                    children: [
+                      pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text('Category', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text('Count', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                      ...pieChartData.entries.map((entry) => pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text(entry.key),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text(entry.value.toString()),
+                          ),
+                        ],
+                      )).toList(),
+                    ],
+                  ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
-  // Sayfa 3: Line Chart
-  pdf.addPage(
-    pw.Page(
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('Item Trend Over Time (Line Chart):',
-                style: pw.TextStyle(
-                    fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 30),
-            pw.Image(lineImage),
-          ],
-        );
-      },
-    ),
-  );
+  // Item Type Distribution (Bar Chart)
+  if (barChartData.isNotEmpty) {
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Item Type Distribution:',
+                  style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              
+              // Add image if available, otherwise add table
+              barChartBytes.isNotEmpty 
+                ? pw.Image(pw.MemoryImage(barChartBytes))
+                : pw.Table(
+                    border: pw.TableBorder.all(),
+                    children: [
+                      pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text('Item Type', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text('Count', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                      ...barChartData.entries.map((entry) => pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text(entry.key),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text(entry.value.toString()),
+                          ),
+                        ],
+                      )).toList(),
+                    ],
+                  ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
-// Sayfa 4 ve devamı: AI summary (MultiPage ile otomatik bölünür)
-// Sayfa 4 ve sonrası: AI yorum metnini böl ve her sayfaya sırayla ekle
-final summaryChunks = splitTextToFitPages(aiResponse ?? 'No AI response received.');
+  // Trend Over Time (Line Chart)
+  if (lineChartData.isNotEmpty) {
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Trend Over Time:',
+                  style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              
+              // Add image if available, otherwise add table
+              lineChartBytes.isNotEmpty 
+                ? pw.Image(pw.MemoryImage(lineChartBytes))
+                : pw.Table(
+                    border: pw.TableBorder.all(),
+                    children: [
+                      pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text('Date', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text('Count', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                      ...lineChartData.entries.map((entry) => pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text(entry.key),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(8),
+                            child: pw.Text(entry.value.toString()),
+                          ),
+                        ],
+                      )).toList(),
+                    ],
+                  ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
-for (var chunk in summaryChunks) {
-  pdf.addPage(
-    pw.Page(
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('AI Generated Summary',
-                style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 10),
-            pw.Text(chunk, style: const pw.TextStyle(fontSize: 12)),
-          ],
-        );
-      },
-    ),
-  );
-}
-  // Dosya kaydet
-  String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+  // AI Summary
+  if (aiResponse != null && aiResponse.isNotEmpty) {
+    final summaryChunks = splitTextToFitPages(aiResponse);
+    for (var chunk in summaryChunks) {
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('AI Generated Summary',
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 10),
+                pw.Text(chunk, style: const pw.TextStyle(fontSize: 12)),
+              ],
+            );
+          },
+        ),
+      );
+    }
+  }
 
+  // Get directory path for saving the PDF
+  String? selectedDirectory = await getDirectoryPath();
+  
   if (selectedDirectory == null) {
-    print("❌ Kullanıcı dizin seçmedi.");
-    return;
+    throw Exception("No directory selected for saving the PDF");
   }
 
   final now = DateTime.now();
@@ -218,6 +336,32 @@ for (var chunk in summaryChunks) {
   await file.writeAsBytes(await pdf.save());
 
   print('✅ PDF saved at: $filePath');
+}
+
+// Helper method to get directory path with retry logic
+Future<String?> getDirectoryPath() async {
+  String? selectedDirectory;
+  int attempts = 0;
+  const maxAttempts = 3;
+  
+  while (selectedDirectory == null && attempts < maxAttempts) {
+    attempts++;
+    try {
+      selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      if (selectedDirectory == null && attempts < maxAttempts) {
+        // Wait a moment before retrying
+        await Future.delayed(Duration(milliseconds: 500));
+      }
+    } catch (e) {
+      print("❌ Error selecting directory (attempt $attempts): $e");
+      if (attempts < maxAttempts) {
+        // Wait a moment before retrying
+        await Future.delayed(Duration(milliseconds: 500));
+      }
+    }
+  }
+  
+  return selectedDirectory;
 }
 
   Future<List<Map<String, dynamic>>> fetchFilteredItems({
@@ -285,13 +429,48 @@ List<PieChartDataModel> prepareCategoryPieChart(Map<String, int> categoryCounts)
   }).toList();
 }
 
+// Update the captureChart method to be more robust
 Future<Uint8List> captureChart(GlobalKey key) async {
-  RenderRepaintBoundary boundary =
-      key.currentContext!.findRenderObject() as RenderRepaintBoundary;
-
-  ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-  ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-  return byteData!.buffer.asUint8List();
+  try {
+    if (key.currentContext == null) {
+      print("⚠️ Chart context is null");
+      return Uint8List(0);
+    }
+    
+    final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary?;
+    if (boundary == null) {
+      print("⚠️ RenderRepaintBoundary is null");
+      return Uint8List(0);
+    }
+    
+    // Try with progressively lower pixel ratios if needed
+    ui.Image? image;
+    for (double ratio in [1.5, 1.0]) {
+      try {
+        image = await boundary.toImage(pixelRatio: ratio);
+        break; // If successful, break the loop
+      } catch (e) {
+        print("⚠️ Failed to capture with pixel ratio $ratio: $e");
+        // Continue to next ratio
+      }
+    }
+    
+    if (image == null) {
+      print("⚠️ Failed to capture image with any pixel ratio");
+      return Uint8List(0);
+    }
+    
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) {
+      print("⚠️ ByteData is null");
+      return Uint8List(0);
+    }
+    
+    return byteData.buffer.asUint8List();
+  } catch (e) {
+    print("⚠️ Chart capture error: $e");
+    return Uint8List(0);
+  }
 }
 
 
