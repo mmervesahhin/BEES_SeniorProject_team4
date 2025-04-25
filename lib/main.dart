@@ -6,7 +6,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Check if Firebase is already initialized
     await Firebase.initializeApp(
       options: const FirebaseOptions(
         apiKey: 'AIzaSyA5R4lMmDbLPDo_JnWH39FwPlniSiEjDGo',
@@ -17,7 +16,6 @@ void main() async {
       ),
     );
   } catch (e) {
-    // If Firebase is already initialized, this will handle the error
     print('Firebase already initialized: $e');
   }
 
@@ -31,7 +29,59 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginScreen(),
+      home: SplashScreen(),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    _animation = Tween<double>(begin: 1.0, end: 0.0).animate(_controller);
+
+    _controller.forward();
+
+    Future.delayed(const Duration(seconds: 2), () {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: FadeTransition(
+        opacity: _animation,
+        child: Center(
+          child: Image.asset('assets/app_icon.png', width: 150),
+        ),
+      ),
     );
   }
 }
