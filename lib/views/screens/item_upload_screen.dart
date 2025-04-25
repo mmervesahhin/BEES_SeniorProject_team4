@@ -118,117 +118,102 @@ class _UploadItemPageState extends State<UploadItemPage> {
   }
 
   // Add the _showDepartmentDialog method after the toggleSelection method
-  void _showDepartmentDialog(StateSetter setDialogState) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        List<String> tempSelection = selectedDepartments.length == departments.length
-            ? List.from(departmentList)
-            : List.from(selectedDepartments);
+  void _showDepartmentDialog(StateSetter parentSetState) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      List<String> tempSelection = selectedDepartments.length == departments.length
+          ? List.from(departments)
+          : List.from(selectedDepartments);
 
-        return StatefulBuilder(
-          builder: (context, innerSetState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(
-                'Select Departments',
-                style: GoogleFonts.nunito(fontWeight: FontWeight.bold, color: primaryYellow),
-              ),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    CheckboxListTile(
-                      value: tempSelection.contains('All Departments') || tempSelection.length == departments.length,
-                      title: Text('All Departments', style: GoogleFonts.nunito()),
+      return StatefulBuilder(
+        builder: (context, innerSetState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Select Departments',
+              style: GoogleFonts.nunito(fontWeight: FontWeight.bold, color: primaryYellow),
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  CheckboxListTile(
+                    value: tempSelection.length == departments.length,
+                    title: Text('All Departments', style: GoogleFonts.nunito()),
+                    activeColor: primaryYellow,
+                    onChanged: (bool? value) {
+                      innerSetState(() {
+                        if (value == true) {
+                          tempSelection = List.from(departments);
+                        } else {
+                          tempSelection.clear();
+                        }
+                      });
+                    },
+                  ),
+                  Divider(),
+                  ...departments.map((dept) {
+                    return CheckboxListTile(
+                      value: tempSelection.contains(dept),
+                      title: Text(dept, style: GoogleFonts.nunito()),
                       activeColor: primaryYellow,
                       onChanged: (bool? value) {
                         innerSetState(() {
                           if (value == true) {
-                            tempSelection = List.from(departmentList);
+                            tempSelection.add(dept);
                           } else {
-                            tempSelection.clear();
+                            tempSelection.remove(dept);
                           }
                         });
                       },
-                    ),
-                    Divider(),
-                    ...departmentList.where((dept) => dept != 'All Departments').map((dept) {
-                      return CheckboxListTile(
-                        value: tempSelection.contains(dept),
-                        title: Text(dept, style: GoogleFonts.nunito()),
-                        activeColor: primaryYellow,
-                        onChanged: (bool? value) {
-                          innerSetState(() {
-                            if (value == true) {
-                              tempSelection.add(dept);
-                            } else {
-                              tempSelection.remove(dept);
-                            }
-
-                            // Check All Departments logic after each change
-                            bool isAllSelected = tempSelection.contains('All Departments');
-                            int normalDeptCount = departments.length;
-                            int selectedNormal = tempSelection
-                                .where((e) => e != 'All Departments')
-                                .length;
-
-                            if (selectedNormal == normalDeptCount && !isAllSelected) {
-                              tempSelection.add('All Departments');
-                            } else if (selectedNormal < normalDeptCount && isAllSelected) {
-                              tempSelection.remove('All Departments');
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ],
+                    );
+                  }).toList(),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: primaryYellow,
+                  textStyle: GoogleFonts.nunito(fontWeight: FontWeight.bold),
+                ),
+                child: Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  parentSetState(() {
+                    selectedDepartments = tempSelection;
+                    // Keep All Departments in UI but not in filters
+                    _filters['departments'] = selectedDepartments;
+                  });
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryYellow,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Apply',
+                  style: GoogleFonts.nunito(fontWeight: FontWeight.bold),
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: primaryYellow,
-                    textStyle: GoogleFonts.nunito(fontWeight: FontWeight.bold),
-                  ),
-                  child: Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    setDialogState(() {
-                      selectedDepartments = tempSelection.contains('All Departments') 
-                          ? List.from(departments)
-                          : tempSelection;
-                      // Keep All Departments in UI but not in filters
-                      _filters['departments'] = selectedDepartments.where((d) => d != 'All Departments').toList();
-                    });
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryYellow,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Apply',
-                    style: GoogleFonts.nunito(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   // Upload cover image
   Widget uploadCoverImagePlaceholder() {
@@ -472,164 +457,172 @@ class _UploadItemPageState extends State<UploadItemPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Photos section
-                    _buildSectionHeader('Photos', true),
-                    SizedBox(height: 12),
-                    
-                    // Cover photo
-                    Row(
-                      children: [
-                        _imageCover == null
-                            ? uploadCoverImagePlaceholder()
-                            : Stack(
-                                children: [
-                                  Container(
-                                    width: 120,
-                                    height: 120,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 4,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Image.file(
-                                        _imageCover!,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: -5,
-                                    right: -5,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.1),
-                                            blurRadius: 2,
-                                            offset: Offset(0, 1),
-                                          ),
-                                        ],
-                                      ),
-                                      child: IconButton(
-                                        icon: Icon(Icons.close, color: Colors.red, size: 18),
-                                        padding: EdgeInsets.zero,
-                                        constraints: BoxConstraints(
-                                          minWidth: 24,
-                                          minHeight: 24,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            _imageCover = null;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                        SizedBox(width: 16),
-                        addMorePhotosPlaceholder(),
-                      ],
+_buildSectionHeader('Photos', true),
+SizedBox(height: 12),
+
+// Cover photo and additional photos in a row
+Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    // Cover photo
+    _imageCover == null
+        ? uploadCoverImagePlaceholder()
+        : Stack(
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
                     ),
-                    
-                    // Cover photo error
-                    if (showCoverError)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          'Please upload a cover photo',
-                          style: GoogleFonts.nunito(
-                            color: Colors.red,
-                            fontSize: 12,
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    _imageCover!,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: -5,
+                right: -5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.close, color: Colors.red, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      minWidth: 24,
+                      minHeight: 24,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _imageCover = null;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+    
+    SizedBox(width: 12),
+    
+    // Additional photos in a row
+    if (_additionalImages.isNotEmpty)
+      Expanded(
+        child: SizedBox(
+          height: 120,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              ..._additionalImages.map((image) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            image,
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
-                    
-                    SizedBox(height: 16),
-                    
-                    // Additional photos
-                    if (_additionalImages.isNotEmpty) ...[
-                      Text(
-                        'Additional Photos',
-                        style: GoogleFonts.nunito(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: textLight,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: _additionalImages.map((image) {
-                          return Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.file(
-                                    image,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: -5,
-                                right: -5,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 2,
-                                        offset: Offset(0, 1),
-                                      ),
-                                    ],
-                                  ),
-                                  child: IconButton(
-                                    icon: Icon(Icons.close, color: Colors.red, size: 18),
-                                    padding: EdgeInsets.zero,
-                                    constraints: BoxConstraints(
-                                      minWidth: 24,
-                                      minHeight: 24,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _additionalImages.remove(image);
-                                      });
-                                    },
-                                  ),
-                                ),
+                      Positioned(
+                        top: -5,
+                        right: -5,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 2,
+                                offset: Offset(0, 1),
                               ),
                             ],
-                          );
-                        }).toList(),
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.close, color: Colors.red, size: 18),
+                            padding: EdgeInsets.zero,
+                            constraints: BoxConstraints(
+                              minWidth: 24,
+                              minHeight: 24,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _additionalImages.remove(image);
+                              });
+                            },
+                          ),
+                        ),
                       ),
-                      SizedBox(height: 24),
                     ],
+                  ),
+                );
+              }).toList(),
+              
+              // Add more photos button at the end
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: addMorePhotosPlaceholder(),
+              ),
+            ],
+          ),
+        ),
+      )
+    else
+      addMorePhotosPlaceholder(),
+  ],
+),
+
+// Cover photo error
+if (showCoverError)
+  Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Text(
+      'Please upload a cover photo',
+      style: GoogleFonts.nunito(
+        color: Colors.red,
+        fontSize: 12,
+      ),
+    ),
+  ),
+
+SizedBox(height: 16),
                     
                     // Item details section
                     _buildSectionHeader('Item Details', true),
@@ -780,112 +773,104 @@ class _UploadItemPageState extends State<UploadItemPage> {
                     // Find the section that starts with "// Department selection UI - matching home screen filter style"
                     // and replace it with:
 
-                    // Department selection UI with dialog
+                    // Department selection UI - matching home screen filter style
                     Container(
-                      decoration: BoxDecoration(
-                        color: backgroundColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                      ),
-                      padding: EdgeInsets.all(16),
+                     
+                      
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Selected departments:',
-                                style: GoogleFonts.nunito(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: textDark,
-                                ),
-                              ),
-                              TextButton.icon(
-                                onPressed: () => _showDepartmentDialog(setState),
-                                icon: Icon(Icons.edit, size: 16, color: primaryYellow),
-                                label: Text(
-                                  "Change",
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryYellow,
-                                  ),
-                                ),
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  backgroundColor: primaryYellow.withOpacity(0.1),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 12),
                           
-                          // Show selected departments or "All Departments" if all are selected
-                          selectedDepartments.length == departments.length
-                            ? Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: primaryYellow,
-                                  borderRadius: BorderRadius.circular(30),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: primaryYellow.withOpacity(0.2),
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
+                          SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () => _showDepartmentDialog(setState),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      selectedDepartments.length == departments.length
+                                          ? 'All Departments'
+                                          : selectedDepartments.isEmpty
+                                              ? 'Select Departments'
+                                              : '${selectedDepartments.length} selected',
+                                      style: GoogleFonts.nunito(
+                                        color: selectedDepartments.isEmpty ? textLight : textDark,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                child: Text(
-                                  'All Departments',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
                                   ),
-                                ),
-                              )
-                            : selectedDepartments.isEmpty
-                              ? Text(
-                                  'No departments selected',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
-                                    color: textLight,
-                                  ),
-                                )
-                              : Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: selectedDepartments.map((dept) {
-                                    return Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: primaryYellow,
-                                        borderRadius: BorderRadius.circular(30),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: primaryYellow.withOpacity(0.2),
-                                            blurRadius: 4,
-                                            offset: Offset(0, 2),
+                                  Icon(Icons.arrow_drop_down, color: primaryYellow),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          if (selectedDepartments.isNotEmpty)
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                if (selectedDepartments.length == departments.length)
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: backgroundColor,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: textLight.withOpacity(0.3)),
+                                    ),
+                                    child: Text(
+                                      'All Departments',
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: textDark,
+                                      ),
+                                    ),
+                                  )
+                                else ...[
+                                  ...selectedDepartments.take(3).map((dept) => Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: backgroundColor,
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(color: textLight.withOpacity(0.3)),
+                                        ),
+                                        child: Text(
+                                          dept,
+                                          style: GoogleFonts.nunito(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: textDark,
                                           ),
-                                        ],
+                                        ),
+                                      )),
+                                  if (selectedDepartments.length > 3)
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: backgroundColor,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: textLight.withOpacity(0.3)),
                                       ),
                                       child: Text(
-                                        dept,
+                                        '+${selectedDepartments.length - 3} more',
                                         style: GoogleFonts.nunito(
-                                          fontSize: 12,
+                                          fontSize: 10,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.white,
+                                          color: textDark,
                                         ),
                                       ),
-                                    );
-                                  }).toList(),
-                                ),
+                                    ),
+                                ],
+                              ],
+                            ),
                         ],
                       ),
                     ),
