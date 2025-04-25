@@ -12,7 +12,8 @@ import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuth;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; 
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class OthersUserProfileScreen extends StatefulWidget {
   final String userId;
@@ -30,12 +31,14 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
   final BlockedUserController _blockedUserController = BlockedUserController();
   String currentUserId = '';
   bool isBlocked = false;
+  
+  // Color scheme
+  final Color primaryYellow = Color(0xFFFFC857);
+  final Color lightYellow = Color(0xFFFFE3A9);
+  final Color backgroundColor = Color(0xFFF8F8F8);
+  final Color textDark = Color(0xFF333333);
+  final Color textLight = Color(0xFF8A8A8A);
 
-Future<void> checkBlockedUsers() async {
-  BlockedUserController blockedUserController = BlockedUserController();
-  List<String> blockedUsers = await blockedUserController.getBlockedUsers(currentUserId);
-  print("Blocked Users: $blockedUsers");
-}
   @override
   void initState() {
     super.initState();
@@ -43,47 +46,51 @@ Future<void> checkBlockedUsers() async {
     activeItems = fetchActiveItems();
     _getCurrentUserId();
     checkIfBlocked();
-    checkBlockedUsers();
   }
 
-   void _getCurrentUserId() {
+  void _getCurrentUserId() {
     final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser  != null) {
+    if (currentUser != null) {
       setState(() {
-        currentUserId = currentUser.uid;  // currentUserId'yi alıyoruz
+        currentUserId = currentUser.uid;
       });
     }
   }
 
   void checkIfBlocked() async {
-  bool blocked = await _blockedUserController.isUserBlocked(widget.userId);
-  setState(() {
-    isBlocked = blocked;
-  });
-}
-
-void toggleBlock() async {
-  if (isBlocked) {
-    await _blockedUserController.unblockUser(currentUserId,widget.userId);
-  } else {
-    await _blockedUserController.blockUser(currentUserId, widget.userId);
+    bool blocked = await _blockedUserController.isUserBlocked(widget.userId);
+    setState(() {
+      isBlocked = blocked;
+    });
   }
-  checkIfBlocked();
 
-  setState(() {
-    isBlocked = !isBlocked;
-  });
+  void toggleBlock() async {
+    if (isBlocked) {
+      await _blockedUserController.unblockUser(currentUserId, widget.userId);
+    } else {
+      await _blockedUserController.blockUser(currentUserId, widget.userId);
+    }
+    
+    setState(() {
+      isBlocked = !isBlocked;
+    });
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(isBlocked
-          ? 'The blocked user will no longer be able to interact with you.'
-          : 'You have unblocked this user.'),
-      backgroundColor: isBlocked ? Colors.green : Colors.red,
-      duration: Duration(seconds:4 ), // Mesajın gösterilme süresi
-    ),
-  );
-}
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isBlocked
+              ? 'User blocked successfully'
+              : 'User unblocked successfully',
+          style: GoogleFonts.nunito(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isBlocked ? Colors.red : primaryYellow,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 
   Future<User> fetchUserProfile() async {
     var doc = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
@@ -102,407 +109,668 @@ void toggleBlock() async {
     return querySnapshot.docs.map((doc) => Item.fromJson(doc.data(), doc.id)).toList();
   }
 
-  Widget _buildTag(String text, Color color) {
-    return Chip(
-      label: Text(text),
-      backgroundColor: color,
-      labelStyle: TextStyle(color: const Color.fromARGB(255, 11, 11, 11)),
+  void _showReportDialog() {
+    String? selectedReason;
+    String details = '';
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: Text(
+                "Report User",
+                style: GoogleFonts.nunito(
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Please select a reason:",
+                      style: GoogleFonts.nunito(color: textDark),
+                    ),
+                    SizedBox(height: 8),
+                    _buildReportOption("Harassment", selectedReason, (value) {
+                      setDialogState(() => selectedReason = value);
+                    }),
+                    _buildReportOption("Suspicious or Fraudulent Behavior", selectedReason, (value) {
+                      setDialogState(() => selectedReason = value);
+                    }),
+                    _buildReportOption("Inappropriate Profile Content", selectedReason, (value) {
+                      setDialogState(() => selectedReason = value);
+                    }),
+                    _buildReportOption("Hate Speech or Bullying", selectedReason, (value) {
+                      setDialogState(() => selectedReason = value);
+                    }),
+                    _buildReportOption("Violent Behavior", selectedReason, (value) {
+                      setDialogState(() => selectedReason = value);
+                    }),
+                    _buildReportOption("Other", selectedReason, (value) {
+                      setDialogState(() => selectedReason = value);
+                    }),
+                    if (selectedReason == 'Other')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: "Please describe your complaint",
+                            hintStyle: GoogleFonts.nunito(color: textLight),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: primaryYellow),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            filled: true,
+                            fillColor: backgroundColor,
+                          ),
+                          style: GoogleFonts.nunito(color: textDark),
+                          maxLines: 3,
+                          onChanged: (text) {
+                            details = text;
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: GoogleFonts.nunito(
+                      color: textLight,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (selectedReason == null || (selectedReason == 'Other' && details.isEmpty)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Please select a reason and provide details if necessary',
+                            style: GoogleFonts.nunito(),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    var report = ReportedUser(
+                      reportReason: selectedReason!,
+                      complaintDetails: selectedReason == 'Other' ? details : '',
+                      reportedBy: currentUserId,
+                      complaintID: DateTime.now().millisecondsSinceEpoch,
+                      userId: widget.userId,
+                    );
+
+                    try {
+                      await _reportedUserController.addReport(report);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Report submitted successfully',
+                            style: GoogleFonts.nunito(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          backgroundColor: primaryYellow,
+                        ),
+                      );
+                      Navigator.of(context).pop();
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Failed to report user: $e',
+                            style: GoogleFonts.nunito(),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryYellow,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    "Submit",
+                    style: GoogleFonts.nunito(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              backgroundColor: Colors.white,
+            );
+          },
+        );
+      },
     );
   }
 
-List<Widget> _buildDepartmentsTag(List<dynamic> departments) {
-  if (departments.isEmpty) return [];
-
-  List<String> visibleDepartments = departments.map((e) => e.toString()).take(1).toList();
-
-  if (departments.length > 1) {
-    visibleDepartments.add('...');
+  Widget _buildReportOption(String title, String? selectedReason, Function(String?) onChanged) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: selectedReason == title ? lightYellow : backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: selectedReason == title ? primaryYellow : Colors.grey.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: RadioListTile<String>(
+        title: Text(
+          title,
+          style: GoogleFonts.nunito(
+            color: textDark,
+            fontWeight: selectedReason == title ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        value: title,
+        groupValue: selectedReason,
+        onChanged: onChanged as void Function(String?),
+        activeColor: primaryYellow,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 
-  return visibleDepartments
-      .map((department) => _buildTag(department, const Color.fromARGB(255, 139, 197, 151)))
-      .toList();
-}
-void _showReportDialog() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      String? selectedReason;
-      String details = '';
-      return StatefulBuilder(
-        builder: (BuildContext context, StateSetter setDialogState) {
-          return AlertDialog(
-            title: Text(
-              "Report User",
-              style: TextStyle(color: Color.fromARGB(255, 17, 39, 18)),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Please select a reason:",
-                  style: TextStyle(color: Color.fromARGB(255, 29, 31, 29)),
-                ),
-                RadioListTile<String>(
-                  title: Text(
-                    "Harassment",
-                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(
+          'User Profile',
+          style: GoogleFonts.nunito(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: textDark,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(color: textDark),
+      ),
+      body: FutureBuilder<User>(
+        future: userProfileData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+              ),
+            );
+          }
+          
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: textLight,
                   ),
-                  value: "Harassment",
-                  groupValue: selectedReason,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedReason = value;
-                    });
-                  },
-                  activeColor: Color.fromARGB(255, 18, 73, 20),
-                ),
-                RadioListTile<String>(
-                  title: Text(
-                    "Suspicious or Fraudulent Behavior",
-                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)),
-                  ),
-                  value: "Suspicious or Fraudulent Behavior",
-                  groupValue: selectedReason,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedReason = value;
-                    });
-                  },
-                  activeColor: Color.fromARGB(255, 18, 73, 20),
-                ),
-                RadioListTile<String>(
-                  title: Text(
-                    "Inappropriate Profile Picture/Name/Surname",
-                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)),
-                  ),
-                  value: "Inappropriate Profile Picture/Name/Surname",
-                  groupValue: selectedReason,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedReason = value;
-                    });
-                  },
-                  activeColor: Color.fromARGB(255, 18, 73, 20),
-                ),
-                RadioListTile<String>(
-                  title: Text(
-                    "Hate Speech or Bullying",
-                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)),
-                  ),
-                  value: "Hate Speech or Bullying",
-                  groupValue: selectedReason,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedReason = value;
-                    });
-                  },
-                  activeColor: Color.fromARGB(255, 18, 73, 20),
-                ),
-                RadioListTile<String>(
-                  title: Text(
-                    "Violent Behavior",
-                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)),
-                  ),
-                  value: "Violent Behavior",
-                  groupValue: selectedReason,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedReason = value;
-                    });
-                  },
-                  activeColor: Color.fromARGB(255, 18, 73, 20),
-                ),
-                RadioListTile<String>(
-                  title: Text(
-                    "Other",
-                    style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)),
-                  ),
-                  value: "Other",
-                  groupValue: selectedReason,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedReason = value;
-                    });
-                  },
-                  activeColor: Color.fromARGB(255, 18, 73, 20),
-                ),
-                if (selectedReason == 'Other')
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: "Please describe your complaint",
-                      border: OutlineInputBorder(),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Color.fromARGB(255, 18, 73, 20)),
-                      ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Error loading profile',
+                    style: GoogleFonts.nunito(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textDark,
                     ),
-                    onChanged: (text) {
-                      setDialogState(() {
-                        details = text;
-                      });
-                    },
                   ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text(
-                  "Cancel",
-                  style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)),
+                  SizedBox(height: 8),
+                  Text(
+                    'Please try again later',
+                    style: GoogleFonts.nunito(
+                      fontSize: 16,
+                      color: textLight,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (!snapshot.hasData) {
+            return Center(
+              child: Text(
+                'No data available',
+                style: GoogleFonts.nunito(
+                  fontSize: 16,
+                  color: textLight,
                 ),
               ),
-              TextButton(
-                onPressed: () async {
-                  if (selectedReason == null || (selectedReason == 'Other' && details.isEmpty)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Please select a reason and provide details if necessary')),
-                    );
-                    return;
-                  }
+            );
+          }
 
-                  var report = ReportedUser(
-                    reportReason: selectedReason!,
-                    complaintDetails: selectedReason == 'Other' ? details : '',
-                    reportedBy: currentUserId,  // Bu kısmı oturum açan kullanıcının ID'si ile değiştirebilirsiniz
-                    complaintID: DateTime.now().millisecondsSinceEpoch,  // Rapor için benzersiz ID
-                    userId: widget.userId,
-                  );
+          User user = snapshot.data!;
+          String userName = '${user.firstName} ${user.lastName}';
+          String userEmail = user.emailAddress;
+          String userProfilePicture = user.profilePicture;
+          double userRating = user.userRating;
 
-                  try {
-                    // Raporu Firestore'a gönder
-                    await _reportedUserController.addReport(report);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Report submitted successfully')));
-                    Navigator.of(context).pop();  // Pop-up'ı kapat
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to report user: $e')));
-                  }
-                },
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Profile Header
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: lightYellow,
+                      backgroundImage: userProfilePicture.isNotEmpty
+                          ? NetworkImage(userProfilePicture)
+                          : null,
+                      child: userProfilePicture.isEmpty
+                          ? Icon(Icons.person, size: 50, color: primaryYellow)
+                          : null,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      userName,
+                      style: GoogleFonts.nunito(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: textDark,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      userEmail,
+                      style: GoogleFonts.nunito(
+                        fontSize: 16,
+                        color: textLight,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.star,
+                          color: primaryYellow,
+                          size: 20,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          userRating.toStringAsFixed(1),
+                          style: GoogleFonts.nunito(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: textDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _showReportDialog,
+                            icon: Icon(Icons.flag, color: Colors.red),
+                            label: Text(
+                              "Report",
+                              style: GoogleFonts.nunito(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.red.withOpacity(0.5)),
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: toggleBlock,
+                            icon: Icon(
+                              isBlocked ? Icons.lock_open : Icons.block,
+                              color: isBlocked ? primaryYellow : Colors.red,
+                            ),
+                            label: Text(
+                              isBlocked ? "Unblock" : "Block",
+                              style: GoogleFonts.nunito(
+                                color: isBlocked ? primaryYellow : Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: isBlocked
+                                    ? primaryYellow.withOpacity(0.5)
+                                    : Colors.red.withOpacity(0.5),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Active Items Section
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
                 child: Text(
-                  "Submit",
-                  style: TextStyle(color: Color.fromARGB(255, 18, 73, 20)),
+                  "Active Items",
+                  style: GoogleFonts.nunito(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textDark,
+                  ),
+                ),
+              ),
+              
+              // Active Items List
+              Expanded(
+                child: FutureBuilder<List<Item>>(
+                  future: activeItems,
+                  builder: (context, itemsSnapshot) {
+                    if (itemsSnapshot.connectionState == ConnectionState.waiting) {
+                      return Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+                        ),
+                      );
+                    }
+
+                    if (itemsSnapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error loading items',
+                          style: GoogleFonts.nunito(
+                            fontSize: 16,
+                            color: textLight,
+                          ),
+                        ),
+                      );
+                    }
+
+                    if (!itemsSnapshot.hasData || itemsSnapshot.data!.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.inventory_2_outlined,
+                              size: 64,
+                              color: textLight,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'No active items',
+                              style: GoogleFonts.nunito(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textDark,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'This user has no items for sale',
+                              style: GoogleFonts.nunito(
+                                fontSize: 16,
+                                color: textLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    var items = itemsSnapshot.data!;
+                    return ListView.builder(
+                      padding: EdgeInsets.all(16),
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        var item = items[index];
+                        bool hidePrice = item.category.toLowerCase() == 'donate' || 
+                                        item.category.toLowerCase() == 'exchange';
+                        
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DetailedItemScreen(itemId: item.itemId!),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            margin: EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.1),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Item Image
+                                ClipRRect(
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(16),
+                                    bottomLeft: Radius.circular(16),
+                                  ),
+                                  child: Image.network(
+                                    item.photoUrl ?? 'https://via.placeholder.com/100',
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                
+                                // Item Details
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.title,
+                                          style: GoogleFonts.nunito(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: textDark,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: 4),
+                                        if (!hidePrice) ...[
+                                          Row(
+                                            children: [
+                                              Text(
+                                                '₺${item.price.toDouble()}',
+                                                style: GoogleFonts.nunito(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                  color: primaryYellow,
+                                                ),
+                                              ),
+                                              if (item.paymentPlan != null && item.paymentPlan!.isNotEmpty)
+                                                Text(
+                                                  ' ${item.paymentPlan}',
+                                                  style: GoogleFonts.nunito(
+                                                    fontSize: 12,
+                                                    color: textLight,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 4),
+                                        ],
+                                        
+                                        // Tags
+                                        Wrap(
+                                          spacing: 6,
+                                          runSpacing: 6,
+                                          children: [
+                                            _buildItemTag(item.category, primaryYellow),
+                                            _buildItemTag(item.condition, lightYellow),
+                                            if (item.departments is List && (item.departments as List).isNotEmpty)
+                                              _buildItemTag(
+                                                (item.departments as List).length > 1
+                                                    ? '${(item.departments as List)[0]} +${(item.departments as List).length - 1}'
+                                                    : (item.departments as List)[0],
+                                                backgroundColor,
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ],
           );
         },
-      );
-    },
-  );
-}
-
- @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('Profile', style: TextStyle(color: Colors.black)),
-      backgroundColor: const Color.fromARGB(255, 248, 250, 248),
-      elevation: 1,
-      iconTheme: IconThemeData(color: Colors.black),
-    ),
-    body: FutureBuilder<User>(
-      future: userProfileData,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-
-        if (snapshot.hasData) {
-          User user = snapshot.data!;
-          String userName = '${user.firstName} ${user.lastName}';
-          String userEmail = user.emailAddress;
-          String userProfilePicture = user.profilePicture;
-          double userRatingDouble = user.userRating;
-
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  margin: EdgeInsets.only(bottom: 16),
-                  color: Color.fromARGB(255, 197, 227, 197),
-                  child: Container(
-                    width: double.infinity, // 💥 sayfa genişliği kadar genişlet
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: userProfilePicture.isNotEmpty
-                              ? NetworkImage(userProfilePicture)
-                              : null,
-                          radius: 40,
-                          child: userProfilePicture.isEmpty ? Icon(Icons.person, size: 40) : null,
-                        ),
-                        SizedBox(height: 12),
-                        Text(userName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 6),
-                        Text(userEmail, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-                        SizedBox(height: 6),
-                        Text('Rating: ${userRatingDouble.toStringAsFixed(2)}',style: TextStyle(fontSize: 14)),
-                      ],
-                    ),
-                  ),
-                ),
-                Text("Active Items", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Divider(),
-                FutureBuilder<List<Item>>(
-                  future: activeItems,
-                  builder: (context, itemsSnapshot) {
-                    if (itemsSnapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    }
-
-                    if (itemsSnapshot.hasError) {
-                      return Center(child: Text('Error: ${itemsSnapshot.error}'));
-                    }
-
-                    if (itemsSnapshot.hasData && itemsSnapshot.data!.isEmpty) {
-                      return Center(child: Text('No active items'));
-                    }
-
-                    var items = itemsSnapshot.data!;
-                    return Expanded(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: items.length,
-                        itemBuilder: (context, index) {
-                          var item = items[index];
-                          return GestureDetector(
-                            onTap: () {
-                              // Item'a tıklandığında detailed_item_screen.dart sayfasına yönlendir
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DetailedItemScreen(itemId: item.itemId!),
-                                ),
-                              );
-                            },
-                            child: Card(
-                              elevation: 3,
-                              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                leading: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    item.photoUrl ?? 'https://via.placeholder.com/80', // Eğer null ise varsayılan resim kullan
-                                    width: 80,
-                                    height: 80,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                title: Text(
-                                  item.title,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          '₺${item.price.toDouble()}',
-                                          style: TextStyle(fontSize: 20),
-                                        ),
-                                        if (item.category == 'Rent')
-                                          Padding(
-                                            padding: const EdgeInsets.only(left: 8.0),
-                                            child: Text(
-                                              item.paymentPlan ?? '',
-                                              style: TextStyle(color: Colors.green),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 4,
-                                          children: [
-                                            _buildTag(item.category, Colors.green),
-                                            _buildTag(item.condition, const Color.fromARGB(255, 154, 197, 147)),
-                                            if (item.departments is List)
-                                              ..._buildDepartmentsTag(item.departments),
-                                          ],
-                                        ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
-                // Aktif öğelerden sonra buton ekliyoruz
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _showReportDialog,
-                          icon: Icon(Icons.report, color: Colors.red),
-                          label: Text("Report", style: TextStyle(color: Colors.red)),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.red),
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: toggleBlock,
-                          icon: Icon(
-                            isBlocked ? Icons.lock_open : Icons.block,
-                            color: isBlocked ? Colors.green : Colors.red,
-                          ),
-                          label: Text(
-                            isBlocked ? "Unblock" : "Block",
-                            style: TextStyle(color: isBlocked ? Colors.green : Colors.red),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: isBlocked ? Colors.green : Colors.red),
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+      ),
+      bottomNavigationBar: Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, -5),
             ),
-          );
-        }
-        return Center(child: Text('No data available'));
-      },
-    ),
-    
-    bottomNavigationBar: BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color.fromARGB(255, 59, 137, 62),
-      onTap: _onItemTapped,
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(icon: Icon(FontAwesomeIcons.shop), label: 'Items'),
-        BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
-        BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
-        BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
-      ],
-    ),
-  );
-}
+          ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: primaryYellow,
+          unselectedItemColor: textLight,
+          selectedLabelStyle: GoogleFonts.nunito(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: GoogleFonts.nunito(
+            fontSize: 12,
+          ),
+          iconSize: 22,
+          elevation: 0,
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.shop),
+              label: 'Items',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.assignment),
+              label: 'Requests',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.favorite),
+              label: 'Favorites',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.account_circle),
+              label: 'Profile',
+            ),
+          ],
+          onTap: _onItemTapped,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildItemTag(String text, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.nunito(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: textDark,
+        ),
+      ),
+    );
+  }
 
   void _onItemTapped(int index) {
     switch (index) {

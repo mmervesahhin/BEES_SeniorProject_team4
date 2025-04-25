@@ -10,8 +10,10 @@ import 'package:printing/printing.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 
 class DataAnalysisController extends ChangeNotifier {
   bool isLoading = false;
@@ -86,24 +88,9 @@ Future<void> createReport({
       ),
     );
 
-    // Get directory path for saving the PDF
-    String? selectedDirectory = await getDirectoryPath();
-    if (selectedDirectory == null) {
-      throw Exception("No directory selected for saving the PDF");
-    }
-
-    final now = DateTime.now();
-    final formattedTime = '${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
-    final formattedStart = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
-    final formattedEnd = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
-    final fileName = 'DataReport[${formattedStart}_to_${formattedEnd}]_at_$formattedTime.pdf';
-    final filePath = path.join(selectedDirectory, fileName);
-
-    final file = File(filePath);
-    await file.writeAsBytes(await pdf.save());
-
-    print('✅ PDF saved with no-data message at: $filePath');
-    return; // ⛔ STOP processing, don't continue
+    // Save PDF using the safer method
+    await savePdf(pdf, startDate, endDate);
+    return;
   }
 
   final pdf = pw.Document();
@@ -320,22 +307,80 @@ Future<void> createReport({
     }
   }
 
-  // Get directory path for saving the PDF
-  String? selectedDirectory = await getDirectoryPath();
-  
-  if (selectedDirectory == null) {
-    throw Exception("No directory selected for saving the PDF");
+  // Save PDF using the safer method
+  await savePdf(pdf, startDate, endDate);
+}
+
+// New method to save PDF with better error handling and fallbacks
+Future<void> savePdf(pw.Document pdf, DateTime startDate, DateTime endDate) async {
+  try {
+    // First try using FilePicker
+    String? selectedDirectory = await getDirectoryPath();
+    
+    if (selectedDirectory != null) {
+      // Use the selected directory
+      final now = DateTime.now();
+      final formattedNow = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
+      final fileName = 'DataReport[${startDate.toString().split(' ').first}_${endDate.toString().split(' ').first}]_$formattedNow.pdf';
+      final filePath = path.join(selectedDirectory, fileName);
+
+      final file = File(filePath);
+      await file.writeAsBytes(await pdf.save());
+      print('✅ PDF saved at: $filePath');
+      return;
+    }
+    
+    // If FilePicker fails, try using getApplicationDocumentsDirectory
+    print("⚠️ FilePicker failed, trying application documents directory...");
+    final directory = await getApplicationDocumentsDirectory();
+    final now = DateTime.now();
+    final formattedNow = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
+    final fileName = 'DataReport[${startDate.toString().split(' ').first}_${endDate.toString().split(' ').first}]_$formattedNow.pdf';
+    final filePath = path.join(directory.path, fileName);
+
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+    print('✅ PDF saved at: $filePath');
+    
+  } catch (e) {
+    print("❌ Error saving PDF: $e");
+    
+    // Last resort: try to save to external storage (Android only)
+    try {
+      if (Platform.isAndroid) {
+        print("⚠️ Trying to save to external storage...");
+        
+        // Request storage permission
+        var status = await Permission.storage.status;
+        if (!status.isGranted) {
+          status = await Permission.storage.request();
+          if (!status.isGranted) {
+            throw Exception("Storage permission denied");
+          }
+        }
+        
+        // Get external storage directory
+        final directory = await getExternalStorageDirectory();
+        if (directory == null) {
+          throw Exception("External storage directory not available");
+        }
+        
+        final now = DateTime.now();
+        final formattedNow = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
+        final fileName = 'DataReport[${startDate.toString().split(' ').first}_${endDate.toString().split(' ').first}]_$formattedNow.pdf';
+        final filePath = path.join(directory.path, fileName);
+
+        final file = File(filePath);
+        await file.writeAsBytes(await pdf.save());
+        print('✅ PDF saved at: $filePath');
+      } else {
+        throw Exception("Could not save PDF on this platform");
+      }
+    } catch (fallbackError) {
+      print("❌ All PDF save methods failed: $fallbackError");
+      throw Exception("Failed to save PDF: $fallbackError");
+    }
   }
-
-  final now = DateTime.now();
-  final formattedNow = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
-  final fileName = 'DataReport[${startDate.toString().split(' ').first}_${endDate.toString().split(' ').first}]_$formattedNow.pdf';
-  final filePath = path.join(selectedDirectory, fileName);
-
-  final file = File(filePath);
-  await file.writeAsBytes(await pdf.save());
-
-  print('✅ PDF saved at: $filePath');
 }
 
 // Helper method to get directory path with retry logic
