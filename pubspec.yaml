@@ -59,19 +59,21 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
+  
+  flutter_native_splash: ^2.3.9
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1  
 
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/icon/app_icon.png"  # kendi ikon yolunu yaz
+  image_path: "assets/app_icon.png"  # kendi ikon yolunu yaz
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/app_icon.png
+  android: true
+  ios: true
 
 
 # For information on the generic Dart part of this file, see the
@@ -90,6 +92,7 @@ flutter:
     - images/bee_pattern.jpg
     - images/bee.jpg
     - images/anon_avatar.jpg
+    - assets/app_icon.png
   # 
 
   # An image asset can refer to one or more resolution-specific "variants", see
