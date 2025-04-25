@@ -30,6 +30,7 @@ class BlockedUserController {
       });
 
       print("User blocked successfully.");
+      await cleanUpFavoritesAfterBlock(currentUserId, userIdToBlock);
 
     } catch (e) {
       throw Exception("Failed to block user: $e");
@@ -89,4 +90,44 @@ class BlockedUserController {
       return false;
     }
   }
+Future<void> cleanUpFavoritesAfterBlock(String currentUserId, String userIdToBlock) async {
+  print("🧹 cleanUpFavoritesAfterBlock() çalıştı (array tabanlı)");
+
+  try {
+    // 1️⃣ A'nın dokümanını çek
+    DocumentSnapshot currentUserDoc = await _firestore.collection('users').doc(currentUserId).get();
+    List<dynamic> currentUserFavorites = currentUserDoc['favoriteItems'] ?? [];
+
+    for (String itemId in currentUserFavorites) {
+      final itemDoc = await _firestore.collection('items').doc(itemId).get();
+      if (itemDoc.exists && itemDoc['itemOwnerId'] == userIdToBlock) {
+        // Remove from array
+        await _firestore.collection('users').doc(currentUserId).update({
+          'favoriteItems': FieldValue.arrayRemove([itemId])
+        });
+        print("✅ $itemId silindi (A'nın array'inden)");
+      }
+    }
+
+    // 2️⃣ B'nin dokümanını çek
+    DocumentSnapshot blockedUserDoc = await _firestore.collection('users').doc(userIdToBlock).get();
+    List<dynamic> blockedUserFavorites = blockedUserDoc['favoriteItems'] ?? [];
+
+    for (String itemId in blockedUserFavorites) {
+      final itemDoc = await _firestore.collection('items').doc(itemId).get();
+      if (itemDoc.exists && itemDoc['itemOwnerId'] == currentUserId) {
+        await _firestore.collection('users').doc(userIdToBlock).update({
+          'favoriteItems': FieldValue.arrayRemove([itemId])
+        });
+        print("✅ $itemId silindi (B'nin array'inden)");
+      }
+    }
+
+    print("🎉 Favori array temizliği tamamlandı!");
+  } catch (e) {
+    print("❌ Favori array temizliği hatası: $e");
+  }
+}
+
+
 }
