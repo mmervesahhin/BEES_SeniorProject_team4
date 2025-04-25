@@ -28,6 +28,8 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
     DocumentReference chatRoomRef = _firestore.collection('chatRooms').doc(chatRoomId);
 
     if (receiverId != currentUserID) {
+        String messageText = content.trim().isNotEmpty ? content : 'You received a photo';
+
       await FirebaseFirestore.instance.collection('notifications').add({
         //'recipientId': receiverId,
         'receiverId': receiverId,
@@ -38,9 +40,11 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
         'isRead': false,
         'type': 'message',
         'message': 'You have a new message', // ✅ bu satır eksik
-
+        'message': messageText,
       });
     }
+
+
 
     try {
     DocumentSnapshot chatRoomSnapshot = await chatRoomRef.get();
