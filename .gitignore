@@ -43,3 +43,22 @@ app.*.map.json
 /android/app/release
 # Native build artifacts (NDK)
 /android/app/.cxx/
+
+# Flutter generated files
+linux/flutter/
+macos/Flutter/
+windows/flutter/
+
+# Flutter/Dart specific
+.dart_tool/
+.packages
+.pub-cache/
+build/
+generated_plugin_registrant.cc
+generated_plugin_registrant.h
+generated_plugins.cmake
+
+# Dependency lock files
+pubspec.lock
+package-lock.json
+yarn.lock
