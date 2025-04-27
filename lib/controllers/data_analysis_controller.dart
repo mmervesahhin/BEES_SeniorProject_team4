@@ -59,21 +59,20 @@ Future<void> createReport({
   required DateTime endDate,
 }) async {
   try {
-   String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-if (selectedDirectory == null) {
-  print("❌ Kullanıcı dizin seçmedi.");
-  return;
-}
+    // 📂 Kullanıcıdan dizin seçmesini iste
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    if (selectedDirectory == null) {
+      print("❌ Kullanıcı dizin seçmedi.");
+      return;
+    }
 
-// 📂 Düzgün path temizlik
-selectedDirectory = selectedDirectory.replaceFirst('/Download/son_reports/Download/son_reports', '/Download/son_reports');
+    // 📂 Dizin temizliği (senin path düzenleme mantığını koruyacağız, istersen buraya eklerim)
+    selectedDirectory = selectedDirectory.replaceFirst('/Download/son_reports/Download/son_reports', '/Download/son_reports');
 
-// 📂 Klasör var mı kontrolü
-final directory = Directory(selectedDirectory);
-if (!await directory.exists()) {
-  print('⚠️ Seçilen klasör bulunamadı. Klasör oluşturuluyor...');
-  await directory.create(recursive: true);
-}
+    final directory = Directory(selectedDirectory);
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
 
     // 📄 Dosya adını oluştur
     final now = DateTime.now();
@@ -98,67 +97,101 @@ if (!await directory.exists()) {
           },
         ),
       );
-    } else {
-      final barImage = pw.MemoryImage(barChartBytes);
-      final pieImage = pw.MemoryImage(pieChartBytes);
-      final lineImage = pw.MemoryImage(lineChartBytes);
-
-      // Sayfa 1
-      pdf.addPage(
-        pw.Page(
-          build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text('BEES Data Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 10),
-                pw.Text('Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}'),
-                pw.SizedBox(height: 20),
-                pw.Text('Category Distribution (Pie Chart):', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 20),
-                pw.Image(pieImage),
-              ],
-            );
-          },
-        ),
-      );
-
-      // Diğer sayfalar...
-      pdf.addPage(
-        pw.Page(
-          build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text('Item Type Chart (Bar):', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 20),
-                pw.Image(barImage),
-              ],
-            );
-          },
-        ),
-      );
-
-      pdf.addPage(
-        pw.Page(
-          build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text('Item Trend Over Time (Line Chart):', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 20),
-                pw.Image(lineImage),
-              ],
-            );
-          },
-        ),
-      );
+      await File(filePath).writeAsBytes(await pdf.save());
+      print('✅ PDF saved with no-data message at: $filePath');
+      return;
     }
 
-    // 📂 Dosyayı kaydet
+    final barImage = pw.MemoryImage(barChartBytes);
+    final pieImage = pw.MemoryImage(pieChartBytes);
+    final lineImage = pw.MemoryImage(lineChartBytes);
+
+    // 📌 AI Yorum Promptu oluştur
+    final aiPrompt = generateAIPrompt(
+      itemTypeData: barChartData,
+      categoryData: pieChartData,
+      trendData: lineChartData,
+    );
+
+    // 🧠 AI'dan yorum al
+    final aiResponse = await fetchAISummaryFromFunction(aiPrompt);
+    print("🧠 AI Prompt:\n$aiPrompt");
+    print("🤖 AI Response: $aiResponse");
+
+    // 📄 PDF'e sayfa ekle
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('BEES Data Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 10),
+              pw.Text('Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}'),
+              pw.SizedBox(height: 20),
+              pw.Text('Category Distribution (Pie Chart):', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              pw.Image(pieImage),
+            ],
+          );
+        },
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Item Type Chart (Bar):', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              pw.Image(barImage),
+            ],
+          );
+        },
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Item Trend Over Time (Line Chart):', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 30),
+              pw.Image(lineImage),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (aiResponse != null && aiResponse.isNotEmpty) {
+      final summaryChunks = splitTextToFitPages(aiResponse);
+      for (var chunk in summaryChunks) {
+        pdf.addPage(
+          pw.Page(
+            build: (pw.Context context) {
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('AI Generated Summary', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 10),
+                  pw.Text(chunk, style: pw.TextStyle(fontSize: 12)),
+                ],
+              );
+            },
+          ),
+        );
+      }
+    }
+
+    // 📂 PDF kaydet
     final file = File(filePath);
     await file.writeAsBytes(await pdf.save());
-    print('✅ PDF saved at: $filePath');
+    print('✅ Final PDF saved at: $filePath');
   } catch (e) {
     print('❌ Error during report creation: $e');
   }

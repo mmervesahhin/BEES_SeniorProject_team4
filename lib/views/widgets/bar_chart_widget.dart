@@ -26,14 +26,18 @@ class ItemTypeBarChart extends StatelessWidget {
             barTouchData: BarTouchData(
               enabled: true,
               touchTooltipData: BarTouchTooltipData(
-                getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                  final itemType = items[groupIndex].key;
-                  return BarTooltipItem(
-                    '$itemType\n${rod.toY.round()} items',
-                    const TextStyle(color: Colors.white),
-                  );
-                },
-              ),
+              tooltipPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                final itemType = items[groupIndex].key;
+                return BarTooltipItem(
+                  '$itemType\n${rod.toY.round()} items',
+                  TextStyle(
+                    color: Colors.white,
+                    fontSize: 10, // küçültüyoruz
+                  ),
+                );
+              },
+            ),
             ),
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(
