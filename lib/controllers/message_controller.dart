@@ -28,6 +28,8 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
     DocumentReference chatRoomRef = _firestore.collection('chatRooms').doc(chatRoomId);
 
     if (receiverId != currentUserID) {
+        String messageText = content.trim().isNotEmpty ? content : 'You received a photo';
+
       await FirebaseFirestore.instance.collection('notifications').add({
         //'recipientId': receiverId,
         'receiverId': receiverId,
@@ -37,8 +39,10 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
         'timestamp': FieldValue.serverTimestamp(),
         'isRead': false,
         'type': 'message',
+        'message': 'You have a new message', // ✅ bu satır eksik
       });
     }
+      
 
     try {
     DocumentSnapshot chatRoomSnapshot = await chatRoomRef.get();
@@ -75,6 +79,29 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
     print("Mesaj gönderme başarısız oldu! Hata: $e");
   }
   }
+
+  Future<void> markMessagesAsRead({
+        required String chatRoomId,
+        required String currentUserId,
+        required String otherUserId,
+      }) async {
+        final batch = FirebaseFirestore.instance.batch();
+
+        final snapshot = await FirebaseFirestore.instance
+            .collection('chatRooms')
+            .doc(chatRoomId)
+            .collection('messages')
+            .where('status', isEqualTo: 'sent')
+            .where('receiverId', isEqualTo: currentUserId)
+            .where('senderId', isEqualTo: otherUserId)
+            .get();
+
+        for (final doc in snapshot.docs) {
+          batch.update(doc.reference, {'status': 'read'});
+        }
+
+        await batch.commit();
+      }
 
   Future<void> updateMessageStatus(String chatRoomId, String messageId, String status) async {
   final messageRef = _firestore.collection('chatRooms').doc(chatRoomId).collection('messages')

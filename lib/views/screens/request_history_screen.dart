@@ -62,11 +62,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> with Single
               SizedBox(height: 12),
               Container(
                 padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
+                
                 child: Text(
                   content,
                   style: GoogleFonts.nunito(
@@ -129,7 +125,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> with Single
             ),
           ),
           content: Text(
-            'Are you sure you want to delete all ${_controller.selectedSegment == 0 ? 'solved' : 'removed'} requests? This action cannot be undone.',
+            'Are you sure you want to delete all ${_controller.selectedSegment == 0 ? 'solved' : 'inactive'} requests? This action cannot be undone.',
             style: GoogleFonts.nunito(
               color: _controller.textMedium,
               fontSize: 14,
@@ -199,7 +195,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> with Single
                 // Restore the request
                 _controller.restoreRequest(
                   requestId, 
-                  _controller.selectedSegment == 0 ? 'solved' : 'removed'
+                  _controller.selectedSegment == 0 ? 'solved' : 'inactive'
                 );
               },
             ),
@@ -223,7 +219,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> with Single
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'All ${_controller.selectedSegment == 0 ? 'solved' : 'removed'} requests have been deleted',
+              'All ${_controller.selectedSegment == 0 ? 'solved' : 'inactive'} requests have been deleted',
               style: GoogleFonts.nunito(
                 color: _controller.textDark,
                 fontWeight: FontWeight.w600,
@@ -351,7 +347,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> with Single
                       child: Row(
                         children: [
                           _buildSegmentButton(0, 'Solved Requests'),
-                          _buildSegmentButton(1, 'Removed Requests'),
+                          _buildSegmentButton(1, 'Inactive Requests'),
                         ],
                       ),
                     ),
@@ -371,7 +367,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> with Single
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
-                      _controller.selectedSegment == 0 ? 'Solved Requests' : 'Removed Requests',
+                      _controller.selectedSegment == 0 ? 'Solved Requests' : 'Inactive Requests',
                       style: GoogleFonts.nunito(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -509,7 +505,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> with Single
                 Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
                 SizedBox(height: 16),
                 Text(
-                  "Error loading removed requests",
+                  "Error loading inactive requests",
                   style: GoogleFonts.nunito(
                     color: Colors.red.shade300, 
                     fontWeight: FontWeight.bold,
@@ -524,7 +520,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> with Single
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return _buildEmptyState(
             icon: Icons.delete_outline,
-            message: "No removed requests found",
+            message: "No inactive requests found",
             description: "Requests you delete will appear here"
           );
         }
@@ -660,7 +656,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> with Single
                           ),
                           SizedBox(width: 4),
                           Text(
-                            isSolved ? 'Solved' : 'Removed',
+                            isSolved ? 'Solved' : 'Inactive',
                             style: GoogleFonts.nunito(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,

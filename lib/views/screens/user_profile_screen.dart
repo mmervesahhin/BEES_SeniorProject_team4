@@ -6,6 +6,7 @@ import 'package:bees/views/screens/request_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:bees/models/item_model.dart';
 import 'package:bees/models/request_model.dart';
@@ -235,6 +236,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with TickerProvid
                             },
                           ),
                           _buildSettingsListTile(
+                          
                             icon: Icons.logout,
                             title: "Log Out",
                             subtitle: "Sign out of your account",
@@ -2844,8 +2846,8 @@ Widget _buildProfileStats(User user) {
       unselectedLabelStyle: GoogleFonts.nunito(fontWeight: FontWeight.normal, fontSize: 12),
       items: <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: Icon(Icons.store),
-          activeIcon: Icon(Icons.store),
+          icon: FaIcon(FontAwesomeIcons.shop),
+          activeIcon: Icon(FontAwesomeIcons.shop),
           label: 'Items',
         ),
         BottomNavigationBarItem(

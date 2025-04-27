@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'actor_model.dart';
 
 class User extends Actor {
@@ -73,7 +75,9 @@ class User extends Actor {
       userRating: (map['userRating'] as num?)?.toDouble() ?? 0.0,
       favoriteItems: List<String>.from(map['favoriteItems'] ?? []),
       isBanned: map['isBanned'] ?? false,
-      banEndDate: map['banEndDate'] != null ? DateTime.tryParse(map['banEndDate']) : null,
+      banEndDate: map['banEndDate'] != null
+    ? (map['banEndDate'] as Timestamp).toDate()
+    : null,
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 class Item {
-  String? itemId;
+  String itemId;
   String itemOwnerId;
   String title;
   String description;
@@ -16,7 +16,7 @@ class Item {
   String itemStatus;
 
   Item({
-    this.itemId,
+    required this.itemId,
     required this.itemOwnerId,
     required this.title,
     required this.description,

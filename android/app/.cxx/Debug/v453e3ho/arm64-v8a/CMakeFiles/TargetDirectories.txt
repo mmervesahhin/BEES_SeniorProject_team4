@@ -1,2 +1,0 @@
-C:/Users/Merve/FlutterProjects/bees/android/app/.cxx/Debug/v453e3ho/arm64-v8a/CMakeFiles/edit_cache.dir
-C:/Users/Merve/FlutterProjects/bees/android/app/.cxx/Debug/v453e3ho/arm64-v8a/CMakeFiles/rebuild_cache.dir

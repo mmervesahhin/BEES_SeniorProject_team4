@@ -105,7 +105,8 @@ Map<String, int> lineChartData = {};
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(20.0),
+      child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -192,42 +193,40 @@ Map<String, int> lineChartData = {};
                           print('⏳ End Date: ${_controller.endDate}');
 
 
-                          // Firestore'dan filtreli veriyi al
-                          final items = await _controller.fetchFilteredItems(
-                            startDate: _controller.startDate!,
-                            endDate: _controller.endDate!,
-                            selectedItemTypes: selectedItemTypes,
-                            selectedCategories: selectedCategories,
-                          );
-                          
-                          // Konsola bastır
-                          for (var item in items) {
-                            print('📦 Item: $item');
-                          }
+                        final items = await _controller.fetchFilteredItems(
+                        startDate: _controller.startDate!,
+                        endDate: _controller.endDate!,
+                        selectedItemTypes: selectedItemTypes,
+                        selectedCategories: selectedCategories,
+                      );
 
-                          // Veriyi grupla
-                          barChartData = _controller.groupByField(items, 'itemType');
-                          pieChartData = _controller.groupByField(items, 'category');
-                          lineChartData = _controller.groupByDate(items);
+                      // Veriyi grupla
+                      barChartData = _controller.groupByField(items, 'itemType');
+                      pieChartData = _controller.groupByField(items, 'category');
+                      lineChartData = _controller.groupByDate(items);
 
-                          setState(() {}); // Grafikler yeniden çizilsin
+                      // 📌 Grafik verisi geldi, grafikleri ekranda yeniden çizdirelim:
+                      setState(() {});
 
-                          // PNG'leri yakala
-                          final barChartBytes = await _controller.captureChart(barChartKey);
-                          final pieBytes = await _controller.captureChart(pieChartKey);
-                          final lineBytes = await _controller.captureChart(lineChartKey);
+                      // ⏳ Grafiklerin ekranda çizilmesini bekleyelim:
+                      await Future.delayed(Duration(milliseconds: 300));  // ⭐️ BU YENİ
 
-                          // PDF oluştur
-                         await _controller.createReport(
-                            barChartBytes: barChartBytes,
-                            pieChartBytes: pieBytes,
-                            lineChartBytes: lineBytes,
-                            barChartData: barChartData,
-                            pieChartData: pieChartData,
-                            lineChartData: lineChartData,
-                            startDate: _controller.startDate!,
-                            endDate: _controller.endDate!,
-                          );
+                      // 📸 Şimdi güvenle capture yapabiliriz
+                      final pieBytes = await _controller.captureChart(pieChartKey);
+                      final barChartBytes = await _controller.captureChart(barChartKey);
+                      final lineBytes = await _controller.captureChart(lineChartKey);
+
+                      // PDF oluştur
+                      await _controller.createReport(
+                        barChartBytes: barChartBytes,
+                        pieChartBytes: pieBytes,
+                        lineChartBytes: lineBytes,
+                        barChartData: barChartData,
+                        pieChartData: pieChartData,
+                        lineChartData: lineChartData,
+                        startDate: _controller.startDate!,
+                        endDate: _controller.endDate!,
+                      );
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('PDF report created successfully!')),
                           );
@@ -253,22 +252,25 @@ Map<String, int> lineChartData = {};
                 textStyle: TextStyle(fontSize: 18),
               ),
             ),
-// En alta, görünmeden render edilecek grafikler
-            Transform.translate(
-              offset: const Offset(0, -99999),
-              child: Column(
-                children: [
-                  CategoryPieChart(data: pieChartData, repaintKey: pieChartKey),
-                  ItemTypeBarChart(data: barChartData, repaintKey: barChartKey),
-                  ItemTrendLineChart(data: lineChartData, repaintKey: lineChartKey),
-                ],
-              ),
+            SizedBox(height: 40), // Biraz boşluk verelim
+
+            Text(
+              'Charts Preview',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
+
+            SizedBox(height: 10),
+
+            CategoryPieChart(data: pieChartData, repaintKey: pieChartKey),
+            SizedBox(height: 20),
+            ItemTypeBarChart(data: barChartData, repaintKey: barChartKey),
+            SizedBox(height: 20),
+            ItemTrendLineChart(data: lineChartData, repaintKey: lineChartKey),
           ],
         ),
       ),
+    ),
     );
-    
   }
 
 Widget _buildDatePickerField(String label, DateTime? date) {

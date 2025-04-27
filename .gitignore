@@ -41,6 +41,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-
+# Native build artifacts (NDK)
+/android/app/.cxx/
 # Android build cache
 android/app/.cxx/

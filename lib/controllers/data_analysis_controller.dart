@@ -48,7 +48,6 @@ Future<DateTime?> selectEndDate(BuildContext context) async {
         endDate != null;
   }
 
-  // Create report logic
 Future<void> createReport({
   required Uint8List barChartBytes,
   required Uint8List pieChartBytes,
@@ -59,121 +58,143 @@ Future<void> createReport({
   required DateTime startDate,
   required DateTime endDate,
 }) async {
-  final pdf = pw.Document();
+  try {
+    // 📂 Kullanıcıdan dizin seçmesini iste
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    if (selectedDirectory == null) {
+      print("❌ Kullanıcı dizin seçmedi.");
+      return;
+    }
 
-  final barImage = pw.MemoryImage(barChartBytes);
-  final pieImage = pw.MemoryImage(pieChartBytes);
-  final lineImage = pw.MemoryImage(lineChartBytes);
+    // 📂 Dizin temizliği (senin path düzenleme mantığını koruyacağız, istersen buraya eklerim)
+    selectedDirectory = selectedDirectory.replaceFirst('/Download/son_reports/Download/son_reports', '/Download/son_reports');
 
-  // 📌 AI Yorum Promptu oluştur
-  final aiPrompt = generateAIPrompt(
-    itemTypeData: barChartData,
-    categoryData: pieChartData,
-    trendData: lineChartData,
-  );
+    final directory = Directory(selectedDirectory);
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
 
-  // 🧠 AI'dan canlı yorum al (Cloud Run fonksiyonuna istek)
-  final aiResponse = await fetchAISummaryFromFunction(aiPrompt);
-  print("🧠 AI Prompt:\n$aiPrompt");
-  print("🤖 AI Response from server: $aiResponse");
+    // 📄 Dosya adını oluştur
+    final now = DateTime.now();
+    final formattedTime = '${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
+    final formattedStart = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+    final formattedEnd = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+    final fileName = 'DataReport[${formattedStart}_to_${formattedEnd}]_at_$formattedTime.pdf';
+    final filePath = path.join(selectedDirectory, fileName);
 
-pdf.addPage(
-    pw.Page(
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('BEES Data Report',
-                style: pw.TextStyle(
-                    fontSize: 24, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 10),
-            pw.Text(
-                'Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}'),
-            pw.SizedBox(height: 20),
-            pw.Text('Category Distribution (Pie Chart):',
-                style: pw.TextStyle(
-                    fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 20),
-            pw.Image(pieImage),
-          ],
+    final pdf = pw.Document();
+
+    if (barChartData.isEmpty && pieChartData.isEmpty && lineChartData.isEmpty) {
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Text(
+                'No data available for the selected filters in this date range.',
+                style: pw.TextStyle(fontSize: 20),
+              ),
+            );
+          },
+        ),
+      );
+      await File(filePath).writeAsBytes(await pdf.save());
+      print('✅ PDF saved with no-data message at: $filePath');
+      return;
+    }
+
+    final barImage = pw.MemoryImage(barChartBytes);
+    final pieImage = pw.MemoryImage(pieChartBytes);
+    final lineImage = pw.MemoryImage(lineChartBytes);
+
+    // 📌 AI Yorum Promptu oluştur
+    final aiPrompt = generateAIPrompt(
+      itemTypeData: barChartData,
+      categoryData: pieChartData,
+      trendData: lineChartData,
+    );
+
+    // 🧠 AI'dan yorum al
+    final aiResponse = await fetchAISummaryFromFunction(aiPrompt);
+    print("🧠 AI Prompt:\n$aiPrompt");
+    print("🤖 AI Response: $aiResponse");
+
+    // 📄 PDF'e sayfa ekle
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('BEES Data Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 10),
+              pw.Text('Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}'),
+              pw.SizedBox(height: 20),
+              pw.Text('Category Distribution (Pie Chart):', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              pw.Image(pieImage),
+            ],
+          );
+        },
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Item Type Chart (Bar):', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              pw.Image(barImage),
+            ],
+          );
+        },
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Item Trend Over Time (Line Chart):', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 30),
+              pw.Image(lineImage),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (aiResponse != null && aiResponse.isNotEmpty) {
+      final summaryChunks = splitTextToFitPages(aiResponse);
+      for (var chunk in summaryChunks) {
+        pdf.addPage(
+          pw.Page(
+            build: (pw.Context context) {
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('AI Generated Summary', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 10),
+                  pw.Text(chunk, style: pw.TextStyle(fontSize: 12)),
+                ],
+              );
+            },
+          ),
         );
-      },
-    ),
-  );
+      }
+    }
 
-  // Sayfa 2: Pie Chart
-  pdf.addPage(
-    pw.Page(
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('Item Type Chart (Bar):',
-                style: pw.TextStyle(
-                    fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 20),
-            pw.Image(barImage),
-          ],
-        );
-      },
-    ),
-  );
-
-  // Sayfa 3: Line Chart
-  pdf.addPage(
-    pw.Page(
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('Item Trend Over Time (Line Chart):',
-                style: pw.TextStyle(
-                    fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 30),
-            pw.Image(lineImage),
-          ],
-        );
-      },
-    ),
-  );
-
-// Sayfa 4 ve devamı: AI summary (MultiPage ile otomatik bölünür)
-// Sayfa 4 ve sonrası: AI yorum metnini böl ve her sayfaya sırayla ekle
-final summaryChunks = splitTextToFitPages(aiResponse ?? 'No AI response received.');
-
-for (var chunk in summaryChunks) {
-  pdf.addPage(
-    pw.Page(
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('AI Generated Summary',
-                style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 10),
-            pw.Text(chunk, style: const pw.TextStyle(fontSize: 12)),
-          ],
-        );
-      },
-    ),
-  );
-}
-  // Dosya kaydet
-  String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-
-  if (selectedDirectory == null) {
-    print("❌ Kullanıcı dizin seçmedi.");
-    return;
+    // 📂 PDF kaydet
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+    print('✅ Final PDF saved at: $filePath');
+  } catch (e) {
+    print('❌ Error during report creation: $e');
   }
-
-  final fileName =
-      'DataReport[${startDate.toString().split(' ').first}_${endDate.toString().split(' ').first}].pdf';
-  final filePath = path.join(selectedDirectory, fileName);
-
-  final file = File(filePath);
-  await file.writeAsBytes(await pdf.save());
-
-  print('✅ PDF saved at: $filePath');
 }
 
   Future<List<Map<String, dynamic>>> fetchFilteredItems({

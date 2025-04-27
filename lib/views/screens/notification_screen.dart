@@ -22,32 +22,43 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? get userId => FirebaseAuth.instance.currentUser?.uid;
   
+  // Color scheme
+  final Color primaryYellow = Color(0xFFFFC857);
+  final Color lightYellow = Color(0xFFFFE3A9);
+  final Color backgroundColor = Color(0xFFF8F8F8);
+  final Color textDark = Color(0xFF333333);
+  final Color textLight = Color(0xFF8A8A8A);
+  
   Future<Map<String, dynamic>?> fetchEntity(String itemId, String entityType) async {
-                    try {
-                      final doc = await FirebaseFirestore.instance
-                          .collection(entityType == "Item" ? "items" : "requests")
-                          .doc(itemId)
-                          .get();
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection(entityType == "Item" ? "items" : "requests")
+          .doc(itemId)
+          .get();
 
-                      return doc.data(); // `Map<String, dynamic>` döner
-                    } catch (e) {
-                      print("❌ Entity çekilemedi: $e");
-                      return null;
-                    }
-                  }
+      return doc.data(); // Returns Map<String, dynamic>
+    } catch (e) {
+      print("❌ Entity fetch failed: $e");
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           "Notifications",
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.nunito(
+            fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: textDark,
           ),
         ),
-        backgroundColor: const Color(0xFF3B893E),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(color: textDark),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
@@ -57,16 +68,41 @@ class _NotificationScreenState extends State<NotificationScreen> {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B893E)),
-            ));
+            return Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+              )
+            );
           }
 
           if (snapshot.hasError) {
             return Center(
-              child: Text(
-                'Error: ${snapshot.error}',
-                style: GoogleFonts.poppins(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: textLight,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Error loading notifications',
+                    style: GoogleFonts.nunito(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textDark,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Please try again later',
+                    style: GoogleFonts.nunito(
+                      fontSize: 16,
+                      color: textLight,
+                    ),
+                  ),
+                ],
               ),
             );
           }
@@ -79,22 +115,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   Icon(
                     Icons.notifications_off_outlined,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: textLight,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     "No notifications yet",
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.nunito(
                       fontSize: 18,
-                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                      color: textDark,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     "We'll notify you when something happens",
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey[500],
+                    style: GoogleFonts.nunito(
+                      fontSize: 16,
+                      color: textLight,
                     ),
                   ),
                 ],
@@ -103,6 +140,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           }
 
           return ListView.builder(
+            padding: EdgeInsets.all(12),
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
               final doc = snapshot.data!.docs[index];
@@ -121,46 +159,53 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 key: Key(doc.id),
                 direction: DismissDirection.endToStart,
                 background: Container(
-                  color: Colors.red,
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade400,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 20),
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
                 onDismissed: (_) => doc.reference.delete(),
                 child: Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  color: isRead ? Colors.grey[100] : Colors.white,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  color: isRead ? backgroundColor : Colors.white,
                   elevation: isRead ? 0 : 2,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
-                      color: isRead ? Colors.grey[300]! : Colors.grey[200]!,
+                      color: isRead ? Colors.grey.withOpacity(0.2) : Colors.transparent,
                       width: 1,
                     ),
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 8,
+                      vertical: 12,
                     ),
                     leading: Container(
-                      width: 40,
-                      height: 40,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
                         color: _getNotificationColor(type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         _getNotificationIcon(type),
                         color: _getNotificationColor(type),
-                        size: 20,
+                        size: 24,
                       ),
                     ),
-                    title: Text(
-                      message,
-                      style: GoogleFonts.poppins(
-                        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                        fontSize: 14,
+                    title: Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        message,
+                        style: GoogleFonts.nunito(
+                          fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                          fontSize: 16,
+                          color: textDark,
+                        ),
                       ),
                     ),
                     subtitle: Column(
@@ -168,23 +213,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       children: [
                         if (itemTitle != null)
                           Padding(
-                            padding: const EdgeInsets.only(top: 4),
+                            padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
                               "Item: $itemTitle",
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.grey[600],
+                              style: GoogleFonts.nunito(
+                                fontSize: 14,
+                                color: textLight,
                               ),
                             ),
                           ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            timestamp != null ? _formatTimestamp(timestamp) : "No timestamp",
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
+                        Text(
+                          timestamp != null ? _formatTimestamp(timestamp) : "No timestamp",
+                          style: GoogleFonts.nunito(
+                            fontSize: 12,
+                            color: textLight,
                           ),
                         ),
                       ],
@@ -192,54 +234,61 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     trailing: type == 'rate_seller' && !rated
                         ? Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                              horizontal: 12,
+                              vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF3B893E).withOpacity(0.1),
+                              color: primaryYellow.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: primaryYellow),
                             ),
                             child: Text(
                               'Rate Now',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.nunito(
                                 fontSize: 12,
-                                color: const Color(0xFF3B893E),
+                                color: textDark,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           )
-                        : null,
+                        : !isRead 
+                          ? Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: primaryYellow,
+                                shape: BoxShape.circle,
+                              ),
+                            )
+                          : null,
                     onTap: () async {
-                      
                       // Mark as read first
                       if (!isRead) {
                         await _controller.markAsRead(doc.id);
                       }
                       
+                      if (type == 'message') {
+                        final rawEntity = await fetchEntity(data['itemId'], data['entityType']);
 
-                        if (type == 'message') {
-                          final rawEntity = await fetchEntity(data['itemId'], data['entityType']);
-
-                          dynamic entity;
-                          if (data['entityType'] == "Item") {
-                            entity = Item.fromMap(rawEntity!); // Item modelini import et
-                          } else {
-                            entity = Request.fromMap(rawEntity!); // Request modelini import et
-                          }                        
+                        dynamic entity;
+                        if (data['entityType'] == "Item") {
+                          entity = Item.fromMap(rawEntity!);
+                        } else {
+                          entity = Request.fromMap(rawEntity!);
+                        }                        
                         if (entity != null) {
                           Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MessageScreen(
-                              chatRoomId: null,
-                              entity: entity,
-                              entityType: data['entityType'],
-                              senderId: data['senderId'],
-                              receiverId: data['receiverId'],
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MessageScreen(
+                                chatRoomId: null,
+                                entity: entity,
+                                entityType: data['entityType'],
+                                senderId: data['senderId'],
+                                receiverId: data['receiverId'],
+                              ),
                             ),
-                          ),
-                        );
-
+                          );
                         }
                       }
                       
@@ -278,11 +327,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Color _getNotificationColor(String type) {
     switch (type) {
       case 'message':
-        return Colors.blue;
+        return primaryYellow;
       case 'rate_seller':
-        return Colors.amber;
+        return primaryYellow;
       default:
-        return const Color(0xFF3B893E);
+        return primaryYellow;
     }
   }
 
@@ -304,4 +353,3 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 }
-

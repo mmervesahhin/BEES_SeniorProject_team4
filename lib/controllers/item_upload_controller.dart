@@ -64,54 +64,27 @@ class ItemController {
         print('Error: User is not logged in.');
         return;
       }
-      // 1. Ana Resmi Firebase Storage'a Yükleme
-      // String? imageUrlCover;
-      // if (imageFileCover != null) {
-      //   imageUrlCover = await _uploadImageToStorage(imageFileCover, "cover_\${DateTime.now().millisecondsSinceEpoch}.jpg");
-      // }
-      // 2. Ek Resimleri Yükleme
-      // List<String> additionalImageUrls = [];
-      // for (File image in additionalImages) {
-      //   String imageUrl = await _uploadImageToStorage(image, "additional_\${DateTime.now().millisecondsSinceEpoch}.jpg");
-      //   additionalImageUrls.add(imageUrl);
-      // }
-
     if (userId == null) {
       print("Error: User is not logged in.");
       return;
     }
-
-    // `itemId` burada tanımlanmalı
-    String itemId = FirebaseFirestore.instance.collection('items').doc().id;
-
     // Cover Image Yükleme
     String? imageUrlCover;
     if (imageFileCover != null) {
-      imageUrlCover = await _uploadImageToStorage(imageFileCover, userId, itemId, "cover_${DateTime.now().millisecondsSinceEpoch}.jpg");
+      imageUrlCover = await _uploadImageToStorage(imageFileCover, userId, item.itemId, "cover_${DateTime.now().millisecondsSinceEpoch}.jpg");
     }
 
     // Ek Resimleri Yükleme
     List<String> additionalImageUrls = [];
     for (int i = 0; i < additionalImages.length; i++) {
-      String imageUrl = await _uploadImageToStorage(additionalImages[i], userId, itemId, "additional_${DateTime.now().millisecondsSinceEpoch}.jpg");
+      String imageUrl = await _uploadImageToStorage(additionalImages[i], userId, item.itemId, "additional_${DateTime.now().millisecondsSinceEpoch}.jpg");
       additionalImageUrls.add(imageUrl);
     }
 
-
-      // 3. Firestore'a Ürün Verisi Ekleme
-      // DocumentReference docRef = await _firestore.collection('items').add({
-      //   ...item.toJson(),
-      //   'photo': imageUrlCover,
-      //   'additionalPhotos': additionalImageUrls,
-      //   'itemOwnerId': userId, 
-      // });
-
-
-
       // **Firestore'a `itemId` ile ekleme (add() yerine set() kullanıyoruz)**
-      await _firestore.collection('items').doc(itemId).set({
+      await _firestore.collection('items').doc(item.itemId).set({
         ...item.toJson(),
-        'itemId': itemId, // **Firestore'un oluşturduğu ID `itemId` olarak kaydedildi**
+        'itemId': item.itemId, // **Firestore'un oluşturduğu ID `itemId` olarak kaydedildi**
         'itemOwnerId': userId, // Kullanıcı ID
         'photo': imageUrlCover,
         'additionalPhotos': additionalImageUrls,
@@ -129,6 +102,7 @@ class ItemController {
     required String category,
     required String condition,
     required String itemType,
+    required String paymentPlan,
     required File? coverImage,
     required List<File> additionalImages,
     required List<String> selectedDepartments,
@@ -160,7 +134,7 @@ class ItemController {
       itemType: itemType, // Eksik olan itemType burada belirtilmeli
       departments: selectedDepartments,
       price: double.parse(priceController.text),
-      paymentPlan: category == 'Rent' ? 'Per Day' : null, // Kira seçeneği için eklendi
+      paymentPlan: category == 'Rent' ? paymentPlan : null,
       photoUrl: null, // Varsayılan olarak boş bırakıldı, eklenecekse ayarlanmalı
       additionalPhotos: [], // Varsayılan olarak boş liste
       favoriteCount: 0, // Yeni oluşturulan öğe için favori sayısı sıfır olarak ayarlandı
@@ -168,13 +142,7 @@ class ItemController {
     );
 
       // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false, // Prevent dismissing the dialog by tapping outside
-        builder: (BuildContext context) {
-          return Center(child: CircularProgressIndicator());
-        },
-      );
+      
 
       await uploadItem(newItem, coverImage, additionalImages);
 
@@ -182,12 +150,6 @@ class ItemController {
       context,
       MaterialPageRoute(builder: (context) => UploadSuccessPage(itemId: itemId)), // Pass itemId
     );
-      Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => UploadSuccessPage(itemId: itemId)),
-    );
-
-
     } 
   }
 

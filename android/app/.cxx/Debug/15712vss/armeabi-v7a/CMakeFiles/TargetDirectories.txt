@@ -1,0 +1,2 @@
+C:/wamp64/www/BEES_SeniorProject_team4/android/app/.cxx/Debug/15712vss/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/wamp64/www/BEES_SeniorProject_team4/android/app/.cxx/Debug/15712vss/armeabi-v7a/CMakeFiles/rebuild_cache.dir

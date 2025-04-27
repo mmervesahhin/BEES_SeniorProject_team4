@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bees/controllers/home_controller.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'message_list_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -23,22 +24,27 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   final HomeController _controller = HomeController();
 
+  final Color primaryYellow = const Color(0xFFFFC857);
+  final Color lightYellow = const Color(0xFFFFE3A9);
+  final Color backgroundColor = const Color(0xFFF8F8F8);
+  final Color textDark = const Color(0xFF333333);
+  final Color textLight = const Color(0xFF8A8A8A);
+
   @override
   void initState() {
     super.initState();
     fetchFavorites();
   }
 
-void fetchFavorites() async {
-  setState(() => isLoading = true);
-  final allFavorites = await _controller.fetchFavorites();
-  favoriteItems = allFavorites.where((doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return data['itemStatus'] != null && data['itemStatus'].toLowerCase() == 'active';
-  }).toList();
-  setState(() => isLoading = false);
-}
-
+  void fetchFavorites() async {
+    setState(() => isLoading = true);
+    final allFavorites = await _controller.fetchFavorites();
+    favoriteItems = allFavorites.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['itemStatus'] != null && data['itemStatus'].toLowerCase() == 'active';
+    }).toList();
+    setState(() => isLoading = false);
+  }
 
   void _toggleFavorite(String itemId, bool isFavorited) async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -49,17 +55,20 @@ void fetchFavorites() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 59, 137, 62),
         automaticallyImplyLeading: false,
-        title: const Text(
-          'BEES',
-          style: TextStyle(
-            fontSize: 24,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          'Favorites',
+          style: GoogleFonts.nunito(
+            fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.yellow,
+            color: textDark,
           ),
         ),
+        iconTheme: IconThemeData(color: textDark),
         actions: [
           IconButton(
             icon: Icon(Icons.message),
@@ -71,129 +80,171 @@ void fetchFavorites() async {
                 ),
               );
             },
-            color: Colors.black,
+            color: textDark,
           ),
         ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : favoriteItems.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.favorite_border, size: 80, color: Colors.grey),
+                      Icon(Icons.favorite_border, size: 64, color: textLight),
                       SizedBox(height: 16),
                       Text(
                         'No favorite items found',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                        style: GoogleFonts.nunito(fontSize: 18, color: textDark),
                         textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Add items to your favorites to see them here.',
+                        style: GoogleFonts.nunito(fontSize: 16, color: textLight),
                       ),
                     ],
                   ),
                 )
-              : Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ListView.builder(
-                    itemCount: favoriteItems.length,
-                    itemBuilder: (context, index) {
-                      var item = favoriteItems[index];
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DetailedItemScreen(itemId: item['itemId']),
-                            ),
-                          );
-                        },
-                        child: Card(
-                          elevation: 3,
-                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12.0),
+                  itemCount: favoriteItems.length,
+                  itemBuilder: (context, index) {
+                    final data = favoriteItems[index].data() as Map<String, dynamic>;
+                    final itemId = favoriteItems[index].id;
+                    final imageUrl = _controller.getImageUrl(data['photo']);
+                    final category = _controller.getCategory(data['category']);
+                    final departments = _controller.getDepartments(data['departments']);
+                    final condition = data['condition'] ?? 'Unknown';
+                    final hidePrice = category.toLowerCase() == 'donation' || category.toLowerCase() == 'exchange';
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DetailedItemScreen(itemId: data['itemId']),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    item['photo'],
-                                    width: 90,
-                                    height: 90,
-                                    fit: BoxFit.cover,
-                                  ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  imageUrl,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      data['title'],
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.nunito(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: textDark,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    if (!hidePrice)
                                       Text(
-                                        item['title'],
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                        '₺${data['price']}',
+                                        style: GoogleFonts.nunito(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: primaryYellow,
+                                        ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            '₺${item['price']}',
-                                            style: TextStyle(fontSize: 20),
-                                          ),
-                                          if (item['category'] == 'Rent')
-                                            Padding(
-                                              padding: const EdgeInsets.only(left: 8.0),
-                                              child: Text(item['paymentPlan']),
-                                            ),
+                                    const SizedBox(height: 6),
+                                    Wrap(
+                                      spacing: 4,
+                                      runSpacing: 4,
+                                      children: [
+                                        _buildTag(category, primaryYellow),
+                                        _buildTag(condition, lightYellow),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Wrap(
+                                      spacing: 4,
+                                      runSpacing: 4,
+                                      children: [
+                                        if (departments.length == 31) // Tüm departmanlar seçiliyse
+                                          _buildTag('All Departments', textLight)
+                                        else ...[
+                                          if (departments.isNotEmpty) _buildTag(departments[0], textDark),
+                                          if (departments.length > 1)
+                                            _buildTag('+${departments.length - 1}', textDark),
                                         ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              _buildTag(item['category'], Colors.green),
-                                              _buildTag(item['condition'], Colors.yellow),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Row(
-                                            children: [
-                                              _buildDepartmentsTag(item['departments']),
-                                            ],
-                                          ),
-                                        ],
+                                      ],
+                                    )
+                                  ],
+                                ),
+                              ),
+                              Align(
+                                alignment: Alignment.center,
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        spreadRadius: 1,
                                       ),
                                     ],
                                   ),
+                                  child: IconButton(
+                                    padding: EdgeInsets.zero,
+                                    icon: Icon(Icons.favorite, color: Colors.red, size: 16),
+                                    onPressed: () {
+                                      _toggleFavorite(itemId, false);
+                                    },
+                                  ),
                                 ),
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.favorite, color: Colors.red),
-                                      onPressed: () {
-                                        _toggleFavorite(item['itemId'], false);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color.fromARGB(255, 59, 137, 62),
+        selectedItemColor: primaryYellow,
+        unselectedItemColor: textLight,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
@@ -208,32 +259,20 @@ void fetchFavorites() async {
 
   Widget _buildTag(String text, Color color) {
     return Container(
-      margin: EdgeInsets.only(right: 4),
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(8),
+        color: color.withOpacity(0.15),
       ),
       child: Text(
         text,
-        style: TextStyle(color: Colors.black),
+        style: GoogleFonts.nunito(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: textDark,
+        ),
       ),
-    );
-  }
-
-  Widget _buildDepartmentsTag(List<dynamic> departments) {
-    if (departments.isEmpty) return Container();
-
-    List<String> visibleDepartments = departments.map((e) => e.toString()).take(1).toList();
-
-    if (departments.length > 1) {
-      visibleDepartments.add('...');
-    }
-
-    return Row(
-      children: visibleDepartments.map((department) {
-        return _buildTag(department, Colors.orange);
-      }).toList(),
     );
   }
 

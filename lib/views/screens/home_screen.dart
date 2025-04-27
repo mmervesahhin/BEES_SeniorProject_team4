@@ -78,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    int activeFilterCount = getActiveFilterCount();
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -93,12 +94,48 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          StreamBuilder<QuerySnapshot>(
+  stream: FirebaseFirestore.instance
+      .collection('notifications')
+      .where('receiverId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+      .where('isRead', isEqualTo: false)
+      .snapshots(),
+  builder: (context, snapshot) {
+    int unreadCount = snapshot.data?.docs.length ?? 0;
+
+    return IconButton(
+      icon: badges.Badge(
+        showBadge: unreadCount > 0,
+        badgeContent: Text(
+          unreadCount.toString(),
+          style: const TextStyle(color: Colors.white, fontSize: 10),
+        ),
+        child: const Icon(Icons.notifications),
+        badgeStyle: const badges.BadgeStyle(
+          badgeColor: Colors.red,
+        ),
+      ),
+      color: textDark,
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationScreen()),
+        );
+      },
+    );
+  },
+),
+
+
         StreamBuilder<int>(
             stream: MessageController().getTotalUnreadMessagesCount(currentUserId), // Stream tüm chat room'lar için toplamı döndürecek
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              }
+              return CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+              );
+            }
+
 
               if (snapshot.hasData) {
                 int unreadMessages = snapshot.data ?? 0;
@@ -133,40 +170,6 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
           ),
-
-
-
-          StreamBuilder<QuerySnapshot>(
-  stream: FirebaseFirestore.instance
-      .collection('notifications')
-      .where('receiverId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-      .where('isRead', isEqualTo: false)
-      .snapshots(),
-  builder: (context, snapshot) {
-    int unreadCount = snapshot.data?.docs.length ?? 0;
-
-    return IconButton(
-      icon: badges.Badge(
-        showBadge: unreadCount > 0,
-        badgeContent: Text(
-          unreadCount.toString(),
-          style: const TextStyle(color: Colors.white, fontSize: 10),
-        ),
-        child: const Icon(Icons.notifications),
-        badgeStyle: const badges.BadgeStyle(
-          badgeColor: Colors.red,
-        ),
-      ),
-      color: textDark,
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const NotificationScreen()),
-        );
-      },
-    );
-  },
-),
 
         ],
       ),
@@ -223,11 +226,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: primaryYellow,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: IconButton(
-                      icon: Icon(Icons.filter_list, color: Colors.white),
-                      onPressed: () {
-                        _showFiltersDialog();
-                      },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: primaryYellow,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: badges.Badge(
+                        showBadge: activeFilterCount > 0,
+                        badgeContent: Text(
+                          activeFilterCount.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 10),
+                        ),
+                        position: badges.BadgePosition.topEnd(top: -6, end: -6),
+                        badgeStyle: const badges.BadgeStyle(
+                          badgeColor: Colors.red,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.filter_list, color: Colors.white),
+                          onPressed: () {
+                            _showFiltersDialog();
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -295,10 +315,42 @@ class _HomeScreenState extends State<HomeScreen> {
                     var departments = data['departments'] ?? [];
 
                     bool matchesSearch = title.contains(_searchQuery);
-                    bool matchesFilters = _controller.applyFilters(price, condition, category, itemType, departments, _filters);
+                    bool matchesFilters = _controller.applyFilters(price.toDouble(), condition, category, itemType, departments, _filters);
 
                     return matchesSearch && matchesFilters;
                   }).toList();
+
+                  if (items.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: textLight,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No items found',
+                            style: GoogleFonts.nunito(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textDark,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Try adjusting your search or filters',
+                            style: GoogleFonts.nunito(
+                              fontSize: 16,
+                              color: textLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
                   items.sort((a, b) {
                     var dataA = a.data() as Map<String, dynamic>? ?? {};
@@ -315,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 0.75, // Adjusted for more height
+                        childAspectRatio: 0.70, // Adjusted for more height
                       ),
                       itemCount: items.length,
                       itemBuilder: (context, index) {
@@ -410,132 +462,169 @@ class _HomeScreenState extends State<HomeScreen> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             SizedBox(height: 4), // Reduced spacing
-                                            if (!hidePrice)
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    '₺${data['price']}',
-                                                    style: GoogleFonts.nunito(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14, // Smaller font
-                                                      color: primaryYellow,
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: 4), // Reduced spacing
-                                                  if (data['paymentPlan'] != null)
-                                                    Expanded(
-                                                      child: Text(
-                                                        data['paymentPlan'],
+                                            SizedBox(
+                                            height: 20,
+                                            child: hidePrice
+                                                ? SizedBox.shrink()
+                                                : Row(
+                                                    children: [
+                                                      Text(
+                                                        '₺${data['price']}',
                                                         style: GoogleFonts.nunito(
-                                                          fontSize: 10, // Smaller font
-                                                          color: textLight,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 14,
+                                                          color: primaryYellow,
                                                         ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
                                                       ),
-                                                    ),
-                                                ],
-                                              ),
+                                                      SizedBox(width: 4),
+                                                      if (data['paymentPlan'] != null)
+                                                        Expanded(
+                                                          child: Text(
+                                                            data['paymentPlan'],
+                                                            style: GoogleFonts.nunito(
+                                                              fontSize: 10,
+                                                              color: textLight,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                          ),
                                             SizedBox(height: 4), // Reduced spacing
                                             
                                             // Tags
                                             Expanded(
-                                              child: SingleChildScrollView(
-                                                child: Wrap(
-                                                  spacing: 2, // Reduced spacing
-                                                  runSpacing: 2, // Reduced spacing
-                                                  children: [
-                                                    // Category tag
-                                                    Container(
-                                                      margin: EdgeInsets.only(bottom: 2, right: 2),
-                                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Reduced padding
-                                                      decoration: BoxDecoration(
-                                                        color: primaryYellow.withOpacity(0.2),
-                                                        borderRadius: BorderRadius.circular(8), // Smaller radius
-                                                        border: Border.all(
-                                                          color: primaryYellow,
-                                                          width: 1,
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        category,
-                                                        style: GoogleFonts.nunito(
-                                                          fontSize: 8, // Smaller font
-                                                          fontWeight: FontWeight.bold,
-                                                          color: textDark,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    
-                                                    // Condition tag
-                                                    Container(
-                                                      margin: EdgeInsets.only(bottom: 2, right: 2),
-                                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Reduced padding
-                                                      decoration: BoxDecoration(
-                                                        color: lightYellow.withOpacity(0.3),
-                                                        borderRadius: BorderRadius.circular(8), // Smaller radius
-                                                        border: Border.all(
-                                                          color: lightYellow,
-                                                          width: 1,
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        condition,
-                                                        style: GoogleFonts.nunito(
-                                                          fontSize: 8, // Smaller font
-                                                          fontWeight: FontWeight.bold,
-                                                          color: textDark,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    
-                                                    // Department tag (first one only)
-                                                    if (departments.isNotEmpty)
-                                                      Container(
-                                                        margin: EdgeInsets.only(bottom: 2, right: 2),
-                                                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Reduced padding
-                                                        decoration: BoxDecoration(
-                                                          color: backgroundColor,
-                                                          borderRadius: BorderRadius.circular(8), // Smaller radius
-                                                          border: Border.all(
-                                                            color: textLight.withOpacity(0.3),
-                                                            width: 1,
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  // Category & Condition Tags
+                                                  Row(
+                                                    children: [
+                                                      // Category tag
+                                                      Flexible(
+                                                        child: Container(
+                                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                          decoration: BoxDecoration(
+                                                            color: primaryYellow.withOpacity(0.2),
+                                                            borderRadius: BorderRadius.circular(8),
+                                                            border: Border.all(color: primaryYellow),
                                                           ),
-                                                        ),
-                                                        child: Text(
-                                                          departments[0],
-                                                          style: GoogleFonts.nunito(
-                                                            fontSize: 8, // Smaller font
-                                                            fontWeight: FontWeight.bold,
-                                                            color: textDark,
+                                                          child: Text(
+                                                            category,
+                                                            style: GoogleFonts.nunito(
+                                                              fontSize: 9,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: textDark,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
                                                           ),
                                                         ),
                                                       ),
-                                                      
-                                                    // More departments indicator
-                                                    if (departments.length > 1)
-                                                      Container(
-                                                        margin: EdgeInsets.only(bottom: 2),
-                                                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Reduced padding
-                                                        decoration: BoxDecoration(
-                                                          color: backgroundColor,
-                                                          borderRadius: BorderRadius.circular(8), // Smaller radius
-                                                          border: Border.all(
-                                                            color: textLight.withOpacity(0.3),
-                                                            width: 1,
+                                                      SizedBox(width: 4),
+                                                      // Condition tag
+                                                      Flexible(
+                                                        child: Container(
+                                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                          decoration: BoxDecoration(
+                                                            color: lightYellow.withOpacity(0.3),
+                                                            borderRadius: BorderRadius.circular(8),
+                                                            border: Border.all(color: lightYellow),
                                                           ),
-                                                        ),
-                                                        child: Text(
-                                                          '+${departments.length - 1}',
-                                                          style: GoogleFonts.nunito(
-                                                            fontSize: 8, // Smaller font
-                                                            fontWeight: FontWeight.bold,
-                                                            color: textDark,
+                                                          child: Text(
+                                                            condition,
+                                                            style: GoogleFonts.nunito(
+                                                              fontSize: 9,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: textDark,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
                                                           ),
                                                         ),
                                                       ),
-                                                  ],
-                                                ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 4),
+
+                                                  // Department Tags
+                                                  Row(
+                                                    children: [
+                                                      if (departments.length == 31)
+                                                        Flexible(
+                                                          child: Container(
+                                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                            decoration: BoxDecoration(
+                                                              color: backgroundColor,
+                                                              borderRadius: BorderRadius.circular(8),
+                                                              border: Border.all(color: textLight.withOpacity(0.3)),
+                                                            ),
+                                                            child: Text(
+                                                              'All Departments',
+                                                              style: GoogleFonts.nunito(
+                                                                fontSize: 9,
+                                                                fontWeight: FontWeight.bold,
+                                                                color: textDark,
+                                                              ),
+                                                              maxLines: 1,
+                                                              overflow: TextOverflow.ellipsis,
+                                                            ),
+                                                          ),
+                                                        )
+                                                      else ...[
+                                                        if (departments.isNotEmpty)
+                                                          Flexible(
+                                                            flex: 2,
+                                                            child: Container(
+                                                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                              decoration: BoxDecoration(
+                                                                color: backgroundColor,
+                                                                borderRadius: BorderRadius.circular(8),
+                                                                border: Border.all(color: textLight.withOpacity(0.3)),
+                                                              ),
+                                                              child: Text(
+                                                                departments[0],
+                                                                style: GoogleFonts.nunito(
+                                                                  fontSize: 9,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: textDark,
+                                                                ),
+                                                                maxLines: 1,
+                                                                overflow: TextOverflow.ellipsis,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        if (departments.length > 1)
+                                                          Flexible(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding: const EdgeInsets.only(left: 4.0),
+                                                              child: Container(
+                                                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                                decoration: BoxDecoration(
+                                                                  color: backgroundColor,
+                                                                  borderRadius: BorderRadius.circular(8),
+                                                                  border: Border.all(color: textLight.withOpacity(0.3)),
+                                                                ),
+                                                                child: Text(
+                                                                  '+${departments.length - 1}',
+                                                                  style: GoogleFonts.nunito(
+                                                                    fontSize: 9,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: textDark,
+                                                                  ),
+                                                                  maxLines: 1,
+                                                                  overflow: TextOverflow.ellipsis,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ],
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ],
@@ -546,6 +635,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 
                                 // Favorite button
+                                // Favorite button (only if not the owner)
+                                if (data['itemOwnerId'] != currentUserId)...[
                                 Positioned(
                                   top: 8,
                                   right: 8,
@@ -579,6 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ),
+                                ],
                               ],
                             ),
                           ),
@@ -679,6 +771,126 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  int getActiveFilterCount() {
+  int count = 0;
+
+  if (_filters['minPrice'] != null) count++;
+  if (_filters['maxPrice'] != null) count++;
+  if (_filters['condition'] != null && _filters['condition'] != 'All') count++;
+  if (_filters['itemType'] != null && _filters['itemType'] != 'All') count++;
+  if (_filters['category'] != null && _filters['category'] != 'All') count++;
+  if ((_filters['departments'] as List).isNotEmpty) count++;
+
+  return count;
+}
+
+
+void _showDepartmentDialog(StateSetter setDialogState) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      List<String> tempSelection = selectedDepartments.contains('All Departments')
+          ? List.from(departmentList)
+          : List.from(selectedDepartments);
+
+      return StatefulBuilder(
+        builder: (context, innerSetState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Select Departments',
+              style: GoogleFonts.nunito(fontWeight: FontWeight.bold, color: primaryYellow),
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                children: [
+                  CheckboxListTile(
+                    value: tempSelection.contains('All Departments'),
+                    title: Text('All Departments', style: GoogleFonts.nunito()),
+                    onChanged: (bool? value) {
+                      innerSetState(() {
+                        if (value == true) {
+                          tempSelection = List.from(departmentList);
+                        } else {
+                          tempSelection.clear();
+                        }
+                      });
+                    },
+                  ),
+                  ...departmentList.where((dept) => dept != 'All Departments').map((dept) {
+                    return CheckboxListTile(
+                      value: tempSelection.contains(dept),
+                      title: Text(dept, style: GoogleFonts.nunito()),
+                      onChanged: (bool? value) {
+                        innerSetState(() {
+                          if (value == true) {
+                            tempSelection.add(dept);
+                          } else {
+                            tempSelection.remove(dept);
+                          }
+
+                          // 🔥 All Departments mantığını her değişimden SONRA kontrol et
+                          bool isAllSelected = tempSelection.contains('All Departments');
+                          int normalDeptCount = departmentList.length - 1;
+                          int selectedNormal = tempSelection
+                              .where((e) => e != 'All Departments')
+                              .length;
+
+                          if (selectedNormal == normalDeptCount && !isAllSelected) {
+                            tempSelection.add('All Departments');
+                          } else if (selectedNormal < normalDeptCount && isAllSelected) {
+                            tempSelection.remove('All Departments');
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: primaryYellow,
+                  textStyle: GoogleFonts.nunito(fontWeight: FontWeight.bold),
+                ),
+                child: Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                setDialogState(() {
+                  selectedDepartments = tempSelection;
+                  // UI'da 'All Departments' görünmeye devam etsin ama filtreye gitmesin:
+                  _filters['departments'] = selectedDepartments.where((d) => d != 'All Departments').toList();
+                });
+                Navigator.of(context).pop();
+              },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryYellow,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Apply',
+                  style: GoogleFonts.nunito(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
   void _showFiltersDialog() {
     // Create controllers only once for the dialog
     TextEditingController minPriceController =
@@ -757,7 +969,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     onChanged: (value) {
                                       setDialogState(() {
-                                        _filters['minPrice'] = value.isEmpty ? null : double.tryParse(value);
+                                        String formatted = value.replaceAll(',', '.');
+                                        double? parsed = double.tryParse(formatted);
+
+                                        _filters['minPrice'] = value.isEmpty ? null : parsed;
+
+                                        if (value.isNotEmpty && parsed == null) {
+                                          errorMessage = 'Please enter a valid number for Min Price.';
+                                        } else {
+                                          errorMessage = '';
+                                        }
                                       });
                                     },
                                     enabled: _filters['category'] != 'Donation' && _filters['category'] != 'Exchange',
@@ -786,7 +1007,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     onChanged: (value) {
                                       setDialogState(() {
-                                        _filters['maxPrice'] = value.isEmpty ? null : double.tryParse(value);
+                                        String formatted = value.replaceAll(',', '.');
+                                        double? parsed = double.tryParse(formatted);
+
+                                        _filters['maxPrice'] = value.isEmpty ? null : parsed;
+
+                                        if (value.isNotEmpty && parsed == null) {
+                                          errorMessage = 'Please enter a valid number for Max Price.';
+                                        } else {
+                                          errorMessage = '';
+                                        }
                                       });
                                     },
                                     enabled: _filters['category'] != 'Donation' && _filters['category'] != 'Exchange',
@@ -807,7 +1037,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             SizedBox(height: 20),
                             
-                            // Departments Section
                             Text(
                               'Departments',
                               style: GoogleFonts.nunito(
@@ -817,74 +1046,102 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             SizedBox(height: 8),
-                            Theme(
-                              data: Theme.of(context).copyWith(
-                                textTheme: TextTheme(
-                                  titleMedium: GoogleFonts.nunito(
-                                    color: textDark,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              child: MultiSelectDialogField(
-                                title: Text(
-                                  'Select Departments',
-                                  style: GoogleFonts.nunito(
-                                    fontWeight: FontWeight.bold,
-                                    color: textDark,
-                                  ),
-                                ),
-                                buttonText: Text(
-                                  'Select Departments',
-                                  style: GoogleFonts.nunito(
-                                    color: textLight,
-                                  ),
-                                ),
-                                buttonIcon: Icon(Icons.arrow_drop_down, color: primaryYellow),
+                            GestureDetector(
+                              onTap: () => _showDepartmentDialog(setDialogState),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
                                   color: backgroundColor,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                selectedColor: primaryYellow,
-                                checkColor: Colors.white,
-                                unselectedColor: textLight,
-                                items: departmentList.map((e) => MultiSelectItem(e, e)).toList(),
-                                initialValue: selectedDepartments.where((dept) => dept != 'All Departments').toList(),
-                                onConfirm: (values) {
-                                  setDialogState(() {
-                                    selectedDepartments = values;
-
-                                    // If 'All Departments' is selected, select all departments and remove 'All Departments' from the list
-                                    if (selectedDepartments.contains('All Departments')) {
-                                      selectedDepartments = List.from(departmentList);
-                                      // selectedDepartments.remove('All Departments');
-                                    }
-
-                                    // If no departments are selected, add 'All Departments' to the list
-                                    if (selectedDepartments.isEmpty) {
-                                      selectedDepartments.add('All Departments');
-                                    }
-
-                                    // Update the _filters['departments'] with the selected departments
-                                    _filters['departments'] = selectedDepartments;
-                                  });
-                                },
-                                onSelectionChanged: (selectedList) {
-                                  setDialogState(() {
-                                    if (selectedList.contains('All Departments') && selectedList.length == departmentList.length) {
-                                      // Keep 'All Departments' selected if all are selected
-                                      selectedDepartments = List.from(departmentList);
-                                    } else if (!selectedList.contains('All Departments')) {
-                                      // Uncheck 'All Departments' if not all are selected
-                                      selectedDepartments = selectedList;
-                                    }
-
-                                    // Update _filters['departments'] whenever selection changes
-                                    _filters['departments'] = selectedDepartments;
-                                  });
-                                },
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    isExpanded: true,
+                                    value: selectedDepartments.contains('All Departments')
+                                        ? 'All Departments'
+                                        : selectedDepartments.isEmpty
+                                            ? null
+                                            : '${selectedDepartments.length} selected',
+                                    hint: Text(
+                                      'Select Departments',
+                                      style: GoogleFonts.nunito(color: textLight),
+                                    ),
+                                    icon: Icon(Icons.arrow_drop_down, color: primaryYellow),
+                                    style: GoogleFonts.nunito(
+                                      color: textDark,
+                                      fontSize: 14,
+                                    ),
+                                    onChanged: (_) {
+                                      // override dropdown behavior: always open the dialog
+                                      _showDepartmentDialog(setDialogState);
+                                    },
+                                    items: [], // dropdown'u boş bırakıyoruz, çünkü dialog açılacak
+                                  ),
+                                ),
                               ),
                             ),
+
+                            SizedBox(height: 8),
+if (selectedDepartments.isNotEmpty)
+  Wrap(
+    spacing: 6,
+    runSpacing: 6,
+    children: [
+      if (selectedDepartments.contains('All Departments'))
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: textLight.withOpacity(0.3)),
+          ),
+          child: Text(
+            'All Departments',
+            style: GoogleFonts.nunito(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: textDark,
+            ),
+          ),
+        )
+      else ...[
+        ...selectedDepartments.take(3).map((dept) => Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: textLight.withOpacity(0.3)),
+              ),
+              child: Text(
+                dept,
+                style: GoogleFonts.nunito(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+            )),
+        if (selectedDepartments.length > 3)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: textLight.withOpacity(0.3)),
+            ),
+            child: Text(
+              '+${selectedDepartments.length - 3} more',
+              style: GoogleFonts.nunito(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: textDark,
+              ),
+            ),
+          ),
+      ],
+    ],
+  ),
+
                             SizedBox(height: 20),
 
                             // Condition Section
@@ -1049,8 +1306,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   'condition': 'All',
                                   'itemType': 'All',
                                   'category': 'All',
-                                  'selectedDepartments': [],
+                                  'departments': [],
                                 };
+                                selectedDepartments = [];
                                 minPriceController.clear();
                                 maxPriceController.clear();
                                 errorMessage = ''; // Clear error when filters are cleared
