@@ -50,7 +50,6 @@ Future<DateTime?> selectEndDate(BuildContext context) async {
         endDate != null;
   }
 
-  // Create report logic
 Future<void> createReport({
   required Uint8List barChartBytes,
   required Uint8List pieChartBytes,
@@ -61,40 +60,8 @@ Future<void> createReport({
   required DateTime startDate,
   required DateTime endDate,
 }) async {
-  if (barChartData.isEmpty && pieChartData.isEmpty && lineChartData.isEmpty) {
-    // No data case - unchanged
-    final pdf = pw.Document();
-    
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text('BEES Data Report',
-                  style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 10),
-              pw.Text(
-                'Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}',
-              ),
-              pw.SizedBox(height: 20),
-              pw.Text(
-                'No data available for the selected filters in this date range.',
-                style: pw.TextStyle(fontSize: 16, fontStyle: pw.FontStyle.italic),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-
-    // Save PDF using the safer method
-    await savePdf(pdf, startDate, endDate);
-    return;
-  }
-
   final pdf = pw.Document();
-  
+
   // AI Prompt generation
   final aiPrompt = generateAIPrompt(
     itemTypeData: barChartData,
@@ -124,7 +91,8 @@ Future<void> createReport({
                 style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 10),
             pw.Text(
-                'Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}'),
+              'Date Range: ${startDate.toLocal().toString().split(' ')[0]} - ${endDate.toLocal().toString().split(' ')[0]}',
+            ),
             pw.SizedBox(height: 20),
           ],
         );
@@ -132,157 +100,205 @@ Future<void> createReport({
     ),
   );
 
-  // Category Distribution (Pie Chart)
+  // Pie Chart Section
   if (pieChartData.isNotEmpty) {
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text('Category Distribution:',
-                  style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 20),
-              
-              // Add image if available, otherwise add table
-              pieChartBytes.isNotEmpty 
-                ? pw.Image(pw.MemoryImage(pieChartBytes))
-                : pw.Table(
-                    border: pw.TableBorder.all(),
-                    children: [
-                      pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text('Category', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          ),
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text('Count', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          ),
-                        ],
-                      ),
-                      ...pieChartData.entries.map((entry) => pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text(entry.key),
-                          ),
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text(entry.value.toString()),
-                          ),
-                        ],
-                      )).toList(),
-                    ],
-                  ),
-            ],
-          );
-        },
-      ),
-    );
+    if (pieChartBytes.isNotEmpty) {
+      final pieImage = pw.MemoryImage(pieChartBytes);
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('Category Distribution:',
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 20),
+                pw.Image(pieImage),
+              ],
+            );
+          },
+        ),
+      );
+    } else {
+      // Table fallback
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('Category Distribution:',
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 20),
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  children: [
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text('Category', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text('Count', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    ...pieChartData.entries.map((entry) => pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text(entry.key),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text(entry.value.toString()),
+                        ),
+                      ],
+                    )).toList(),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
   }
 
-  // Item Type Distribution (Bar Chart)
+  // Bar Chart Section
   if (barChartData.isNotEmpty) {
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text('Item Type Distribution:',
-                  style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 20),
-              
-              // Add image if available, otherwise add table
-              barChartBytes.isNotEmpty 
-                ? pw.Image(pw.MemoryImage(barChartBytes))
-                : pw.Table(
-                    border: pw.TableBorder.all(),
-                    children: [
-                      pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text('Item Type', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          ),
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text('Count', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          ),
-                        ],
-                      ),
-                      ...barChartData.entries.map((entry) => pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text(entry.key),
-                          ),
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text(entry.value.toString()),
-                          ),
-                        ],
-                      )).toList(),
-                    ],
-                  ),
-            ],
-          );
-        },
-      ),
-    );
+    if (barChartBytes.isNotEmpty) {
+      final barImage = pw.MemoryImage(barChartBytes);
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('Item Type Distribution:',
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 20),
+                pw.Image(barImage),
+              ],
+            );
+          },
+        ),
+      );
+    } else {
+      // Table fallback
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('Item Type Distribution:',
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 20),
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  children: [
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text('Item Type', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text('Count', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    ...barChartData.entries.map((entry) => pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text(entry.key),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text(entry.value.toString()),
+                        ),
+                      ],
+                    )).toList(),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
   }
 
-  // Trend Over Time (Line Chart)
+  // Line Chart Section
   if (lineChartData.isNotEmpty) {
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text('Trend Over Time:',
-                  style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 20),
-              
-              // Add image if available, otherwise add table
-              lineChartBytes.isNotEmpty 
-                ? pw.Image(pw.MemoryImage(lineChartBytes))
-                : pw.Table(
-                    border: pw.TableBorder.all(),
-                    children: [
-                      pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text('Date', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          ),
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text('Count', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          ),
-                        ],
-                      ),
-                      ...lineChartData.entries.map((entry) => pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text(entry.key),
-                          ),
-                          pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text(entry.value.toString()),
-                          ),
-                        ],
-                      )).toList(),
-                    ],
-                  ),
-            ],
-          );
-        },
-      ),
-    );
+    if (lineChartBytes.isNotEmpty) {
+      final lineImage = pw.MemoryImage(lineChartBytes);
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('Trend Over Time:',
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 20),
+                pw.Image(lineImage),
+              ],
+            );
+          },
+        ),
+      );
+    } else {
+      // Table fallback
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('Trend Over Time:',
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 20),
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  children: [
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text('Date', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text('Count', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    ...lineChartData.entries.map((entry) => pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text(entry.key),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text(entry.value.toString()),
+                        ),
+                      ],
+                    )).toList(),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
   }
 
   // AI Summary
@@ -307,17 +323,66 @@ Future<void> createReport({
     }
   }
 
-  // Save PDF using the safer method
+  // Save the PDF
   await savePdf(pdf, startDate, endDate);
 }
 
-// New method to save PDF with better error handling and fallbacks
+// Helper method to get directory path with retry logic
+Future<String?> getDirectoryPath() async {
+  String? selectedDirectory;
+  int attempts = 0;
+  const maxAttempts = 3;
+  
+  while (selectedDirectory == null && attempts < maxAttempts) {
+    attempts++;
+    try {
+      selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      if (selectedDirectory == null && attempts < maxAttempts) {
+        // Wait a moment before retrying
+        await Future.delayed(Duration(milliseconds: 500));
+      }
+    } catch (e) {
+      print("❌ Error selecting directory (attempt $attempts): $e");
+      if (attempts < maxAttempts) {
+        // Wait a moment before retrying
+        await Future.delayed(Duration(milliseconds: 500));
+      }
+    }
+  }
+  
+  return selectedDirectory;
+}
+
 Future<void> savePdf(pw.Document pdf, DateTime startDate, DateTime endDate) async {
+  try {
+    String? selectedDirectory = await getDirectoryPath();
+    if (selectedDirectory != null) {
+      // 📂 Path düzeltmesi
+      selectedDirectory = selectedDirectory.replaceFirst(
+        '/Download/son_reports/Download/son_reports',
+        '/Download/son_reports',
+      );
+
+      final now = DateTime.now();
+      final formattedNow = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
+      final fileName = 'DataReport[${startDate.toString().split(' ').first}_${endDate.toString().split(' ').first}]_$formattedNow.pdf';
+      final filePath = path.join(selectedDirectory, fileName);
+
+      final file = File(filePath);
+      await file.writeAsBytes(await pdf.save());
+      print('✅ PDF saved at: $filePath');
+      return;
+    }} catch (e) {
+  print('❌ Error during PDF saving: $e');
+}
+
+
   try {
     // First try using FilePicker
     String? selectedDirectory = await getDirectoryPath();
     
     if (selectedDirectory != null) {
+      
       // Use the selected directory
       final now = DateTime.now();
       final formattedNow = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')}';
@@ -381,32 +446,6 @@ Future<void> savePdf(pw.Document pdf, DateTime startDate, DateTime endDate) asyn
       throw Exception("Failed to save PDF: $fallbackError");
     }
   }
-}
-
-// Helper method to get directory path with retry logic
-Future<String?> getDirectoryPath() async {
-  String? selectedDirectory;
-  int attempts = 0;
-  const maxAttempts = 3;
-  
-  while (selectedDirectory == null && attempts < maxAttempts) {
-    attempts++;
-    try {
-      selectedDirectory = await FilePicker.platform.getDirectoryPath();
-      if (selectedDirectory == null && attempts < maxAttempts) {
-        // Wait a moment before retrying
-        await Future.delayed(Duration(milliseconds: 500));
-      }
-    } catch (e) {
-      print("❌ Error selecting directory (attempt $attempts): $e");
-      if (attempts < maxAttempts) {
-        // Wait a moment before retrying
-        await Future.delayed(Duration(milliseconds: 500));
-      }
-    }
-  }
-  
-  return selectedDirectory;
 }
 
   Future<List<Map<String, dynamic>>> fetchFilteredItems({
