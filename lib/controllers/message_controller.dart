@@ -40,7 +40,6 @@ Map<String, dynamic> entityMap = entity is Map<String, dynamic> ? entity : entit
         'isRead': false,
         'type': 'message',
         'message': 'You have a new message', // ✅ bu satır eksik
-        'message': messageText,
       });
     }
 

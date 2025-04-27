@@ -384,6 +384,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
           );
         },
       );
+      
 
       // Upload the item
       await itemController.validateAndUploadItem(
@@ -396,7 +397,9 @@ class _UploadItemPageState extends State<UploadItemPage> {
         selectedDepartments: selectedDepartments,
         context: context,
       );
+      
     }
+    
   }
 
   @override
