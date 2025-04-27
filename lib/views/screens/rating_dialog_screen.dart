@@ -1,3 +1,4 @@
+import 'package:bees/views/screens/blocked_users_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,6 +11,7 @@ class RatingDialog extends StatefulWidget {
   final String notificationId;
   final Color primaryColor;
   final Function? onRatingSubmitted;
+  final primaryYellow = const Color(0xFFFFC857);
 
   const RatingDialog({
     Key? key,
@@ -17,7 +19,7 @@ class RatingDialog extends StatefulWidget {
     required this.itemId,
     required this.itemTitle,
     required this.notificationId,
-    this.primaryColor = const Color(0xFF3B893E),
+    this.primaryColor = const Color(0xFFFFC857),
     this.onRatingSubmitted,
   }) : super(key: key);
 
@@ -66,7 +68,7 @@ class _RatingDialogState extends State<RatingDialog> {
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: widget.primaryColor,
+              color: AppColors.primaryYellow,
             ),
           ),
           const SizedBox(height: 15),
@@ -163,7 +165,7 @@ class _RatingDialogState extends State<RatingDialog> {
                                   'Thank you for your rating!',
                                   style: GoogleFonts.poppins(),
                                 ),
-                                backgroundColor: widget.primaryColor,
+                                backgroundColor: AppColors.primaryYellow,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
@@ -182,7 +184,7 @@ class _RatingDialogState extends State<RatingDialog> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.primaryColor,
+                  backgroundColor: AppColors.primaryYellow,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(

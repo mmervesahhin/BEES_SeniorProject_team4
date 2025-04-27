@@ -210,14 +210,12 @@ class _MessageScreenState extends State<MessageScreen> {
     switch (status) {
       case 'sent':
         return Icon(Icons.check, color: Colors.grey, size: 16);
-      case 'delivered':
-        return Icon(Icons.done_all, color: Colors.grey, size: 16);
       case 'read':
-        return Icon(Icons.done_all, color: primaryYellow, size: 16);
+        return Icon(Icons.done_all, color: Colors.blueGrey, size: 16);
       case 'failed':
         return Icon(Icons.error_outline, color: Colors.red, size: 16);
       case 'sending':
-        return Icon(Icons.access_time, color: Colors.grey, size: 16);
+        return Icon(Icons.access_time, color: Colors.blueGrey, size: 16);
       default:
         return SizedBox.shrink();
     }

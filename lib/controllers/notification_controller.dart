@@ -39,6 +39,28 @@ class NotificationController {
       rethrow;
     }
   }
+  Future<void> markMessageNotificationsAsRead({
+  required String chatRoomId,
+  required String currentUserId,
+}) async {
+  try {
+    final snapshot = await _firestore
+        .collection('notifications')
+        .where('receiverId', isEqualTo: currentUserId)
+        .where('type', isEqualTo: 'message')
+        .get();
+
+    for (var doc in snapshot.docs) {
+      // Chat room ID eşleşiyor mu? (itemId üzerinden kontrol yapabilirsin)
+      if ((doc.data()['itemId'] ?? '').isNotEmpty && chatRoomId.startsWith(doc.data()['itemId'])) {
+        await doc.reference.update({'isRead': true});
+      }
+    }
+  } catch (e) {
+    print('❌ Error marking notifications as read: $e');
+  }
+}
+
 
   Future<void> submitRating({
     required String sellerId,

@@ -236,6 +236,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> with TickerProvid
                             },
                           ),
                           _buildSettingsListTile(
+                          
                             icon: Icons.logout,
                             title: "Log Out",
                             subtitle: "Sign out of your account",

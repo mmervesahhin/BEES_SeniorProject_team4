@@ -1,3 +1,4 @@
+import 'package:bees/controllers/notification_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth_user;
@@ -83,9 +84,98 @@ Widget _buildChatRoomItem(ChatRoom chatRoom) {
   dynamic entity = chatRoom.entity;
   Timestamp lastMessageTimestamp = chatRoom.lastMessageTimestamp;
   String currentUserId = auth_user.FirebaseAuth.instance.currentUser?.uid ?? '';
-  
-  // Determine the other user
-  String otherUserId = userIds.firstWhere((id) => id != currentUserId, orElse: () => '');
+
+  // Add a local state to track if the message is read
+  bool isRead = false;
+
+  String otherUserId = userIds.firstWhere(
+    (id) => id != currentUserId,
+    orElse: () => '',
+  );
+
+  if (otherUserId.isEmpty) {
+    return Dismissible(
+      key: Key(chatRoomId),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        color: Colors.red,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.delete, color: Colors.white),
+            SizedBox(height: 4),
+            Text(
+              'Delete',
+              style: GoogleFonts.nunito(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text(
+                "Delete Conversation",
+                style: GoogleFonts.nunito(
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+              content: Text(
+                "Are you sure you want to delete this conversation?",
+                style: GoogleFonts.nunito(
+                  color: textDark,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    "Cancel",
+                    style: GoogleFonts.nunito(
+                      color: textLight,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    "Delete",
+                    style: GoogleFonts.nunito(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            );
+          },
+        );
+      },
+      onDismissed: (direction) async {
+        await FirebaseFirestore.instance.collection('chatRooms').doc(chatRoomId).delete();
+      },
+      child: _buildErrorChatItem("Invalid chat room: No other user found."),
+    );
+  }
 
   return FutureBuilder<DocumentSnapshot>(
     future: _firestore.collection('users').doc(otherUserId).get(),
@@ -132,6 +222,7 @@ Widget _buildChatRoomItem(ChatRoom chatRoom) {
                 }
 
                 int messageCount = messageCountSnapshot.data ?? 0;
+                isRead = messageCount == 0; // Update isRead based on message count
 
                 return Dismissible(
                   key: Key(chatRoomId),
@@ -209,13 +300,16 @@ Widget _buildChatRoomItem(ChatRoom chatRoom) {
                       },
                     );
                   },
-                  onDismissed: (_) async {
-                    await removeUserFromChatRoom(chatRoomId);
+                  onDismissed: (direction) async {
+                    await FirebaseFirestore.instance
+                      .collection('chatRooms')
+                      .doc(chatRoomId)
+                      .delete();
                   },
                   child: Card(
                     margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     elevation: 0,
-                    color:Colors.white,
+                    color: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
@@ -223,123 +317,125 @@ Widget _buildChatRoomItem(ChatRoom chatRoom) {
                         width: 1,
                       ),
                     ),
-                    child: ListTile(
-                      onTap: isActive ? () {
+                    child: InkWell(
+                      onTap: isActive ? () async {
                         if (entityType == "Item") {
                           String itemId = entity['itemId'];
                           Item itemEntity = Item.fromJson(entity, itemId);
-                          _navigateToMessageScreen(chatRoomId, itemEntity, entityType, context);
+                          await _navigateToMessageScreen(chatRoomId, itemEntity, entityType, context);
+                          setState(() {
+                            isRead = true; // Mark as read when clicked
+                          });
                         } else if (entityType == "Request") {
-                          String reqId = entity['requestID'];
                           Request reqEntity = Request.fromJson2(entity);
-                          _navigateToMessageScreen(chatRoomId, reqEntity, entityType, context);
+                          await _navigateToMessageScreen(chatRoomId, reqEntity, entityType, context);
+                          setState(() {
+                            isRead = true; // Mark as read when clicked
+                          });
                         }
                       } : null,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      leading: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.white,
-                        backgroundImage: userProfilePic.isNotEmpty
-                            ? NetworkImage(userProfilePic)
-                            : null,
-                        child: userProfilePic.isEmpty
-                            ? Icon(Icons.person, color: primaryYellow)
-                            : null,
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              userName,
-                              style: GoogleFonts.nunito(
-                                fontWeight: messageCount > 0 && isActive
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                fontSize: 16,
-                                color: isActive ? textDark : textLight,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            DateFormat('dd/MM/yyyy').format(lastMessageTimestamp.toDate().toLocal()),
-                            style: GoogleFonts.nunito(
-                              fontSize: 12,
-                              color: textLight,
-                            ),
-                          ),
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 4),
-                          Row(
-                            children: [
-                              // Entity type icon
-                              Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: isActive ? Colors.white : Colors.grey.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(
-                                    color: isActive ? primaryYellow : Colors.grey.withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Icon(
-                                  entityType == "Item" ? Icons.shopping_bag : Icons.assignment,
-                                  size: 12,
-                                  color: isActive ? primaryYellow : Colors.grey,
-                                ),
-                              ),
-                              SizedBox(width: 6),
-                              
-                              // Message preview
-                              Expanded(
-                                child: Text(
-                                  isActive ? displayMessage : statusMessage,
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 14,
-                                    color: isActive ? textDark : textLight,
-                                    fontWeight: messageCount > 0 && isActive
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                              
-                              // Time
-                              Text(
-                                DateFormat('HH:mm').format(lastMessageTimestamp.toDate().toLocal()),
-                                style: GoogleFonts.nunito(
-                                  fontSize: 12,
-                                  color: textLight,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      trailing: messageCount > 0 && isActive
-                          ? Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: primaryYellow,
-                                shape: BoxShape.circle,
-                              ),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        leading: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white,
+                          backgroundImage: userProfilePic.isNotEmpty
+                              ? NetworkImage(userProfilePic)
+                              : null,
+                          child: userProfilePic.isEmpty
+                              ? Icon(Icons.person, color: primaryYellow)
+                              : null,
+                        ),
+                        title: Row(
+                          children: [
+                            Expanded(
                               child: Text(
-                                messageCount > 99 ? '99+' : messageCount.toString(),
+                                userName,
                                 style: GoogleFonts.nunito(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: !isRead
+                                      ? FontWeight.normal
+                                      : FontWeight.bold,
+                                  fontSize: 16,
+                                  color: isActive ? textDark : textLight,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            )
-                          : null,
+                            ),
+                            Text(
+                              DateFormat('dd/MM/yyyy').format(lastMessageTimestamp.toDate().toLocal()),
+                              style: GoogleFonts.nunito(
+                                fontSize: 12,
+                                color: textLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: isActive ? Colors.white : Colors.grey.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: isActive ? primaryYellow : Colors.grey.withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    entityType == "Item" ? Icons.shopping_bag : Icons.assignment,
+                                    size: 12,
+                                    color: isActive ? primaryYellow : Colors.grey,
+                                  ),
+                                ),
+                                SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    isActive ? displayMessage : statusMessage,
+                                    style: GoogleFonts.nunito(
+                                      fontSize: 14,
+                                      color: isActive ? textDark : textLight,
+                                      fontWeight: !isRead && isActive
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                                Text(
+                                  DateFormat('HH:mm').format(lastMessageTimestamp.toDate().toLocal()),
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 12,
+                                    color: textLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        trailing: messageCount > 0 && isActive
+                            ? Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: primaryYellow,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  messageCount > 99 ? '99+' : messageCount.toString(),
+                                  style: GoogleFonts.nunito(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              )
+                            : null,
+                      ),
                     ),
                   ),
                 );
@@ -457,33 +553,53 @@ Widget _buildChatRoomItem(ChatRoom chatRoom) {
     }
   }
 
-  void _navigateToMessageScreen(
-      String chatRoomId, dynamic entity, String entityType, BuildContext context) {
-    String currentUserId = currentUser.uid;
+ Future<void> _navigateToMessageScreen(
+  String chatRoomId, 
+  dynamic entity, 
+  String entityType, 
+  BuildContext context
+) async {
+  String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
 
-    // ChatRoom ID'yi "_" ile ayırıp user ID'lerini al
-    List<String> parts = chatRoomId.split("_");
+  List<String> parts = chatRoomId.split("_");
+  parts.removeAt(0);
 
-    // İlk parça itemId veya requestID olduğu için çıkar
-    parts.removeAt(0);
+  String senderId = parts.firstWhere((id) => id != currentUserId, orElse: () => '');
+  String receiverId = currentUserId;
 
-    // Current user ID olmayanı sender yap
-    String senderId = parts.firstWhere((id) => id != currentUserId, orElse: () => "");
-    String receiverId = currentUserId;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MessageScreen(
-          chatRoomId: chatRoomId,
-          receiverId: receiverId,
-          senderId: senderId,
-          entity: entity,
-          entityType: entityType,
-        ),
-      ),
-    );
+  if (senderId.isEmpty) {
+    print('Invalid chat room.');
+    return;
   }
+
+  // Mark messages as read before navigating
+  await MessageController().markMessagesAsRead(
+    chatRoomId: chatRoomId,
+    currentUserId: currentUserId,
+    otherUserId: senderId,
+  );
+
+  // Mark notifications as read
+  await NotificationController().markMessageNotificationsAsRead(
+    chatRoomId: chatRoomId,
+    currentUserId: currentUserId,
+  );
+
+  // Navigate to the chat screen
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => MessageScreen(
+        chatRoomId: chatRoomId,
+        senderId: senderId,
+        receiverId: receiverId,
+        entity: entity,
+        entityType: entityType,
+      ),
+    ),
+  );
+}
+
 
 
 bool _showHeader = true;
@@ -544,7 +660,7 @@ Widget build(BuildContext context) {
         ],
       ),
     ),
-  // other widgets below...
+
 
         
         // Chat list
