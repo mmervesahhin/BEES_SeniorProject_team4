@@ -68,7 +68,7 @@ class _RatingDialogState extends State<RatingDialog> {
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryYellow,
+              color: widget.primaryColor,
             ),
           ),
           const SizedBox(height: 15),
@@ -152,11 +152,11 @@ class _RatingDialogState extends State<RatingDialog> {
                             notificationId: widget.notificationId,
                             itemId: widget.itemId,
                           );
-                          
+
                           if (widget.onRatingSubmitted != null) {
                             widget.onRatingSubmitted!();
                           }
-                          
+
                           if (context.mounted) {
                             Navigator.of(context, rootNavigator: true).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -178,7 +178,8 @@ class _RatingDialogState extends State<RatingDialog> {
                           if (context.mounted) {
                             setState(() {
                               _isSubmitting = false;
-                              _errorMessage = 'Failed to submit rating. Please try again.';
+                              _errorMessage =
+                                  'Failed to submit rating. Please try again.';
                             });
                           }
                         }
@@ -190,7 +191,8 @@ class _RatingDialogState extends State<RatingDialog> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
                 child: Text(
                   _isSubmitting ? 'Submitting...' : 'Submit',
@@ -204,4 +206,3 @@ class _RatingDialogState extends State<RatingDialog> {
     );
   }
 }
-

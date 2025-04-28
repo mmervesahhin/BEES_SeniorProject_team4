@@ -18,20 +18,23 @@ import 'package:google_fonts/google_fonts.dart';
 class OthersUserProfileScreen extends StatefulWidget {
   final String userId;
 
-  const OthersUserProfileScreen({Key? key, required this.userId}) : super(key: key);
+  const OthersUserProfileScreen({Key? key, required this.userId})
+      : super(key: key);
 
   @override
-  _OthersUserProfileScreenState createState() => _OthersUserProfileScreenState();
+  _OthersUserProfileScreenState createState() =>
+      _OthersUserProfileScreenState();
 }
 
 class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
   late Future<User> userProfileData;
   late Future<List<Item>> activeItems;
-  final ReportedUserController _reportedUserController = ReportedUserController();
+  final ReportedUserController _reportedUserController =
+      ReportedUserController();
   final BlockedUserController _blockedUserController = BlockedUserController();
   String currentUserId = '';
   bool isBlocked = false;
-  
+
   // Color scheme
   final Color primaryYellow = Color(0xFFFFC857);
   final Color lightYellow = Color(0xFFFFE3A9);
@@ -70,7 +73,7 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
     } else {
       await _blockedUserController.blockUser(currentUserId, widget.userId);
     }
-    
+
     setState(() {
       isBlocked = !isBlocked;
     });
@@ -93,7 +96,10 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
   }
 
   Future<User> fetchUserProfile() async {
-    var doc = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
+    var doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .get();
     if (!doc.exists) {
       throw Exception("User not found");
     }
@@ -106,13 +112,15 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
         .where('itemOwnerId', isEqualTo: widget.userId)
         .where('itemStatus', isEqualTo: 'active')
         .get();
-    return querySnapshot.docs.map((doc) => Item.fromJson(doc.data(), doc.id)).toList();
+    return querySnapshot.docs
+        .map((doc) => Item.fromJson(doc.data(), doc.id))
+        .toList();
   }
 
   void _showReportDialog() {
     String? selectedReason;
     String details = '';
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -139,16 +147,22 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                     _buildReportOption("Harassment", selectedReason, (value) {
                       setDialogState(() => selectedReason = value);
                     }),
-                    _buildReportOption("Suspicious or Fraudulent Behavior", selectedReason, (value) {
+                    _buildReportOption(
+                        "Suspicious or Fraudulent Behavior", selectedReason,
+                        (value) {
                       setDialogState(() => selectedReason = value);
                     }),
-                    _buildReportOption("Inappropriate Profile Content", selectedReason, (value) {
+                    _buildReportOption(
+                        "Inappropriate Profile Content", selectedReason,
+                        (value) {
                       setDialogState(() => selectedReason = value);
                     }),
-                    _buildReportOption("Hate Speech or Bullying", selectedReason, (value) {
+                    _buildReportOption(
+                        "Hate Speech or Bullying", selectedReason, (value) {
                       setDialogState(() => selectedReason = value);
                     }),
-                    _buildReportOption("Violent Behavior", selectedReason, (value) {
+                    _buildReportOption("Violent Behavior", selectedReason,
+                        (value) {
                       setDialogState(() => selectedReason = value);
                     }),
                     _buildReportOption("Other", selectedReason, (value) {
@@ -163,13 +177,15 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                             hintStyle: GoogleFonts.nunito(color: textLight),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withOpacity(0.3)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: primaryYellow),
                             ),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
                             filled: true,
                             fillColor: backgroundColor,
                           ),
@@ -198,7 +214,8 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    if (selectedReason == null || (selectedReason == 'Other' && details.isEmpty)) {
+                    if (selectedReason == null ||
+                        (selectedReason == 'Other' && details.isEmpty)) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -213,7 +230,8 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
 
                     var report = ReportedUser(
                       reportReason: selectedReason!,
-                      complaintDetails: selectedReason == 'Other' ? details : '',
+                      complaintDetails:
+                          selectedReason == 'Other' ? details : '',
                       reportedBy: currentUserId,
                       complaintID: DateTime.now().millisecondsSinceEpoch,
                       userId: widget.userId,
@@ -273,14 +291,17 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
     );
   }
 
-  Widget _buildReportOption(String title, String? selectedReason, Function(String?) onChanged) {
+  Widget _buildReportOption(
+      String title, String? selectedReason, Function(String?) onChanged) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: selectedReason == title ? lightYellow : backgroundColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: selectedReason == title ? primaryYellow : Colors.grey.withOpacity(0.3),
+          color: selectedReason == title
+              ? primaryYellow
+              : Colors.grey.withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -289,7 +310,8 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
           title,
           style: GoogleFonts.nunito(
             color: textDark,
-            fontWeight: selectedReason == title ? FontWeight.bold : FontWeight.normal,
+            fontWeight:
+                selectedReason == title ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         value: title,
@@ -331,7 +353,7 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
               ),
             );
           }
-          
+
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -464,7 +486,8 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                               ),
                             ),
                             style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.red.withOpacity(0.5)),
+                              side: BorderSide(
+                                  color: Colors.red.withOpacity(0.5)),
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -505,7 +528,7 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                   ],
                 ),
               ),
-              
+
               // Active Items Section
               Padding(
                 padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
@@ -518,16 +541,18 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                   ),
                 ),
               ),
-              
+
               // Active Items List
               Expanded(
                 child: FutureBuilder<List<Item>>(
                   future: activeItems,
                   builder: (context, itemsSnapshot) {
-                    if (itemsSnapshot.connectionState == ConnectionState.waiting) {
+                    if (itemsSnapshot.connectionState ==
+                        ConnectionState.waiting) {
                       return Center(
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(primaryYellow),
                         ),
                       );
                     }
@@ -582,15 +607,17 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                       itemCount: items.length,
                       itemBuilder: (context, index) {
                         var item = items[index];
-                        bool hidePrice = item.category.toLowerCase() == 'donate' || 
-                                        item.category.toLowerCase() == 'exchange';
-                        
+                        bool hidePrice =
+                            item.category.toLowerCase() == 'donate' ||
+                                item.category.toLowerCase() == 'exchange';
+
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => DetailedItemScreen(itemId: item.itemId!),
+                                builder: (context) =>
+                                    DetailedItemScreen(itemId: item.itemId!),
                               ),
                             );
                           },
@@ -621,19 +648,21 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                                     bottomLeft: Radius.circular(16),
                                   ),
                                   child: Image.network(
-                                    item.photoUrl ?? 'https://via.placeholder.com/100',
+                                    item.photoUrl ??
+                                        'https://via.placeholder.com/100',
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
-                                
+
                                 // Item Details
                                 Expanded(
                                   child: Padding(
                                     padding: EdgeInsets.all(12),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           item.title,
@@ -657,7 +686,8 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                                                   color: primaryYellow,
                                                 ),
                                               ),
-                                              if (item.paymentPlan != null && item.paymentPlan!.isNotEmpty)
+                                              if (item.paymentPlan != null &&
+                                                  item.paymentPlan!.isNotEmpty)
                                                 Text(
                                                   ' ${item.paymentPlan}',
                                                   style: GoogleFonts.nunito(
@@ -669,19 +699,26 @@ class _OthersUserProfileScreenState extends State<OthersUserProfileScreen> {
                                           ),
                                           SizedBox(height: 4),
                                         ],
-                                        
+
                                         // Tags
                                         Wrap(
                                           spacing: 6,
                                           runSpacing: 6,
                                           children: [
-                                            _buildItemTag(item.category, primaryYellow),
-                                            _buildItemTag(item.condition, lightYellow),
-                                            if (item.departments is List && (item.departments as List).isNotEmpty)
+                                            _buildItemTag(
+                                                item.category, primaryYellow),
+                                            _buildItemTag(
+                                                item.condition, lightYellow),
+                                            if (item.departments is List &&
+                                                (item.departments as List)
+                                                    .isNotEmpty)
                                               _buildItemTag(
-                                                (item.departments as List).length > 1
+                                                (item.departments as List)
+                                                            .length >
+                                                        1
                                                     ? '${(item.departments as List)[0]} +${(item.departments as List).length - 1}'
-                                                    : (item.departments as List)[0],
+                                                    : (item.departments
+                                                        as List)[0],
                                                 backgroundColor,
                                               ),
                                           ],

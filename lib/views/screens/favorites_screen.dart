@@ -41,7 +41,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     final allFavorites = await _controller.fetchFavorites();
     favoriteItems = allFavorites.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      return data['itemStatus'] != null && data['itemStatus'].toLowerCase() == 'active';
+      return data['itemStatus'] != null &&
+          data['itemStatus'].toLowerCase() == 'active';
     }).toList();
     setState(() => isLoading = false);
   }
@@ -95,13 +96,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       SizedBox(height: 16),
                       Text(
                         'No favorite items found',
-                        style: GoogleFonts.nunito(fontSize: 18, color: textDark),
+                        style:
+                            GoogleFonts.nunito(fontSize: 18, color: textDark),
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 8),
                       Text(
                         'Add items to your favorites to see them here.',
-                        style: GoogleFonts.nunito(fontSize: 16, color: textLight),
+                        style:
+                            GoogleFonts.nunito(fontSize: 16, color: textLight),
                       ),
                     ],
                   ),
@@ -110,20 +113,24 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   padding: const EdgeInsets.all(12.0),
                   itemCount: favoriteItems.length,
                   itemBuilder: (context, index) {
-                    final data = favoriteItems[index].data() as Map<String, dynamic>;
+                    final data =
+                        favoriteItems[index].data() as Map<String, dynamic>;
                     final itemId = favoriteItems[index].id;
                     final imageUrl = _controller.getImageUrl(data['photo']);
                     final category = _controller.getCategory(data['category']);
-                    final departments = _controller.getDepartments(data['departments']);
+                    final departments =
+                        _controller.getDepartments(data['departments']);
                     final condition = data['condition'] ?? 'Unknown';
-                    final hidePrice = category.toLowerCase() == 'donation' || category.toLowerCase() == 'exchange';
+                    final hidePrice = category.toLowerCase() == 'donation' ||
+                        category.toLowerCase() == 'exchange';
 
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => DetailedItemScreen(itemId: data['itemId']),
+                            builder: (context) =>
+                                DetailedItemScreen(itemId: data['itemId']),
                           ),
                         );
                       },
@@ -197,12 +204,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                       spacing: 4,
                                       runSpacing: 4,
                                       children: [
-                                        if (departments.length == 31) // Tüm departmanlar seçiliyse
-                                          _buildTag('All Departments', textLight)
+                                        if (departments.length ==
+                                            31) // Tüm departmanlar seçiliyse
+                                          _buildTag(
+                                              'All Departments', textLight)
                                         else ...[
-                                          if (departments.isNotEmpty) _buildTag(departments[0], textDark),
+                                          if (departments.isNotEmpty)
+                                            _buildTag(departments[0], textDark),
                                           if (departments.length > 1)
-                                            _buildTag('+${departments.length - 1}', textDark),
+                                            _buildTag(
+                                                '+${departments.length - 1}',
+                                                textDark),
                                         ],
                                       ],
                                     )
@@ -227,7 +239,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                   ),
                                   child: IconButton(
                                     padding: EdgeInsets.zero,
-                                    icon: Icon(Icons.favorite, color: Colors.red, size: 16),
+                                    icon: Icon(Icons.favorite,
+                                        color: Colors.red, size: 16),
                                     onPressed: () {
                                       _toggleFavorite(itemId, false);
                                     },
@@ -248,10 +261,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
-          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
+          BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.assignment), label: 'Requests'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.favorite), label: 'Favorites'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.account_circle), label: 'Profile'),
         ],
       ),
     );
@@ -280,13 +297,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (index == _selectedIndex) return;
     switch (index) {
       case 0:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => HomeScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => HomeScreen()));
         break;
       case 1:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => RequestsScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => RequestsScreen()));
         break;
       case 3:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => UserProfileScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => UserProfileScreen()));
         break;
     }
   }

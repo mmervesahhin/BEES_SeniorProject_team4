@@ -1,6 +1,6 @@
+import 'package:bees/views/screens/detailed_item_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/views/screens/home_screen.dart';
-import 'package:bees/views/screens/detailed_item_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'dart:async';
@@ -14,7 +14,8 @@ class UploadSuccessPage extends StatefulWidget {
   State<UploadSuccessPage> createState() => _UploadSuccessPageState();
 }
 
-class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTickerProviderStateMixin {
+class _UploadSuccessPageState extends State<UploadSuccessPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   bool _showContent = false;
 
@@ -70,32 +71,30 @@ class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTicker
               ),
             ),
           ),
-          
+
           // Success content
           SafeArea(
             child: Column(
               children: [
                 // App bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Image.asset(
                         'assets/app_icon.png', // Replace with your app logo
                         height: 40,
-                        
                       ),
-                      
-                      
                     ],
                   ),
                 ),
-                
+
                 Expanded(
                   child: AnimatedOpacity(
                     opacity: _showContent ? 1.0 : 0.0,
-                    duration: Duration(milliseconds: 500),
+                    duration: Duration(milliseconds: 600),
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
@@ -103,21 +102,20 @@ class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTicker
                         children: [
                           Flexible(
                             child: Container(
-                            height: 200,
-                            width: 200,
-                            child: Lottie.asset(
-                              'assets/success_animation.json', // animation koymayı dene
-                              controller: _animationController,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) => 
-                                _buildFallbackAnimation(),
+                              height: 200,
+                              width: 200,
+                              child: Lottie.asset(
+                                'assets/success_animation.json', // animation koymayı dene
+                                controller: _animationController,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    _buildFallbackAnimation(),
+                              ),
                             ),
                           ),
-                          ),
-                          
+
                           // Success animation
-                          
-                          
+
                           // Success message
                           Text(
                             'Item Successfully Uploaded!',
@@ -129,7 +127,7 @@ class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTicker
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: 16),
-                          
+
                           // Success description
                           Text(
                             'Your item is now live and visible to all users. You can view it or return to the home screen.',
@@ -141,7 +139,7 @@ class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTicker
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: 40),
-                          
+
                           // Action buttons
                           Row(
                             children: [
@@ -152,7 +150,9 @@ class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTicker
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => DetailedItemScreen(itemId: widget.itemId),
+                                        builder: (context) =>
+                                            DetailedItemScreen(
+                                                itemId: widget.itemId),
                                       ),
                                     );
                                   },
@@ -174,14 +174,16 @@ class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTicker
                                 ),
                               ),
                               SizedBox(width: 16),
-                              
+
                               // Home button
                               Expanded(
                                 child: OutlinedButton.icon(
                                   onPressed: () {
                                     Navigator.pushAndRemoveUntil(
                                       context,
-                                      MaterialPageRoute(builder: (context) => const HomeScreen()),
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const HomeScreen()),
                                       (route) => false,
                                     );
                                   },
@@ -189,7 +191,8 @@ class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTicker
                                   label: Text('Home'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: textDark,
-                                    side: BorderSide(color: textLight.withOpacity(0.3)),
+                                    side: BorderSide(
+                                        color: textLight.withOpacity(0.3)),
                                     padding: EdgeInsets.symmetric(vertical: 16),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -208,7 +211,7 @@ class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTicker
                     ),
                   ),
                 ),
-                
+
                 // Bottom info section
                 AnimatedOpacity(
                   opacity: _showContent ? 1.0 : 0.0,
@@ -245,13 +248,15 @@ class _UploadSuccessPageState extends State<UploadSuccessPage> with SingleTicker
                         _buildNextStep(
                           icon: Icons.visibility,
                           title: 'Users can now see your item',
-                          description: 'Your item is visible in search results and browsing',
+                          description:
+                              'Your item is visible in search results and browsing',
                         ),
                         SizedBox(height: 12),
                         _buildNextStep(
                           icon: Icons.notifications,
                           title: 'You\'ll get notified',
-                          description: 'When someone is interested in your item',
+                          description:
+                              'When someone is interested in your item',
                         ),
                         SizedBox(height: 12),
                         _buildNextStep(

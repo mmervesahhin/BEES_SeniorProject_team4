@@ -1,7 +1,8 @@
 import 'dart:io';
 
+import 'package:bees/views/screens/detailed_item_screen.dart';
 import 'package:flutter/material.dart';
-import 'detailed_item_screen.dart';
+
 import 'detailed_request_screen.dart';
 import 'package:bees/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -46,14 +47,13 @@ class _MessageScreenState extends State<MessageScreen> {
   bool _isAttachmentMenuOpen = false;
   bool _isSending = false;
   VideoPlayerController? _videoPlayerController;
-  
+
   // Color scheme
   final Color primaryYellow = Color(0xFFFFC857);
   final Color lightYellow = Color(0xFFFFE3A9);
   final Color textDark = Color(0xFF333333);
   final Color textLight = Color(0xFF8A8A8A);
   final Color backgroundColor = Color(0xFFF8F8F8);
-
 
   @override
   void dispose() {
@@ -64,7 +64,9 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   String truncateText(String text, int maxLength) {
-    return (text.length > maxLength) ? '${text.substring(0, maxLength)}...' : text;
+    return (text.length > maxLength)
+        ? '${text.substring(0, maxLength)}...'
+        : text;
   }
 
   Future<User?> _getUserDetails(String userID) async {
@@ -92,22 +94,27 @@ class _MessageScreenState extends State<MessageScreen> {
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => OthersUserProfileScreen(userId: userId)),
+        MaterialPageRoute(
+            builder: (context) => OthersUserProfileScreen(userId: userId)),
       );
     }
   }
 
-  Future<void> _addUserToRemovedUserIds(String senderId, String receiverId) async {
-    final chatRoomRef = FirebaseFirestore.instance.collection('chatRooms').doc(widget.chatRoomId);
+  Future<void> _addUserToRemovedUserIds(
+      String senderId, String receiverId) async {
+    final chatRoomRef = FirebaseFirestore.instance
+        .collection('chatRooms')
+        .doc(widget.chatRoomId);
     final chatRoomSnapshot = await chatRoomRef.get();
 
     if (chatRoomSnapshot.exists) {
       final chatRoomData = chatRoomSnapshot.data()!;
-      List<String> removedUserIds = List<String>.from(chatRoomData['removedUserIds'] ?? []);
-      
+      List<String> removedUserIds =
+          List<String>.from(chatRoomData['removedUserIds'] ?? []);
+
       if (!removedUserIds.contains(senderId)) removedUserIds.add(senderId);
       if (!removedUserIds.contains(receiverId)) removedUserIds.add(receiverId);
-      
+
       await chatRoomRef.update({
         'removedUserIds': removedUserIds,
       });
@@ -133,12 +140,16 @@ class _MessageScreenState extends State<MessageScreen> {
     });
 
     String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
-    String finalSenderId = (currentUserId == widget.senderId) ? widget.receiverId : currentUserId;
-    String finalReceiverId = (currentUserId == widget.senderId) ? currentUserId : widget.senderId;
+    String finalSenderId =
+        (currentUserId == widget.senderId) ? widget.receiverId : currentUserId;
+    String finalReceiverId =
+        (currentUserId == widget.senderId) ? currentUserId : widget.senderId;
 
     // Check if user is blocked
-    bool isBlockedByReceiver = await _blockedUserController.isUserBlocked(finalReceiverId);
-    bool isCurrentUserBlocked = await _blockedUserController.isUserBlocked(finalSenderId);
+    bool isBlockedByReceiver =
+        await _blockedUserController.isUserBlocked(finalReceiverId);
+    bool isCurrentUserBlocked =
+        await _blockedUserController.isUserBlocked(finalSenderId);
 
     if (isCurrentUserBlocked) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -193,7 +204,7 @@ class _MessageScreenState extends State<MessageScreen> {
     setState(() {
       _isSending = false;
     });
-    
+
     // Scroll to bottom after sending
     Future.delayed(Duration(milliseconds: 300), () {
       if (_scrollController.hasClients) {
@@ -229,14 +240,16 @@ class _MessageScreenState extends State<MessageScreen> {
 
     try {
       String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      Reference storageRef = FirebaseStorage.instance.ref().child('chat_images/$fileName');
+      Reference storageRef =
+          FirebaseStorage.instance.ref().child('chat_images/$fileName');
       UploadTask uploadTask = storageRef.putFile(File(image.path));
       String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
-      
+
       TaskSnapshot snapshot = await uploadTask;
       String imageUrl = await snapshot.ref.getDownloadURL();
-      String finalReceiverId = (currentUserId == widget.senderId) ? currentUserId : widget.senderId;
-      
+      String finalReceiverId =
+          (currentUserId == widget.senderId) ? currentUserId : widget.senderId;
+
       String id = "";
       if (widget.entityType == "Item") {
         id = widget.entity.itemId;
@@ -277,14 +290,16 @@ class _MessageScreenState extends State<MessageScreen> {
 
     try {
       String fileName = '${DateTime.now().millisecondsSinceEpoch}.mp4';
-      Reference storageRef = FirebaseStorage.instance.ref().child('chat_videos/$fileName');
+      Reference storageRef =
+          FirebaseStorage.instance.ref().child('chat_videos/$fileName');
       UploadTask uploadTask = storageRef.putFile(File(video.path));
       String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
-      
+
       TaskSnapshot snapshot = await uploadTask;
       String videoUrl = await snapshot.ref.getDownloadURL();
-      String finalReceiverId = (currentUserId == widget.senderId) ? currentUserId : widget.senderId;
-      
+      String finalReceiverId =
+          (currentUserId == widget.senderId) ? currentUserId : widget.senderId;
+
       String id = "";
       if (widget.entityType == "Item") {
         id = widget.entity.itemId;
@@ -332,7 +347,7 @@ class _MessageScreenState extends State<MessageScreen> {
               ),
             );
           }
-          
+
           return Stack(
             alignment: Alignment.center,
             children: [
@@ -349,7 +364,9 @@ class _MessageScreenState extends State<MessageScreen> {
               ),
               IconButton(
                 icon: Icon(
-                  _videoPlayerController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                  _videoPlayerController!.value.isPlaying
+                      ? Icons.pause
+                      : Icons.play_arrow,
                   color: Colors.white,
                   size: 40,
                 ),
@@ -405,7 +422,8 @@ class _MessageScreenState extends State<MessageScreen> {
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Row(
-            mainAxisAlignment: isSentMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment:
+                isSentMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               // Avatar for received messages
@@ -418,18 +436,22 @@ class _MessageScreenState extends State<MessageScreen> {
                         ? NetworkImage(snapshot.data!.profilePicture)
                         : null,
                     backgroundColor: lightYellow,
-                    child: (!snapshot.hasData || snapshot.data == null || snapshot.data!.profilePicture.isEmpty)
+                    child: (!snapshot.hasData ||
+                            snapshot.data == null ||
+                            snapshot.data!.profilePicture.isEmpty)
                         ? Icon(Icons.person, color: primaryYellow, size: 16)
                         : null,
                   ),
                 ),
-              
+
               SizedBox(width: !isSentMessage ? 8 : 0),
-              
+
               // Message content
               Flexible(
                 child: Column(
-                  crossAxisAlignment: isSentMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: isSentMessage
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     // Sender name for received messages
                     if (!isSentMessage)
@@ -444,7 +466,7 @@ class _MessageScreenState extends State<MessageScreen> {
                           ),
                         ),
                       ),
-                    
+
                     // Message bubble
                     Container(
                       constraints: BoxConstraints(
@@ -454,8 +476,12 @@ class _MessageScreenState extends State<MessageScreen> {
                       decoration: BoxDecoration(
                         color: isSentMessage ? primaryYellow : Colors.white,
                         borderRadius: BorderRadius.circular(16).copyWith(
-                          bottomRight: isSentMessage ? Radius.circular(0) : Radius.circular(16),
-                          bottomLeft: !isSentMessage ? Radius.circular(0) : Radius.circular(16),
+                          bottomRight: isSentMessage
+                              ? Radius.circular(0)
+                              : Radius.circular(16),
+                          bottomLeft: !isSentMessage
+                              ? Radius.circular(0)
+                              : Radius.circular(16),
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -469,17 +495,20 @@ class _MessageScreenState extends State<MessageScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Message content (text, image, or video)
-                          if (data['content'].toString().startsWith('http') && 
+                          if (data['content'].toString().startsWith('http') &&
                               data['content'].toString().endsWith('.mp4'))
                             _buildVideoPlayer(data['content'])
-                          else if (data['content'].toString().startsWith('http'))
+                          else if (data['content']
+                              .toString()
+                              .startsWith('http'))
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: Image.network(
                                 data['content'],
                                 width: 200,
                                 fit: BoxFit.cover,
-                                loadingBuilder: (context, child, loadingProgress) {
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
                                   if (loadingProgress == null) return child;
                                   return Container(
                                     width: 200,
@@ -490,11 +519,17 @@ class _MessageScreenState extends State<MessageScreen> {
                                     ),
                                     child: Center(
                                       child: CircularProgressIndicator(
-                                        value: loadingProgress.expectedTotalBytes != null
-                                            ? loadingProgress.cumulativeBytesLoaded / 
-                                              loadingProgress.expectedTotalBytes!
+                                        value: loadingProgress
+                                                    .expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                    .cumulativeBytesLoaded /
+                                                loadingProgress
+                                                    .expectedTotalBytes!
                                             : null,
-                                        valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                primaryYellow),
                                       ),
                                     ),
                                   );
@@ -508,7 +543,8 @@ class _MessageScreenState extends State<MessageScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Center(
-                                      child: Icon(Icons.error, color: Colors.red),
+                                      child:
+                                          Icon(Icons.error, color: Colors.red),
                                     ),
                                   );
                                 },
@@ -522,7 +558,7 @@ class _MessageScreenState extends State<MessageScreen> {
                                 color: isSentMessage ? Colors.white : textDark,
                               ),
                             ),
-                          
+
                           // Time and status
                           SizedBox(height: 4),
                           Row(
@@ -533,7 +569,9 @@ class _MessageScreenState extends State<MessageScreen> {
                                 timeString,
                                 style: GoogleFonts.nunito(
                                   fontSize: 10,
-                                  color: isSentMessage ? Colors.white.withOpacity(0.8) : textLight,
+                                  color: isSentMessage
+                                      ? Colors.white.withOpacity(0.8)
+                                      : textLight,
                                 ),
                               ),
                               SizedBox(width: 4),
@@ -546,9 +584,9 @@ class _MessageScreenState extends State<MessageScreen> {
                   ],
                 ),
               ),
-              
+
               SizedBox(width: isSentMessage ? 8 : 0),
-              
+
               // Avatar for sent messages
               if (isSentMessage)
                 GestureDetector(
@@ -559,7 +597,9 @@ class _MessageScreenState extends State<MessageScreen> {
                         ? NetworkImage(snapshot.data!.profilePicture)
                         : null,
                     backgroundColor: lightYellow,
-                    child: (!snapshot.hasData || snapshot.data == null || snapshot.data!.profilePicture.isEmpty)
+                    child: (!snapshot.hasData ||
+                            snapshot.data == null ||
+                            snapshot.data!.profilePicture.isEmpty)
                         ? Icon(Icons.person, color: primaryYellow, size: 16)
                         : null,
                   ),
@@ -580,7 +620,8 @@ class _MessageScreenState extends State<MessageScreen> {
     }
 
     return StreamBuilder(
-      stream: MessageController().getMessages(id, widget.senderId, widget.receiverId),
+      stream: MessageController()
+          .getMessages(id, widget.senderId, widget.receiverId),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -634,7 +675,8 @@ class _MessageScreenState extends State<MessageScreen> {
         // Scroll to bottom after loading messages
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients) {
-            _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+            _scrollController
+                .jumpTo(_scrollController.position.maxScrollExtent);
           }
         });
 
@@ -814,7 +856,9 @@ class _MessageScreenState extends State<MessageScreen> {
                     child: Row(
                       children: [
                         Icon(
-                          widget.entityType == "Item" ? Icons.shopping_bag : Icons.assignment,
+                          widget.entityType == "Item"
+                              ? Icons.shopping_bag
+                              : Icons.assignment,
                           color: primaryYellow,
                           size: 20,
                         ),
@@ -841,12 +885,12 @@ class _MessageScreenState extends State<MessageScreen> {
                 ],
               ),
             ),
-            
+
             // Messages
             Expanded(
               child: _buildMessageList(),
             ),
-            
+
             // Attachment menu
             if (_isAttachmentMenuOpen)
               Container(
@@ -860,7 +904,8 @@ class _MessageScreenState extends State<MessageScreen> {
                       label: "Gallery",
                       onTap: () async {
                         final ImagePicker picker = ImagePicker();
-                        final List<XFile>? images = await picker.pickMultiImage();
+                        final List<XFile>? images =
+                            await picker.pickMultiImage();
                         if (images != null && images.isNotEmpty) {
                           for (var image in images) {
                             await _sendImageMessage(image);
@@ -873,7 +918,8 @@ class _MessageScreenState extends State<MessageScreen> {
                       label: "Camera",
                       onTap: () async {
                         final ImagePicker picker = ImagePicker();
-                        final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+                        final XFile? photo =
+                            await picker.pickImage(source: ImageSource.camera);
                         if (photo != null) {
                           await _sendImageMessage(photo);
                         }
@@ -882,7 +928,7 @@ class _MessageScreenState extends State<MessageScreen> {
                   ],
                 ),
               ),
-            
+
             // Message input
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -924,14 +970,17 @@ class _MessageScreenState extends State<MessageScreen> {
                           color: textLight,
                           fontSize: 16,
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                          borderSide:
+                              BorderSide(color: Colors.grey.withOpacity(0.3)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                          borderSide:
+                              BorderSide(color: Colors.grey.withOpacity(0.3)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
@@ -949,7 +998,8 @@ class _MessageScreenState extends State<MessageScreen> {
                           height: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(primaryYellow),
                           ),
                         )
                       : IconButton(
