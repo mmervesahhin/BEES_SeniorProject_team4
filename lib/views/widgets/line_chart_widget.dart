@@ -28,13 +28,16 @@ class ItemTrendLineChart extends StatelessWidget {
 
       final parsedDate = DateTime.tryParse(dateStr);
       if (parsedDate != null) {
-        labels[i] = DateFormat('MMM dd').format(parsedDate); // örn. Mar 03
+        labels[i] = DateFormat('MMM dd').format(parsedDate);
       } else {
         labels[i] = dateStr;
       }
     }
 
-    final maxY = (data.values.isEmpty ? 1 : data.values.reduce((a, b) => a > b ? a : b)) + 2;
+    final maxY = (data.values.isEmpty
+            ? 1
+            : data.values.reduce((a, b) => a > b ? a : b)) +
+        2;
 
     return RepaintBoundary(
       key: repaintKey,
@@ -48,7 +51,7 @@ class ItemTrendLineChart extends StatelessWidget {
             lineTouchData: LineTouchData(
               enabled: true,
               touchTooltipData: LineTouchTooltipData(
-               getTooltipItems: (touchedSpots) {
+                getTooltipItems: (touchedSpots) {
                   return touchedSpots.map((spot) {
                     final index = spot.x.toInt();
                     final label = labels[index] ?? '';
@@ -79,32 +82,30 @@ class ItemTrendLineChart extends StatelessWidget {
                   showTitles: true,
                   reservedSize: 36,
                   getTitlesWidget: (value, meta) {
-                  final index = value.toInt();
-
-                  // Sadece belirli indexlerde göster
-                  if (labels.containsKey(index) && index % 2 == 0) {
-                    return SideTitleWidget(
-                      meta: meta,
-                      child: Text(
-                        labels[index]!,
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                    );
-                  }
-
-                  return const SizedBox.shrink();
-                },
+                    final index = value.toInt();
+                    if (labels.containsKey(index) && index % 2 == 0) {
+                      return SideTitleWidget(
+                        meta: meta,
+                        child: Text(
+                          labels[index]!,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
                 ),
               ),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             lineBarsData: [
               LineChartBarData(
                 isCurved: true,
                 spots: spots,
                 barWidth: 3,
-                color: Colors.blueAccent,
+                color: Color(0xFF4E79A7), // Deep blue professional tone
                 belowBarData: BarAreaData(show: false),
                 dotData: FlDotData(show: true),
               ),

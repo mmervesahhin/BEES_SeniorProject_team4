@@ -15,6 +15,19 @@ class ItemTypeBarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = data.entries.toList();
 
+    final colors = [
+      Color(0xFF4E79A7), // Deep Blue
+      Color(0xFFF28E2B), // Orange
+      Color(0xFFE15759), // Soft Red
+      Color(0xFF76B7B2), // Teal
+      Color(0xFF59A14F), // Green
+      Color(0xFFEDC949), // Yellow
+      Color(0xFFAF7AA1), // Mauve
+      Color(0xFFFF9DA7), // Light Coral
+      Color(0xFF9C755F), // Brownish
+      Color(0xFFBAB0AC), // Gray
+    ];
+
     return RepaintBoundary(
       key: repaintKey,
       child: SizedBox(
@@ -22,22 +35,27 @@ class ItemTypeBarChart extends StatelessWidget {
         child: BarChart(
           BarChartData(
             alignment: BarChartAlignment.spaceAround,
-            maxY: (data.values.isEmpty ? 1 : data.values.reduce((a, b) => a > b ? a : b)).toDouble() + 2,
+            maxY: (data.values.isEmpty
+                        ? 1
+                        : data.values.reduce((a, b) => a > b ? a : b))
+                    .toDouble() +
+                2,
             barTouchData: BarTouchData(
               enabled: true,
               touchTooltipData: BarTouchTooltipData(
-              tooltipPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                final itemType = items[groupIndex].key;
-                return BarTooltipItem(
-                  '$itemType\n${rod.toY.round()} items',
-                  TextStyle(
-                    color: Colors.white,
-                    fontSize: 10, // küçültüyoruz
-                  ),
-                );
-              },
-            ),
+                tooltipPadding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  final itemType = items[groupIndex].key;
+                  return BarTooltipItem(
+                    '$itemType\n${rod.toY.round()} items',
+                    TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                    ),
+                  );
+                },
+              ),
             ),
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(
@@ -72,7 +90,8 @@ class ItemTypeBarChart extends StatelessWidget {
                 ),
               ),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             barGroups: items.asMap().entries.map((entry) {
               final index = entry.key;
@@ -84,7 +103,8 @@ class ItemTypeBarChart extends StatelessWidget {
                     toY: value.toDouble(),
                     width: 18,
                     borderRadius: BorderRadius.circular(4),
-                    color: Colors.green,
+                    color:
+                        colors[index % colors.length], // 🎯 color from palette
                   ),
                 ],
                 showingTooltipIndicators: [0],
