@@ -56,6 +56,8 @@ dependencies:
   flutter_rating_bar: ^4.0.1
   badges: ^3.1.1
   shared_preferences: ^2.2.2
+  syncfusion_flutter_charts: ^29.1.39
+  lottie: ^2.7.0
 
 dev_dependencies:
   flutter_test:
@@ -94,6 +96,7 @@ flutter:
     - images/bee.jpg
     - images/anon_avatar.jpg
     - assets/app_icon.png
+    - assets/success_animation.json
   # 
 
   # An image asset can refer to one or more resolution-specific "variants", see

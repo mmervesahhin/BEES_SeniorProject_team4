@@ -142,13 +142,7 @@ class ItemController {
     );
 
       // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false, // Prevent dismissing the dialog by tapping outside
-        builder: (BuildContext context) {
-          return Center(child: CircularProgressIndicator());
-        },
-      );
+      
 
       await uploadItem(newItem, coverImage, additionalImages);
 

@@ -1,16 +1,60 @@
-# bees
+# 🐝 BEES
 
-A new Flutter project.
+The Bilkent Educational Exchange for Sustainability (BEES) is a mobile application designed to foster sustainability and resource-sharing within the Bilkent University community. BEES empowers students by providing a secure, student-only platform where they can buy, sell, rent, donate or exchange academic materials such as textbooks, calculators, notes, T-squares, and even laptops. This initiative not only reduces the need to purchase new resources but also minimizes waste, promoting a circular economy within the university. BEES is a solution to inefficiencies in material access, tackling both environmental and economic concerns through its innovative approach. Key features of the platform include department-specific searches that allow students to find materials relevant to their field, a built-in auction system for competitive pricing, and dynamic pricing algorithms that adjust based on supply, demand, and condition of the items. BEES's goal is to cultivate a sustainable, collaborative environment that encourages students to make environmentally conscious decisions, while also alleviating the financial pressure that comes with buying new academic materials.
 
-## Getting Started
+# Coding Standard
 
-This project is a starting point for a Flutter application.
+This document defines the coding standards used by Team 4 in the BEES Senior Project. All team members are expected to follow this guide to maintain consistency and readability throughout the project.
 
-A few resources to get you started if this is your first Flutter project:
+---
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 📚 Language & Framework
+- **Language:** Dart
+- **Framework:** Flutter
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## 📁 Project Architecture
+We follow the **MVC (Model-View-Controller)** architectural pattern:
+- `models/` → Data classes (e.g., `User`, `Item`, `Request`)
+- `controllers/` → Business logic and Firestore operations
+- `views/screens/` → UI screens
+- `views/widgets/` → Custom reusable widgets
+- `utils/` → Colors, constants, formatters, and helpers
+
+---
+
+## 🔤 Naming Conventions
+
+### Files and Folders
+- Use `snake_case` for all file and folder names  
+  e.g., `home_screen.dart`, `user_model.dart`, `admin_controller.dart`
+
+### Classes
+- Use `PascalCase` for class names  
+  e.g., `HomeScreen`, `RequestController`, `UserModel`
+
+### Variables and Functions
+- Use `camelCase` for variables and function names  
+  e.g., `fetchItems()`, `userRating`, `isBanned`
+
+### Constants
+- Use `UPPER_CASE_WITH_UNDERSCORES` for constants  
+  e.g., `PRIMARY_YELLOW`, `DEFAULT_TIMEOUT`
+
+---
+
+## 🎯 Code Formatting
+
+### Indentation
+- Use **2 spaces** for indentation (default Flutter formatting)
+
+### Line Length
+- Keep lines under 100 characters where possible
+
+### Brackets
+- Opening bracket on the same line:
+  ```dart
+  void fetchData() {
+    // ...
+  }

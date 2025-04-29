@@ -1,3 +1,4 @@
+import 'package:bees/views/screens/blocked_users_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,6 +11,7 @@ class RatingDialog extends StatefulWidget {
   final String notificationId;
   final Color primaryColor;
   final Function? onRatingSubmitted;
+  final primaryYellow = const Color(0xFFFFC857);
 
   const RatingDialog({
     Key? key,
@@ -17,7 +19,7 @@ class RatingDialog extends StatefulWidget {
     required this.itemId,
     required this.itemTitle,
     required this.notificationId,
-    this.primaryColor = const Color(0xFF3B893E),
+    this.primaryColor = const Color(0xFFFFC857),
     this.onRatingSubmitted,
   }) : super(key: key);
 
@@ -150,11 +152,11 @@ class _RatingDialogState extends State<RatingDialog> {
                             notificationId: widget.notificationId,
                             itemId: widget.itemId,
                           );
-                          
+
                           if (widget.onRatingSubmitted != null) {
                             widget.onRatingSubmitted!();
                           }
-                          
+
                           if (context.mounted) {
                             Navigator.of(context, rootNavigator: true).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -163,7 +165,7 @@ class _RatingDialogState extends State<RatingDialog> {
                                   'Thank you for your rating!',
                                   style: GoogleFonts.poppins(),
                                 ),
-                                backgroundColor: widget.primaryColor,
+                                backgroundColor: AppColors.primaryYellow,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
@@ -176,19 +178,21 @@ class _RatingDialogState extends State<RatingDialog> {
                           if (context.mounted) {
                             setState(() {
                               _isSubmitting = false;
-                              _errorMessage = 'Failed to submit rating. Please try again.';
+                              _errorMessage =
+                                  'Failed to submit rating. Please try again.';
                             });
                           }
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.primaryColor,
+                  backgroundColor: AppColors.primaryYellow,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
                 child: Text(
                   _isSubmitting ? 'Submitting...' : 'Submit',
@@ -202,4 +206,3 @@ class _RatingDialogState extends State<RatingDialog> {
     );
   }
 }
-

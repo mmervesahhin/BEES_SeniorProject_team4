@@ -15,12 +15,16 @@ class CategoryPieChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = data.values.fold(0, (sum, val) => sum + val);
     final colors = [
-      Colors.green,
-      Colors.blue,
-      Colors.orange,
-      Colors.purple,
-      Colors.red,
-      Colors.teal,
+      Color(0xFF4E79A7), // Deep Blue
+      Color(0xFFF28E2B), // Orange
+      Color(0xFFE15759), // Soft Red
+      Color(0xFF76B7B2), // Teal
+      Color(0xFF59A14F), // Green
+      Color(0xFFEDC949), // Yellow
+      Color(0xFFAF7AA1), // Mauve
+      Color(0xFFFF9DA7), // Light Coral
+      Color(0xFF9C755F), // Brownish
+      Color(0xFFBAB0AC), // Gray
     ];
 
     final sections = data.entries.toList().asMap().entries.map((entry) {

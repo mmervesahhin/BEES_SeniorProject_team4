@@ -16,7 +16,7 @@ class BeesedTransactionHandler {
   final NotificationController _notificationController = NotificationController();
   
   // Define colors to match login screen
-  final Color primaryColor = Color(0xFF3B893E); // Green color from message_list_screen
+  final Color primaryColor = Color(0xFFFFC857); // Green color from message_list_screen
   final Color accentColor = Colors.amber;
   final Color textColor = Color(0xFF333333);
   final Color lightTextColor = Color(0xFF757575);
