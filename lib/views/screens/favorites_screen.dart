@@ -258,6 +258,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: primaryYellow,
         unselectedItemColor: textLight,
+        selectedLabelStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+        unselectedLabelStyle: GoogleFonts.nunito(
+          fontSize: 12,
+        ),
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[

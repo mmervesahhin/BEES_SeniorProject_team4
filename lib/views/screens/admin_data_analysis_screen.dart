@@ -60,12 +60,6 @@ class _AdminDataAnalysisScreenState extends State<AdminDataAnalysisScreen> {
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            Image.asset(
-              'assets/app_icon.png', // Assuming you have this asset
-              width: 32,
-              height: 32,
-            ),
-            SizedBox(width: 8),
             Text.rich(
               TextSpan(
                 children: [

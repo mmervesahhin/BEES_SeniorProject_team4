@@ -2,7 +2,7 @@ import 'package:bees/controllers/edit_item_controller.dart';
 import 'package:bees/models/edit_item_model.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/models/item_model.dart';
-
+import 'package:google_fonts/google_fonts.dart';
 
 class EditItemScreen extends StatefulWidget {
   final Item item;
@@ -16,7 +16,7 @@ class EditItemScreen extends StatefulWidget {
 class _EditItemScreenState extends State<EditItemScreen> {
   late EditItemModel _model;
   late EditItemController _controller;
-  
+
   // Updated color palette
   final Color primaryColor = Color(0xFFFFC857); // Vibrant yellow
   final Color secondaryColor = const Color(0xFFFFF8E1); // Light yellow
@@ -35,180 +35,207 @@ class _EditItemScreenState extends State<EditItemScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Item', style: TextStyle(fontWeight: FontWeight.normal, color: Colors.black)),
+        title: Text(
+          'Edit Item',
+          style: GoogleFonts.nunito(
+              fontWeight: FontWeight.normal, color: Colors.black),
+        ),
         backgroundColor: primaryColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black), // Black icons for contrast
+        iconTheme: const IconThemeData(
+            color: Colors.black), // Black icons for contrast
       ),
-      body: _controller.isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700))) 
-        : SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _controller.formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Photo Section
-                _buildSectionTitle('Photos (Required)'),
-                const SizedBox(height: 8),
-                _buildPhotoSection(),
-                const SizedBox(height: 24),
+      body: _controller.isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFFFFD700)))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _controller.formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Photo Section
+                    _buildSectionTitle('Photos (Required)'),
+                    const SizedBox(height: 8),
+                    _buildPhotoSection(),
+                    const SizedBox(height: 24),
 
-                // Basic Information
-                _buildSectionTitle('Item Information'),
-                const SizedBox(height: 8),
-                
-                // Title Field
-                _buildFormField(
-                  initialValue: _model.editedItem.title,
-                  labelText: 'Title',
-                  validator: (value) => value?.isEmpty ?? true ? 'Title is required' : null,
-                  onChanged: (value) => setState(() => _model.editedItem.title = value),
-                ),
-                const SizedBox(height: 16),
+                    // Basic Information
+                    _buildSectionTitle('Item Information'),
+                    const SizedBox(height: 8),
 
-                // Description Field
-                _buildFormField(
-                  initialValue: _model.editedItem.description,
-                  labelText: 'Description',
-                  maxLines: 3,
-                  validator: (value) => value?.isEmpty ?? true ? null : null,
-                  onChanged: (value) => setState(() => _model.editedItem.description = value),
-                ),
-                const SizedBox(height: 24),
+                    // Title Field
+                    _buildFormField(
+                      initialValue: _model.editedItem.title,
+                      labelText: 'Title',
+                      validator: (value) =>
+                          value?.isEmpty ?? true ? 'Title is required' : null,
+                      onChanged: (value) =>
+                          setState(() => _model.editedItem.title = value),
+                    ),
+                    const SizedBox(height: 16),
 
-                // Pricing & Category
-                _buildSectionTitle('Pricing & Details'),
-                const SizedBox(height: 8),
+                    // Description Field
+                    _buildFormField(
+                      initialValue: _model.editedItem.description,
+                      labelText: 'Description',
+                      maxLines: 3,
+                      validator: (value) =>
+                          value?.isEmpty ?? true ? null : null,
+                      onChanged: (value) =>
+                          setState(() => _model.editedItem.description = value),
+                    ),
+                    const SizedBox(height: 24),
 
-                // Item Type (Sale/Rent/Exchange/Donate)
-                _buildDropdownField(
-                  value: _model.editedItem.category ?? _model.categories[0],
-                  labelText: 'Category',
-                  items: _model.categories,
-                  onChanged: (value) {
-                    setState(() {
-                      _controller.updateCategory(value);
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
+                    // Pricing & Category
+                    _buildSectionTitle('Pricing & Details'),
+                    const SizedBox(height: 8),
 
-                if (_model.editedItem.category == 'Sale' || _model.editedItem.category == 'Rent')
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    // Item Type (Sale/Rent/Exchange/Donate)
+                    _buildDropdownField(
+                      value: _model.editedItem.category ?? _model.categories[0],
+                      labelText: 'Category',
+                      items: _model.categories,
+                      onChanged: (value) {
+                        setState(() {
+                          _controller.updateCategory(value);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    if (_model.editedItem.category == 'Sale' ||
+                        _model.editedItem.category == 'Rent')
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Price Input Field
-                          Expanded(
-                            child: _buildFormField(
-                              initialValue: _model.editedItem.price.toString(),
-                              labelText: 'Price',
-                              keyboardType: TextInputType.number,
-                              prefixIcon: const Icon(Icons.currency_lira, color: Colors.black),
-                              validator: (value) {
-                                if (value?.isEmpty ?? true) return 'Price is required';
-                                if (double.tryParse(value!) == null) return 'Invalid price';
-                                return null;
-                              },
-                              onChanged: (value) => setState(() => _model.editedItem.price = double.tryParse(value) ?? _model.editedItem.price),
-                            ),
-                          ),
-
-                          // Show payment plan dropdown if category is Rent
-                          if (_model.editedItem.category == 'Rent')
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: Row(
-                                children: [
-                                  Text("/", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                  DropdownButton<String>(
-                                    value: _model.selectedPaymentPlan,
-                                    items: _model.paymentPlan.map((String duration) {
-                                      return DropdownMenuItem<String>(
-                                        value: duration,
-                                        child: Text(duration),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _controller.updatePaymentPlan(value);
-                                      });
-                                    },
-                                  ),
-                                ],
+                          Row(
+                            children: [
+                              // Price Input Field
+                              Expanded(
+                                child: _buildFormField(
+                                  initialValue:
+                                      _model.editedItem.price.toString(),
+                                  labelText: 'Price',
+                                  keyboardType: TextInputType.number,
+                                  prefixIcon: const Icon(Icons.currency_lira,
+                                      color: Colors.black),
+                                  validator: (value) {
+                                    if (value?.isEmpty ?? true)
+                                      return 'Price is required';
+                                    if (double.tryParse(value!) == null)
+                                      return 'Invalid price';
+                                    return null;
+                                  },
+                                  onChanged: (value) => setState(() =>
+                                      _model.editedItem.price =
+                                          double.tryParse(value) ??
+                                              _model.editedItem.price),
+                                ),
                               ),
-                            ),
+
+                              // Show payment plan dropdown if category is Rent
+                              if (_model.editedItem.category == 'Rent')
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: Row(
+                                    children: [
+                                      Text("/",
+                                          style: GoogleFonts.nunito(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold)),
+                                      DropdownButton<String>(
+                                        value: _model.selectedPaymentPlan,
+                                        items: _model.paymentPlan
+                                            .map((String duration) {
+                                          return DropdownMenuItem<String>(
+                                            value: duration,
+                                            child: Text(duration,
+                                                style: GoogleFonts.nunito()),
+                                          );
+                                        }).toList(),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _controller
+                                                .updatePaymentPlan(value);
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
 
-                // Condition Dropdown
-                _buildDropdownField(
-                  value: _model.editedItem.condition,
-                  labelText: 'Condition',
-                  items: _model.conditions,
-                  onChanged: (value) {
-                    setState(() {
-                      if (value != null) _model.editedItem.condition = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // ItemType Dropdown
-                _buildDropdownField(
-                  value: _model.editedItem.itemType,
-                  labelText: 'Item Type',
-                  items: _model.itemTypes,
-                  onChanged: (value) {
-                    setState(() {
-                      if (value != null) _model.editedItem.itemType = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // Departments Section
-                _buildSectionTitle('Relevant Departments'),
-                const SizedBox(height: 8),
-                _buildDepartmentsSelector(),
-                const SizedBox(height: 32),
-
-                // Save Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _controller.isLoading ? null : _saveItem,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 2,
+                    // Condition Dropdown
+                    _buildDropdownField(
+                      value: _model.editedItem.condition,
+                      labelText: 'Condition',
+                      items: _model.conditions,
+                      onChanged: (value) {
+                        setState(() {
+                          if (value != null)
+                            _model.editedItem.condition = value;
+                        });
+                      },
                     ),
-                    child: _controller.isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Save Changes',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white, // Black text for contrast
-                            ),
+                    const SizedBox(height: 16),
+
+                    // ItemType Dropdown
+                    _buildDropdownField(
+                      value: _model.editedItem.itemType,
+                      labelText: 'Item Type',
+                      items: _model.itemTypes,
+                      onChanged: (value) {
+                        setState(() {
+                          if (value != null) _model.editedItem.itemType = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Departments Section
+                    _buildSectionTitle('Relevant Departments'),
+                    const SizedBox(height: 8),
+                    _buildDepartmentsSelector(),
+                    const SizedBox(height: 32),
+
+                    // Save Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _controller.isLoading ? null : _saveItem,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                  ),
+                          elevation: 2,
+                        ),
+                        child: _controller.isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : Text(
+                                'Save Changes',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      Colors.white, // Black text for contrast
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
-          ),
-        ),
     );
   }
 
@@ -216,20 +243,21 @@ class _EditItemScreenState extends State<EditItemScreen> {
     setState(() {
       _controller.isLoading = true;
     });
-    
+
     final success = await _controller.saveItem(context);
-    
+
     setState(() {
       _controller.isLoading = false;
     });
-    
+
     if (success) {
       // Show success message and close screen
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Item updated successfully'),
-          backgroundColor:  Color(0xFFFFE3A9),
+          content:
+              Text('Item updated successfully', style: GoogleFonts.nunito()),
+          backgroundColor: Color(0xFFFFE3A9),
         ),
       );
     }
@@ -240,7 +268,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Text(
         title,
-        style: TextStyle(
+        style: GoogleFonts.nunito(
           fontSize: 18,
           fontWeight: FontWeight.bold,
           color: textColor,
@@ -265,7 +293,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
             children: [
               Text(
                 'Add at least one photo of your item',
-                style: TextStyle(
+                style: GoogleFonts.nunito(
                   color: textColor.withOpacity(0.7),
                   fontSize: 14,
                 ),
@@ -280,7 +308,8 @@ class _EditItemScreenState extends State<EditItemScreen> {
                     _buildPhotoTile(
                       isNetwork: true,
                       source: _model.photoUrls[i],
-                      onDelete: () => setState(() => _controller.deletePhoto(i)),
+                      onDelete: () =>
+                          setState(() => _controller.deletePhoto(i)),
                     ),
 
                   // Display new photos
@@ -288,7 +317,8 @@ class _EditItemScreenState extends State<EditItemScreen> {
                     _buildPhotoTile(
                       isNetwork: false,
                       source: _model.newPhotos[i],
-                      onDelete: () => setState(() => _controller.deletePhoto(_model.photoUrls.length + i)),
+                      onDelete: () => setState(() =>
+                          _controller.deletePhoto(_model.photoUrls.length + i)),
                     ),
 
                   // Add Photo Button
@@ -319,7 +349,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                           const SizedBox(height: 8),
                           Text(
                             'Add Photo',
-                            style: TextStyle(
+                            style: GoogleFonts.nunito(
                               fontSize: 12,
                               color: textColor.withOpacity(0.7),
                             ),
@@ -338,7 +368,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               'At least one photo is required',
-              style: TextStyle(
+              style: GoogleFonts.nunito(
                 color: errorColor,
                 fontSize: 12,
               ),
@@ -440,7 +470,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
       initialValue: initialValue,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: TextStyle(color: Colors.grey.shade700),
+        labelStyle: GoogleFonts.nunito(color: Colors.grey.shade700),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -456,7 +486,8 @@ class _EditItemScreenState extends State<EditItemScreen> {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: errorColor, width: 1),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         filled: true,
         fillColor: Colors.grey.shade50,
         prefixIcon: prefixIcon,
@@ -465,7 +496,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
       keyboardType: keyboardType,
       validator: validator,
       onChanged: onChanged,
-      style: TextStyle(color: textColor),
+      style: GoogleFonts.nunito(color: textColor),
     );
   }
 
@@ -479,7 +510,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
       value: items.contains(value) ? value : items.first,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: TextStyle(color: Colors.grey.shade700),
+        labelStyle: GoogleFonts.nunito(color: Colors.grey.shade700),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -491,19 +522,20 @@ class _EditItemScreenState extends State<EditItemScreen> {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         filled: true,
         fillColor: Colors.grey.shade50,
       ),
       items: items.map((String value) {
         return DropdownMenuItem<String>(
           value: value,
-          child: Text(value),
+          child: Text(value, style: GoogleFonts.nunito()),
         );
       }).toList(),
       onChanged: onChanged,
       icon: Icon(Icons.arrow_drop_down, color: primaryColor),
-      style: TextStyle(color: textColor),
+      style: GoogleFonts.nunito(color: textColor),
       dropdownColor: Colors.white,
     );
   }
@@ -521,17 +553,21 @@ class _EditItemScreenState extends State<EditItemScreen> {
         children: [
           Text(
             'Select departments relevant to this item:',
-            style: TextStyle(
+            style: GoogleFonts.nunito(
               color: textColor,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 12, width: 10,),
+          const SizedBox(
+            height: 12,
+            width: 10,
+          ),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: _model.departments.map((department) {
-              final isSelected = _model.selectedDepartments.contains(department);
+              final isSelected =
+                  _model.selectedDepartments.contains(department);
               return GestureDetector(
                 onTap: () {
                   setState(() {
@@ -542,7 +578,8 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   width: 70, // Set a fixed width
                   height: 30, // Set a fixed height
                   alignment: Alignment.center, // Center the text
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: isSelected ? primaryColor : Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -552,7 +589,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   ),
                   child: Text(
                     department,
-                    style: TextStyle(
+                    style: GoogleFonts.nunito(
                       color: isSelected ? Colors.white : textColor,
                       fontSize: 10,
                     ),

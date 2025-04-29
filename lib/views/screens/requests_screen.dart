@@ -24,7 +24,8 @@ class RequestsScreen extends StatefulWidget {
   _RequestsScreenState createState() => _RequestsScreenState();
 }
 
-class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProviderStateMixin {
+class _RequestsScreenState extends State<RequestsScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 1;
   TextEditingController _searchController = TextEditingController();
   final RequestController _requestController = RequestController();
@@ -101,7 +102,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => OthersUserProfileScreen(userId: userId)),
+        MaterialPageRoute(
+            builder: (context) => OthersUserProfileScreen(userId: userId)),
       );
     }
   }
@@ -116,8 +118,6 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            
-            const SizedBox(width: 10),
             Text(
               'Requests',
               style: GoogleFonts.nunito(
@@ -131,7 +131,6 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
         actions: [
           IconButton(
             icon: Icon(Icons.message_rounded, size: 24),
-            
             onPressed: () {
               Navigator.push(
                 context,
@@ -296,7 +295,7 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
             ),
           );
         }
-        
+
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
             child: Column(
@@ -335,16 +334,21 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
 
         List<Request> filteredRequests = snapshot.data!.where((req) {
           String contentLower = req.requestContent.toLowerCase();
-          
-          bees.User? user = _requestController.cachedUsers[req.requestOwnerID];
-          String userNameLower = user != null ? "${user.firstName} ${user.lastName}".toLowerCase() : "";
 
-          return contentLower.contains(searchQueryLower) || userNameLower.contains(searchQueryLower); 
+          bees.User? user = _requestController.cachedUsers[req.requestOwnerID];
+          String userNameLower = user != null
+              ? "${user.firstName} ${user.lastName}".toLowerCase()
+              : "";
+
+          return contentLower.contains(searchQueryLower) ||
+              userNameLower.contains(searchQueryLower);
         }).toList();
 
         filteredRequests.sort((a, b) {
-          int relevanceA = _calculateRelevance(a.requestContent, searchQueryLower);
-          int relevanceB = _calculateRelevance(b.requestContent, searchQueryLower);
+          int relevanceA =
+              _calculateRelevance(a.requestContent, searchQueryLower);
+          int relevanceB =
+              _calculateRelevance(b.requestContent, searchQueryLower);
           return relevanceB.compareTo(relevanceA);
         });
 
@@ -404,11 +408,11 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
       future: _requestController.getUserByRequestID(request.requestID),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _loadingRequestCard(request); 
+          return _loadingRequestCard(request);
         }
 
         if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-          return _errorRequestCard(request); 
+          return _errorRequestCard(request);
         }
 
         bees.User user = snapshot.data!;
@@ -419,7 +423,7 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
             borderRadius: BorderRadius.circular(16),
           ),
           elevation: 0.5,
-          color:backgroundColor,
+          color: backgroundColor,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -446,7 +450,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                               ? NetworkImage(user.profilePicture)
                               : null,
                           child: user.profilePicture.isEmpty
-                              ? Icon(Icons.person, color: primaryYellow, size: 24)
+                              ? Icon(Icons.person,
+                                  color: primaryYellow, size: 24)
                               : null,
                         ),
                       ),
@@ -480,42 +485,41 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                       ),
                     ),
                     if (request.requestOwnerID != currentUserId) ...[
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.message_outlined,
-                            color: primaryYellow,
-                            size: 22,
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.message_outlined,
+                              color: primaryYellow,
+                              size: 22,
+                            ),
+                            onPressed: () {
+                              _navigateToMessageScreen(request, "Request");
+                            },
+                            tooltip: 'Message',
+                            splashRadius: 24,
                           ),
-                          onPressed: () {
-                            _navigateToMessageScreen(request, "Request");
-                          },
-                          tooltip: 'Message',
-                          splashRadius: 24,
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.more_vert,
-                            color: textLight,
-                            size: 22,
+                          IconButton(
+                            icon: Icon(
+                              Icons.more_vert,
+                              color: textLight,
+                              size: 22,
+                            ),
+                            onPressed: () {
+                              _showReportOptions(context, request);
+                            },
+                            tooltip: 'More options',
+                            splashRadius: 24,
                           ),
-                          onPressed: () {
-                            _showReportOptions(context, request);
-                          },
-                          tooltip: 'More options',
-                          splashRadius: 24,
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -527,7 +531,6 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                     ),
                   ),
                 ),
-          
               ],
             ),
           ),
@@ -576,7 +579,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                       color: lightYellow.withOpacity(0.3),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.report_outlined, color: primaryYellow, size: 20),
+                    child: Icon(Icons.report_outlined,
+                        color: primaryYellow, size: 20),
                   ),
                   title: Text(
                     "Inappropriate for BEES",
@@ -598,7 +602,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
                       color: lightYellow.withOpacity(0.3),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.gavel_rounded, color: primaryYellow, size: 20),
+                    child: Icon(Icons.gavel_rounded,
+                        color: primaryYellow, size: 20),
                   ),
                   title: Text(
                     "Illegal request",
@@ -629,8 +634,9 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
       return;
     }
 
-    bool alreadyReported = await ReportedRequestController().hasUserReportedRequest(request.requestID, userId);
-    
+    bool alreadyReported = await ReportedRequestController()
+        .hasUserReportedRequest(request.requestID, userId);
+
     if (alreadyReported) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -639,7 +645,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
             style: GoogleFonts.nunito(),
           ),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           backgroundColor: Colors.grey[800],
           margin: const EdgeInsets.all(16),
         ),
@@ -690,7 +697,7 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
     } else if (entityType == "Request") {
       senderId = entity.requestOwnerID;
     }
-    
+
     if (senderId == receiverId) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -699,14 +706,15 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
             style: GoogleFonts.nunito(),
           ),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           backgroundColor: Colors.grey[800],
           margin: const EdgeInsets.all(16),
         ),
       );
       return;
     }
-    
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => MessageScreen(
@@ -755,7 +763,7 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
       ),
     );
   }
-  
+
   Widget _errorRequestCard(Request request) {
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -769,7 +777,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
           children: [
             CircleAvatar(
               backgroundColor: Colors.red[50],
-              child: Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+              child:
+                  Icon(Icons.error_outline, color: Colors.red[700], size: 20),
             ),
             const SizedBox(width: 12),
             Text(
@@ -789,7 +798,7 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays == 0) {
       return "Today at ${DateFormat('h:mm a').format(date)}";
     } else if (difference.inDays == 1) {

@@ -465,20 +465,6 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
             color: Colors.white.withOpacity(0.9),
             shape: BoxShape.circle,
           ),
-          child: IconButton(
-            icon: Icon(
-              isFavorited ? Icons.favorite : Icons.favorite_border,
-              color: isFavorited ? AppColors.accentRed : AppColors.textDark,
-            ),
-            onPressed: () async {
-              setState(() {
-                isFavorited = !isFavorited;
-                hasFavoriteChanged = true;
-              });
-              _homeController.updateFavoriteCount(widget.itemId, isFavorited,
-                  FirebaseAuth.instance.currentUser!.uid);
-            },
-          ),
         ),
         Container(
           margin: EdgeInsets.all(8),

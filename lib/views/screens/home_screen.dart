@@ -111,14 +111,22 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Text(
-          'BEES',
-          style: GoogleFonts.nunito(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: primaryYellow,
+        title: Row(children: [
+          Image.asset(
+            'assets/app_icon.png',
+            width: 32,
+            height: 32,
           ),
-        ),
+          SizedBox(width: 8),
+          Text(
+            'BEES',
+            style: GoogleFonts.nunito(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: primaryYellow,
+            ),
+          ),
+        ]),
         actions: [
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
