@@ -232,7 +232,7 @@ class _RequestsScreenState extends State<RequestsScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.add, color: Colors.white, size: 28),
+        child: const Icon(Icons.edit, color: Colors.white, size: 28),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
