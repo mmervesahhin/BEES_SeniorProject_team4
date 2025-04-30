@@ -136,7 +136,16 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
             ),
             onPressed: () {
               _adminController.showItemRemoveOptions(
-                  context, Item.fromJson(itemDetails!, widget.itemId));
+                context,
+                Item.fromJson(itemDetails!, widget.itemId),
+                onSuccess: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => AdminHomeScreen()),
+                    (route) => false,
+                  );
+                },
+              );
             },
           ),
         ),
@@ -577,66 +586,6 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
               ],
             ),
           ),
-
-          SizedBox(height: 16),
-
-          // Admin actions
-          Container(
-            padding: EdgeInsets.all(16),
-            color: Colors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.admin_panel_settings,
-                        color: AppColors.accentBlue),
-                    SizedBox(width: 8),
-                    Text(
-                      "Admin Actions",
-                      style: GoogleFonts.nunito(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          _adminController.showItemRemoveOptions(context,
-                              Item.fromJson(itemDetails!, widget.itemId));
-                        },
-                        icon: Icon(Icons.delete, size: 18),
-                        label: Text(
-                          "Remove Item",
-                          style: GoogleFonts.nunito(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accentRed,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Bottom padding
-          SizedBox(height: 24),
         ],
       ),
     );
