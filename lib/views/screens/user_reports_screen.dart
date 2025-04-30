@@ -27,7 +27,7 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
   String? _selectedBanReason;
   String? _selectedBanDuration;
   String _banExplanation = '';
-  
+
   // Modern trading app color palette
   final Color primaryYellow = Color(0xFFFFC857);
   final Color secondaryYellow = Color(0xFFFFD166);
@@ -107,7 +107,8 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(primaryYellow),
                         ),
                       );
                     }
@@ -147,29 +148,36 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                       children: snapshot.data!.docs.map((doc) {
                         return FutureBuilder(
                           future: Future.wait([
-                            _adminController.getUserInfo(doc['reportedBy']), 
+                            _adminController.getUserInfo(doc['reportedBy']),
                             _adminController.getUserInfo(doc['userId'])
                           ]),
-                          builder: (context, AsyncSnapshot<List<Map<String, dynamic>?>> userSnapshots) {
-                            if (userSnapshots.connectionState == ConnectionState.waiting) {
+                          builder: (context,
+                              AsyncSnapshot<List<Map<String, dynamic>?>>
+                                  userSnapshots) {
+                            if (userSnapshots.connectionState ==
+                                ConnectionState.waiting) {
                               return _buildLoadingCard();
                             }
-                            
-                            String reportedByName = '${userSnapshots.data?[0]?['firstName'] ?? 'Unknown Reporter'} ${userSnapshots.data?[0]?['lastName'] ?? ''}';
-                            String reportedUserName = '${userSnapshots.data?[1]?['firstName'] ?? 'Unknown User'} ${userSnapshots.data?[1]?['lastName'] ?? ''}';
-                            String? profileImageUrl = userSnapshots.data?[1]?['profilePicture'];
+
+                            String reportedByName =
+                                '${userSnapshots.data?[0]?['firstName'] ?? 'Unknown Reporter'} ${userSnapshots.data?[0]?['lastName'] ?? ''}';
+                            String reportedUserName =
+                                '${userSnapshots.data?[1]?['firstName'] ?? 'Unknown User'} ${userSnapshots.data?[1]?['lastName'] ?? ''}';
+                            String? profileImageUrl =
+                                userSnapshots.data?[1]?['profilePicture'];
                             String? complaintDetails = doc['complaintDetails'];
-                            String reportReason = doc['reportReason'] ?? 'No reason provided';
+                            String reportReason =
+                                doc['reportReason'] ?? 'No reason provided';
 
                             return _buildReportedUserCard(
-                              userId: doc['userId'],
-                              userName: reportedUserName,
-                              reporterName: reportedByName,
-                              profileImageUrl: profileImageUrl,
-                              reportReason: reportReason,
-                              complaintDetails: complaintDetails,
-                              complaintId: doc.id // Convert to String
-                            );
+                                userId: doc['userId'],
+                                userName: reportedUserName,
+                                reporterName: reportedByName,
+                                profileImageUrl: profileImageUrl,
+                                reportReason: reportReason,
+                                complaintDetails: complaintDetails,
+                                complaintId: doc.id // Convert to String
+                                );
                           },
                         );
                       }).toList(),
@@ -202,7 +210,8 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(primaryYellow),
                         ),
                       );
                     }
@@ -242,14 +251,24 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                       children: snapshot.data!.docs.map((doc) {
                         return FutureBuilder(
                           future: _adminController.getUserInfo(doc.id),
-                          builder: (context, AsyncSnapshot<Map<String, dynamic>?> userSnapshot) {
-                            if (userSnapshot.connectionState == ConnectionState.waiting) {
+                          builder: (context,
+                              AsyncSnapshot<Map<String, dynamic>?>
+                                  userSnapshot) {
+                            if (userSnapshot.connectionState ==
+                                ConnectionState.waiting) {
                               return _buildLoadingCard();
                             }
-                            
-                            String userName = '${userSnapshot.data?['firstName'] ?? 'Unknown User'} ${userSnapshot.data?['lastName'] ?? ''}';
-                            String? profileImageUrl = userSnapshot.data?['profilePicture'];
-                            String banExpiration = (userSnapshot.data?['banEndDate'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? 'Permanent';
+
+                            String userName =
+                                '${userSnapshot.data?['firstName'] ?? 'Unknown User'} ${userSnapshot.data?['lastName'] ?? ''}';
+                            String? profileImageUrl =
+                                userSnapshot.data?['profilePicture'];
+                            String banExpiration =
+                                (userSnapshot.data?['banEndDate'] as Timestamp?)
+                                        ?.toDate()
+                                        .toString()
+                                        .substring(0, 16) ??
+                                    'Permanent';
 
                             return _buildBannedUserCard(
                               userId: doc.id,
@@ -385,14 +404,14 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
   }
 
   Widget _buildReportedUserCard({
-  required String userId,
-  required String userName,
-  required String reporterName,
-  String? profileImageUrl,
-  required String reportReason,
-  String? complaintDetails,
-  required dynamic complaintId, // Change to dynamic type
-}){
+    required String userId,
+    required String userName,
+    required String reporterName,
+    String? profileImageUrl,
+    required String reportReason,
+    String? complaintDetails,
+    required dynamic complaintId, // Change to dynamic type
+  }) {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -450,7 +469,8 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                   decoration: BoxDecoration(
                     color: errorColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: errorColor.withOpacity(0.2), width: 1),
+                    border: Border.all(
+                        color: errorColor.withOpacity(0.2), width: 1),
                   ),
                   child: Text(
                     reportReason,
@@ -506,17 +526,19 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                 ),
                 SizedBox(width: 8),
                 TextButton.icon(
-                onPressed: () => _adminController.ignoreUserReport(complaintId),
-                icon: Icon(Icons.delete_outline, size: 18, color: primaryYellow),
-                label: Text(
-                  "Dismiss",
-                  style: GoogleFonts.nunito(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: primaryYellow,
+                  onPressed: () =>
+                      _adminController.ignoreUserReport(complaintId),
+                  icon: Icon(Icons.delete_outline,
+                      size: 18, color: primaryYellow),
+                  label: Text(
+                    "Dismiss",
+                    style: GoogleFonts.nunito(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: primaryYellow,
+                    ),
                   ),
                 ),
-              ),
               ],
             ),
           ],
@@ -583,7 +605,7 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                       Icon(Icons.timer_outlined, size: 14, color: textMedium),
                       SizedBox(width: 4),
                       Text(
-                        "Ban expires: $banExpiration",
+                        "Ban expires:\n $banExpiration",
                         style: GoogleFonts.nunito(
                           fontSize: 14,
                           color: textMedium,
@@ -596,7 +618,8 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
             ),
             TextButton.icon(
               onPressed: () => _showUnbanDialog(userId),
-              icon: Icon(Icons.check_circle_outline, size: 18, color: successColor),
+              icon: Icon(Icons.check_circle_outline,
+                  size: 18, color: successColor),
               label: Text(
                 "Unban",
                 style: GoogleFonts.nunito(
@@ -616,19 +639,24 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
     if (index == _selectedIndex) return;
     switch (index) {
       case 0:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminHomeScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminHomeScreen()));
         break;
       case 1:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminRequestsScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminRequestsScreen()));
         break;
       case 2:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminReportsScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminReportsScreen()));
         break;
       case 3:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminDataAnalysisScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminDataAnalysisScreen()));
         break;
       case 4:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminProfileScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminProfileScreen()));
         break;
     }
   }
@@ -638,7 +666,8 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
             'Unban User',
             style: GoogleFonts.nunito(
@@ -706,7 +735,8 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               title: Text(
                 'Ban User',
                 style: GoogleFonts.nunito(
@@ -801,7 +831,8 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: borderColor),
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
                         ),
                         style: GoogleFonts.nunito(
                           fontSize: 14,
@@ -888,7 +919,8 @@ class _UserReportsScreenState extends State<UserReportsScreen> {
                   ),
                   onPressed: (_selectedBanReason == null ||
                           _selectedBanDuration == null ||
-                          (_selectedBanReason == 'Other' && _banExplanation.isEmpty))
+                          (_selectedBanReason == 'Other' &&
+                              _banExplanation.isEmpty))
                       ? null
                       : () {
                           _adminController.banUser(
