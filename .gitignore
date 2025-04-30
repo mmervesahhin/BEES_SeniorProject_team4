@@ -45,3 +45,10 @@ app.*.map.json
 /android/app/.cxx/
 # Android build cache
 android/app/.cxx/
+
+# Auto-generated plugin registrant files
+linux/flutter/generated_plugin_registrant.*
+linux/flutter/generated_plugins.cmake
+macos/Flutter/GeneratedPluginRegistrant.swift
+windows/flutter/generated_plugin_registrant.*
+windows/flutter/generated_plugins.cmake
