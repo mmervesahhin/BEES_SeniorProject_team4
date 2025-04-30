@@ -1,5 +1,6 @@
 import 'package:bees/controllers/beesed_transaction_controller.dart';
 import 'package:bees/controllers/user_profile_controller.dart';
+import 'package:bees/views/screens/detailed_item_screen.dart';
 import 'package:bees/views/screens/item_history_screen.dart';
 import 'package:bees/views/screens/blocked_users_screen.dart';
 import 'package:bees/views/screens/request_history_screen.dart';
@@ -914,224 +915,233 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   }
 
   Widget _buildItemCard(Item item) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => DetailedItemScreen(itemId: item.itemId),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Item image with status badge
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                child: item.photoUrl != null
-                    ? Image.network(
-                        item.photoUrl!,
-                        width: double.infinity,
-                        height: 150,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        width: double.infinity,
-                        height: 150,
-                        color: Colors.grey[200],
-                        child: Icon(Icons.image_outlined,
-                            color: Colors.grey, size: 48),
-                      ),
-              ),
-              Positioned(
-                top: 12,
-                left: 12,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: item.itemStatus == 'active'
-                        ? primaryYellow
-                        : Colors.grey,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        item.itemStatus == 'active'
-                            ? Icons.check_circle
-                            : Icons.hourglass_empty,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        item.itemStatus == 'active'
-                            ? 'Active'
-                            : item.itemStatus,
-                        style: GoogleFonts.nunito(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.favorite,
-                        color: Colors.red.shade400,
-                        size: 16,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        '${item.favoriteCount}',
-                        style: GoogleFonts.nunito(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: textDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Item details
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Item image with status badge
+            Stack(
               children: [
-                Text(
-                  item.title,
-                  style: GoogleFonts.nunito(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: textDark,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 8),
-                Text(
-                  item.description ?? "",
-                  style: GoogleFonts.nunito(
-                    color: textMedium,
-                    fontSize: 14,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 12),
-
-                // Tags
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    if (item.category != null && item.category!.isNotEmpty)
-                      _buildChip(item.category!),
-                    if (item.condition != null && item.condition!.isNotEmpty)
-                      _buildChip(item.condition!),
-                    if (item.itemType != null && item.itemType!.isNotEmpty)
-                      _buildChip(item.itemType!),
-                  ],
-                ),
-
-                SizedBox(height: 16),
-
-                // Price and actions
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '₺${item.price.toStringAsFixed(2)}',
-                      style: GoogleFonts.nunito(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: primaryYellow,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        if (item.itemStatus == 'active')
-                          ElevatedButton(
-                            onPressed: () => _markItemAsBeesed(item),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryYellow,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                            ),
-                            child: Text(
-                              'BEESED',
-                              style: GoogleFonts.nunito(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        SizedBox(width: 8),
-                        IconButton(
-                          icon: Icon(Icons.edit_outlined, color: textMedium),
-                          onPressed: () => _controller.navigateToEditItemScreen(
-                              context, item),
-                          tooltip: 'Edit',
-                          padding: EdgeInsets.all(8),
-                          constraints: BoxConstraints(),
-                          splashRadius: 24,
+                ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                  child: item.photoUrl != null
+                      ? Image.network(
+                          item.photoUrl!,
+                          width: double.infinity,
+                          height: 150,
+                          fit: BoxFit.cover,
+                        )
+                      : Container(
+                          width: double.infinity,
+                          height: 150,
+                          color: Colors.grey[200],
+                          child: Icon(Icons.image_outlined,
+                              color: Colors.grey, size: 48),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.delete_outline, color: errorColor),
-                          onPressed: () =>
-                              _showDeleteConfirmation(context, item),
-                          tooltip: 'Delete',
-                          padding: EdgeInsets.all(8),
-                          constraints: BoxConstraints(),
-                          splashRadius: 24,
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: item.itemStatus == 'active'
+                          ? primaryYellow
+                          : Colors.grey,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          item.itemStatus == 'active'
+                              ? Icons.check_circle
+                              : Icons.hourglass_empty,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          item.itemStatus == 'active'
+                              ? 'Active'
+                              : item.itemStatus,
+                          style: GoogleFonts.nunito(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.favorite,
+                          color: Colors.red.shade400,
+                          size: 16,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          '${item.favoriteCount}',
+                          style: GoogleFonts.nunito(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: textDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+
+            // Item details
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: GoogleFonts.nunito(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textDark,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    item.description ?? "",
+                    style: GoogleFonts.nunito(
+                      color: textMedium,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 12),
+
+                  // Tags
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (item.category != null && item.category!.isNotEmpty)
+                        _buildChip(item.category!),
+                      if (item.condition != null && item.condition!.isNotEmpty)
+                        _buildChip(item.condition!),
+                      if (item.itemType != null && item.itemType!.isNotEmpty)
+                        _buildChip(item.itemType!),
+                    ],
+                  ),
+
+                  SizedBox(height: 16),
+
+                  // Price and actions
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '₺${item.price.toStringAsFixed(2)}',
+                        style: GoogleFonts.nunito(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: primaryYellow,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          if (item.itemStatus == 'active')
+                            ElevatedButton(
+                              onPressed: () => _markItemAsBeesed(item),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryYellow,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                              ),
+                              child: Text(
+                                'BEESED',
+                                style: GoogleFonts.nunito(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          SizedBox(width: 8),
+                          IconButton(
+                            icon: Icon(Icons.edit_outlined, color: textMedium),
+                            onPressed: () => _controller
+                                .navigateToEditItemScreen(context, item),
+                            tooltip: 'Edit',
+                            padding: EdgeInsets.all(8),
+                            constraints: BoxConstraints(),
+                            splashRadius: 24,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete_outline, color: errorColor),
+                            onPressed: () =>
+                                _showDeleteConfirmation(context, item),
+                            tooltip: 'Delete',
+                            padding: EdgeInsets.all(8),
+                            constraints: BoxConstraints(),
+                            splashRadius: 24,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
