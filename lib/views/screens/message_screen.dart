@@ -148,8 +148,10 @@ class _MessageScreenState extends State<MessageScreen> {
     // Check if user is blocked
     bool isBlockedByReceiver =
         await _blockedUserController.isUserBlocked(finalReceiverId);
-    bool isCurrentUserBlocked =
-        await _blockedUserController.isUserBlocked(finalSenderId);
+    //bool isCurrentUserBlocked =
+    //  await _blockedUserController.isUserBlocked(finalSenderId);
+    bool isCurrentUserBlocked = await _blockedUserController.isBlockedByUser(
+        currentUserId, finalReceiverId);
 
     if (isCurrentUserBlocked) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -696,17 +698,24 @@ class _MessageScreenState extends State<MessageScreen> {
   Widget build(BuildContext context) {
     String id = "";
     String name = "";
-    String userID = "";
+    //String userID = "";
 
     if (widget.entityType == "Item") {
       id = widget.entity.itemId;
       name = truncateText(widget.entity.title, 30);
-      userID = widget.entity.itemOwnerId;
+      //userID = widget.entity.itemOwnerId;
     } else if (widget.entityType == "Request") {
       id = widget.entity.requestID;
       name = truncateText(widget.entity.requestContent, 30);
-      userID = widget.entity.requestOwnerID;
+      //userID = widget.entity.requestOwnerID;
     }
+
+    String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
+
+    // Alıcı ID'sini belirle (sendMessage fonksiyonundaki mantıkla aynı)
+    String userID = (currentUserId == widget.senderId)
+        ? widget.receiverId
+        : widget.senderId;
 
     return GestureDetector(
       onTap: () {
