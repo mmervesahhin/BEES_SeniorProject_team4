@@ -436,14 +436,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             category.toLowerCase() == 'exchange';
 
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
                                     DetailedItemScreen(itemId: data['itemId']),
                               ),
                             );
+
+                            if (result == true) {
+                              await fetchAndSetFavorites();
+                              setState(() {}); // UI'yi yenile
+                            }
                           },
                           child: Container(
                             decoration: BoxDecoration(
