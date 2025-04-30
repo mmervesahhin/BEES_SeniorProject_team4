@@ -27,7 +27,7 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
   final RequestController _requestController = RequestController();
   final AdminController _adminController = AdminController();
   String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
-  
+
   // Modern trading app color palette
   final Color primaryYellow = Color(0xFFFFC857);
   final Color secondaryYellow = Color(0xFFFFD166);
@@ -49,7 +49,8 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
 
   Future<void> _loadReports() async {
     setState(() => isLoading = true);
-    List<Map<String, dynamic>> fetchedReports = await _adminController.fetchReportedRequests();
+    List<Map<String, dynamic>> fetchedReports =
+        await _adminController.fetchReportedRequests();
 
     for (var report in fetchedReports) {
       String? requestId = report['requestId'];
@@ -61,7 +62,8 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
           report['requestOwnerID'] = req.requestOwnerID;
           report['requestObject'] = req;
 
-          bees.User? requestOwner = await _requestController.getUserByRequestID(requestId);
+          bees.User? requestOwner =
+              await _requestController.getUserByRequestID(requestId);
           if (requestOwner != null) {
             report['requestOwnerName'] = requestOwner.firstName;
             report['requestOwnerSurname'] = requestOwner.lastName;
@@ -80,7 +82,8 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
   void _navigateToProfile(String userId) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AdminOthersUserProfileScreen(userId: userId)),
+      MaterialPageRoute(
+          builder: (context) => AdminOthersUserProfileScreen(userId: userId)),
     );
   }
 
@@ -136,49 +139,50 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
               SizedBox(height: 16),
               Expanded(
                 child: isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
-                      ),
-                    )
-                  : reports.isEmpty
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline,
-                              size: 64,
-                              color: Colors.grey.shade300,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              "No reported requests",
-                              style: GoogleFonts.nunito(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textMedium,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              "There are no reported requests at this time",
-                              style: GoogleFonts.nunito(
-                                fontSize: 14,
-                                color: textMedium,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(primaryYellow),
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: reports.length,
-                        itemBuilder: (context, index) {
-                          final report = reports[index];
-                          return _buildReportCard(report);
-                        },
-                      ),
+                    : reports.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.check_circle_outline,
+                                  size: 64,
+                                  color: Colors.grey.shade300,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  "No reported requests",
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: textMedium,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "There are no reported requests at this time",
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 14,
+                                    color: textMedium,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: reports.length,
+                            itemBuilder: (context, index) {
+                              final report = reports[index];
+                              return _buildReportCard(report);
+                            },
+                          ),
               ),
             ],
           ),
@@ -246,7 +250,8 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
     final Request? requestObj = report['requestObject'];
     final String reportReason = report['reportReason'] ?? 'No reason provided';
     final String reporterName = report['reporterName'] ?? 'Unknown';
-    final String requestContent = report['requestContent'] ?? 'No content available';
+    final String requestContent =
+        report['requestContent'] ?? 'No content available';
 
     return Container(
       margin: EdgeInsets.only(bottom: 16),
@@ -333,7 +338,8 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
                   decoration: BoxDecoration(
                     color: errorColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: errorColor.withOpacity(0.2), width: 1),
+                    border: Border.all(
+                        color: errorColor.withOpacity(0.2), width: 1),
                   ),
                   child: Text(
                     reportReason,
@@ -354,32 +360,6 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
                 color: textMedium,
               ),
             ),
-            SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: requestObj != null
-                      ? () {
-                          _adminController.showRequestRemoveOptions(
-                            context,
-                            requestObj,
-                            onSuccess: _loadReports,
-                          );
-                        }
-                      : null,
-                  icon: Icon(Icons.flag, size: 18, color: primaryYellow),
-                  label: Text(
-                    "Take Action",
-                    style: GoogleFonts.nunito(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: primaryYellow,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -390,19 +370,24 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
     if (index == _selectedIndex) return;
     switch (index) {
       case 0:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminHomeScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminHomeScreen()));
         break;
       case 1:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminRequestsScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminRequestsScreen()));
         break;
       case 2:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminReportsScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminReportsScreen()));
         break;
       case 3:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminDataAnalysisScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminDataAnalysisScreen()));
         break;
       case 4:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminProfileScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminProfileScreen()));
         break;
     }
   }
