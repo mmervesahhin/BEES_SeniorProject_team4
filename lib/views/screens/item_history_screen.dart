@@ -14,20 +14,21 @@ class ItemHistoryScreen extends StatefulWidget {
   _ItemHistoryScreenState createState() => _ItemHistoryScreenState();
 }
 
-class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTickerProviderStateMixin {
+class _ItemHistoryScreenState extends State<ItemHistoryScreen>
+    with SingleTickerProviderStateMixin {
   final UserProfileController _controller = UserProfileController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
-  
+
   // 0 = Inactive Items, 1 = Beesed Items
   int _selectedSegment = 0;
   bool _isLoading = false;
   bool _isHeaderVisible = true;
-  
+
   // Animation controller
   late AnimationController _animationController;
-  
+
   // Custom color palette - More professional white-based theme
   final Color primaryAccent = Color(0xFFFFC857);
   final Color lightAccent = Color(0xFFFFF8E8);
@@ -36,7 +37,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
   final Color textDark = Color(0xFF333333);
   final Color textLight = Color(0xFF8A8A8A);
   final Color dividerColor = Color(0xFFF0F0F0);
-  
+
   @override
   void initState() {
     super.initState();
@@ -45,25 +46,27 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       vsync: this,
       duration: Duration(milliseconds: 300),
     );
-    
+
     // Add scroll listener for header visibility
     _scrollController.addListener(_handleScroll);
-    
+
     // Start the animation
     _animationController.forward();
   }
-  
+
   void _handleScroll() {
     // Show header when scrolling up, hide when scrolling down
-    if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
+    if (_scrollController.position.userScrollDirection ==
+        ScrollDirection.reverse) {
       if (_isHeaderVisible) {
         setState(() {
           _isHeaderVisible = false;
         });
       }
-    } 
-    
-    if (_scrollController.position.userScrollDirection == ScrollDirection.forward) {
+    }
+
+    if (_scrollController.position.userScrollDirection ==
+        ScrollDirection.forward) {
       if (!_isHeaderVisible) {
         setState(() {
           _isHeaderVisible = true;
@@ -71,7 +74,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       }
     }
   }
-  
+
   @override
   void dispose() {
     // Dispose controllers to prevent memory leaks
@@ -80,24 +83,24 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
     _scrollController.dispose();
     super.dispose();
   }
-  
+
   // Delete a single item
   Future<void> _deleteItem(String itemId, String collectionName) async {
     try {
       setState(() {
         _isLoading = true;
       });
-      
+
       // Update the item status to 'deleted'
       await _firestore.collection(collectionName).doc(itemId).update({
         'itemStatus': 'deleted',
         'lastModifiedDate': FieldValue.serverTimestamp(),
       });
-      
+
       setState(() {
         _isLoading = false;
       });
-      
+
       _showSnackBar('Item deleted successfully', isSuccess: true);
     } catch (e) {
       print('Error deleting item: $e');
@@ -107,23 +110,24 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       _showSnackBar('Failed to delete item. Try again later.', isError: true);
     }
   }
-  
+
   // Restore a deleted item
-  Future<void> _restoreItem(String itemId, String collectionName, String previousStatus) async {
+  Future<void> _restoreItem(
+      String itemId, String collectionName, String previousStatus) async {
     try {
       setState(() {
         _isLoading = true;
       });
-      
+
       await _firestore.collection(collectionName).doc(itemId).update({
         'itemStatus': previousStatus,
         'lastModifiedDate': FieldValue.serverTimestamp(),
       });
-      
+
       setState(() {
         _isLoading = false;
       });
-      
+
       _showSnackBar('Item restored successfully', isSuccess: true);
     } catch (e) {
       print('Error restoring item: $e');
@@ -133,28 +137,30 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       _showSnackBar('Failed to restore item. Try again later.', isError: true);
     }
   }
-  
+
   // Delete all items of a specific type
   Future<void> _deleteAllItems() async {
     final User? user = _auth.currentUser;
     if (user == null) return;
-    
+
     try {
       setState(() {
         _isLoading = true;
       });
-      
-      final String collectionName = _selectedSegment == 0 ? 'items' : 'beesed_items';
-      final String statusField = _selectedSegment == 0 ? 'itemStatus' : 'beesedStatus';
+
+      final String collectionName =
+          _selectedSegment == 0 ? 'items' : 'beesed_items';
+      final String statusField =
+          _selectedSegment == 0 ? 'itemStatus' : 'beesedStatus';
       final String statusValue = _selectedSegment == 0 ? 'inactive' : 'beesed';
-      
+
       // Get all items with the current status
       final QuerySnapshot querySnapshot = await _firestore
           .collection(collectionName)
           .where('itemOwnerId', isEqualTo: user.uid)
           .where(statusField, isEqualTo: statusValue)
           .get();
-      
+
       if (querySnapshot.docs.isEmpty) {
         setState(() {
           _isLoading = false;
@@ -162,24 +168,26 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
         _showSnackBar('No items to delete', isSuccess: true);
         return;
       }
-      
+
       // Update all items to 'deleted' status
       final batch = _firestore.batch();
-      
+
       for (var doc in querySnapshot.docs) {
         batch.update(doc.reference, {
-          'itemStatus': 'deleted',  // Ensure this is set to 'deleted'
+          'itemStatus': 'deleted', // Ensure this is set to 'deleted'
           'lastModifiedDate': FieldValue.serverTimestamp(),
         });
       }
-      
+
       await batch.commit();
-      
+
       setState(() {
         _isLoading = false;
       });
-      
-      _showSnackBar('All ${_selectedSegment == 0 ? 'inactive' : 'beesed'} items have been deleted', isSuccess: true);
+
+      _showSnackBar(
+          'All ${_selectedSegment == 0 ? 'inactive' : 'beesed'} items have been deleted',
+          isSuccess: true);
     } catch (e) {
       print('Error deleting all items: $e');
       setState(() {
@@ -188,9 +196,10 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       _showSnackBar('Failed to delete items. Try again later.', isError: true);
     }
   }
-  
+
   // Show delete confirmation dialog for a single item
-  void _showDeleteItemConfirmation(String itemId, String title, String collectionName) {
+  void _showDeleteItemConfirmation(
+      String itemId, String title, String collectionName) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -268,7 +277,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       },
     );
   }
-  
+
   // Show delete confirmation dialog for all items
   void _showDeleteAllConfirmation() {
     showDialog(
@@ -323,11 +332,11 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       },
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final User? user = _auth.currentUser;
-    
+
     if (user == null) {
       return Scaffold(
         appBar: AppBar(
@@ -350,7 +359,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
         ),
       );
     }
-    
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -416,7 +425,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
               ),
             ),
           ),
-          
+
           // Status indicator
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -435,27 +444,27 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
               ],
             ),
           ),
-          
+
           // Items List
           Expanded(
             child: _isLoading
-              ? Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(primaryAccent),
-                  ),
-                )
-              : _selectedSegment == 0
-                ? _buildInactiveItemsList(user.uid)
-                : _buildBeesedItemsList(user.uid),
+                ? Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(primaryAccent),
+                    ),
+                  )
+                : _selectedSegment == 0
+                    ? _buildInactiveItemsList(user.uid)
+                    : _buildBeesedItemsList(user.uid),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildSegmentButton(int index, String title) {
     final bool isSelected = _selectedSegment == index;
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -484,7 +493,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       ),
     );
   }
-  
+
   Widget _buildInactiveItemsList(String userId) {
     return FutureBuilder<QuerySnapshot>(
       future: _firestore
@@ -513,7 +522,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                 Text(
                   "Error loading inactive items",
                   style: GoogleFonts.nunito(
-                    color: Colors.red.shade300, 
+                    color: Colors.red.shade300,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -522,7 +531,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                 Text(
                   snapshot.error.toString(),
                   style: GoogleFonts.nunito(
-                    color: textLight, 
+                    color: textLight,
                     fontSize: 12,
                   ),
                   textAlign: TextAlign.center,
@@ -534,10 +543,9 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return _buildEmptyState(
-            icon: Icons.inventory_2_outlined,
-            message: "No inactive items found",
-            description: "Items you delete will appear here"
-          );
+              icon: Icons.inventory_2_outlined,
+              message: "No inactive items found",
+              description: "Items you delete will appear here");
         }
 
         // Sort items by lastModifiedDate (most recent first)
@@ -545,36 +553,39 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
         sortedDocs.sort((a, b) {
           final aData = a.data() as Map<String, dynamic>;
           final bData = b.data() as Map<String, dynamic>;
-          
+
           final Timestamp? aTimestamp = aData['lastModifiedDate'] as Timestamp?;
           final Timestamp? bTimestamp = bData['lastModifiedDate'] as Timestamp?;
-          
+
           if (aTimestamp == null && bTimestamp == null) return 0;
           if (aTimestamp == null) return 1;
           if (bTimestamp == null) return -1;
-          
-          return bTimestamp.compareTo(aTimestamp); // Descending order (newest first)
+
+          return bTimestamp
+              .compareTo(aTimestamp); // Descending order (newest first)
         });
 
-        final items = sortedDocs.map((doc) {
-          try {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-            return {
-              'item': Item.fromJson(data, doc.id),
-              'timestamp': data['lastModifiedDate'] as Timestamp?,
-            };
-          } catch (e) {
-            print("Error parsing item: $e");
-            return null;
-          }
-        }).where((item) => item != null).toList();
+        final items = sortedDocs
+            .map((doc) {
+              try {
+                Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+                return {
+                  'item': Item.fromJson(data, doc.id),
+                  'timestamp': data['lastModifiedDate'] as Timestamp?,
+                };
+              } catch (e) {
+                print("Error parsing item: $e");
+                return null;
+              }
+            })
+            .where((item) => item != null)
+            .toList();
 
         if (items.isEmpty) {
           return _buildEmptyState(
-            icon: Icons.inventory_2_outlined,
-            message: "No inactive items found",
-            description: "Items you delete will appear here"
-          );
+              icon: Icons.inventory_2_outlined,
+              message: "No inactive items found",
+              description: "Items you delete will appear here");
         }
 
         return ListView.builder(
@@ -584,22 +595,21 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
           itemBuilder: (context, index) {
             final itemData = items[index]!;
             return _buildItemCard(
-              itemData['item'] as Item, 
-              itemData['timestamp'] as Timestamp?,
-              collectionName: 'items'
-            );
+                itemData['item'] as Item, itemData['timestamp'] as Timestamp?,
+                collectionName: 'items');
           },
         );
       },
     );
   }
-  
+
   Widget _buildBeesedItemsList(String userId) {
     return FutureBuilder<QuerySnapshot>(
       future: _firestore
           .collection('beesed_items')
           .where('itemOwnerId', isEqualTo: userId)
-          .where('itemStatus', isNotEqualTo: 'deleted')  // Add this line to exclude deleted items
+          .where('itemStatus',
+              isNotEqualTo: 'deleted') // Add this line to exclude deleted items
           .get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -622,7 +632,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                 Text(
                   "Error loading beesed items",
                   style: GoogleFonts.nunito(
-                    color: Colors.red.shade300, 
+                    color: Colors.red.shade300,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -631,7 +641,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                 Text(
                   snapshot.error.toString(),
                   style: GoogleFonts.nunito(
-                    color: textLight, 
+                    color: textLight,
                     fontSize: 12,
                   ),
                   textAlign: TextAlign.center,
@@ -643,10 +653,9 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return _buildEmptyState(
-            icon: Icons.check_circle_outline,
-            message: "No beesed items found",
-            description: "Items you mark as BEESED will appear here"
-          );
+              icon: Icons.check_circle_outline,
+              message: "No beesed items found",
+              description: "Items you mark as BEESED will appear here");
         }
 
         // Sort items by beesedDate (most recent first)
@@ -654,36 +663,39 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
         sortedDocs.sort((a, b) {
           final aData = a.data() as Map<String, dynamic>;
           final bData = b.data() as Map<String, dynamic>;
-          
+
           final Timestamp? aTimestamp = aData['beesedDate'] as Timestamp?;
           final Timestamp? bTimestamp = bData['beesedDate'] as Timestamp?;
-          
+
           if (aTimestamp == null && bTimestamp == null) return 0;
           if (aTimestamp == null) return 1;
           if (bTimestamp == null) return -1;
-          
-          return bTimestamp.compareTo(aTimestamp); // Descending order (newest first)
+
+          return bTimestamp
+              .compareTo(aTimestamp); // Descending order (newest first)
         });
 
-        final items = sortedDocs.map((doc) {
-          try {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-            return {
-              'item': Item.fromJson(data, doc.id),
-              'timestamp': data['beesedDate'] as Timestamp?,
-            };
-          } catch (e) {
-            print("Error parsing beesed item: $e");
-            return null;
-          }
-        }).where((item) => item != null).toList();
+        final items = sortedDocs
+            .map((doc) {
+              try {
+                Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+                return {
+                  'item': Item.fromJson(data, doc.id),
+                  'timestamp': data['beesedDate'] as Timestamp?,
+                };
+              } catch (e) {
+                print("Error parsing beesed item: $e");
+                return null;
+              }
+            })
+            .where((item) => item != null)
+            .toList();
 
         if (items.isEmpty) {
           return _buildEmptyState(
-            icon: Icons.check_circle_outline,
-            message: "No beesed items found",
-            description: "Items you mark as BEESED will appear here"
-          );
+              icon: Icons.check_circle_outline,
+              message: "No beesed items found",
+              description: "Items you mark as BEESED will appear here");
         }
 
         return ListView.builder(
@@ -693,16 +705,14 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
           itemBuilder: (context, index) {
             final itemData = items[index]!;
             return _buildItemCard(
-              itemData['item'] as Item, 
-              itemData['timestamp'] as Timestamp?,
-              collectionName: 'beesed_items'
-            );
+                itemData['item'] as Item, itemData['timestamp'] as Timestamp?,
+                collectionName: 'beesed_items');
           },
         );
       },
     );
   }
-  
+
   Widget _buildEmptyState({
     required IconData icon,
     required String message,
@@ -765,16 +775,16 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       ),
     );
   }
-  
+
   String _formatDate(Timestamp? timestamp) {
     if (timestamp == null) {
       return 'Date not available';
     }
-    
+
     final DateTime date = timestamp.toDate();
     final DateTime now = DateTime.now();
     final Duration difference = now.difference(date);
-    
+
     if (difference.inDays == 0) {
       return 'Today, ${DateFormat('h:mm a').format(date)}';
     } else if (difference.inDays == 1) {
@@ -785,8 +795,9 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       return DateFormat('MMM d, yyyy').format(date);
     }
   }
-  
-  Widget _buildItemCard(Item item, Timestamp? timestamp, {required String collectionName}) {
+
+  Widget _buildItemCard(Item item, Timestamp? timestamp,
+      {required String collectionName}) {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -840,12 +851,15 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                                 color: Colors.grey[100],
                                 child: Center(
                                   child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
                                             loadingProgress.expectedTotalBytes!
                                         : null,
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[400]!),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.grey[400]!),
                                   ),
                                 ),
                               );
@@ -856,7 +870,8 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                                 width: 100,
                                 height: 100,
                                 color: Colors.grey[100],
-                                child: Icon(Icons.broken_image, color: Colors.grey),
+                                child: Icon(Icons.broken_image,
+                                    color: Colors.grey),
                               );
                             },
                           )
@@ -868,9 +883,9 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                           ),
                   ),
                 ),
-                
+
                 SizedBox(width: 16),
-                
+
                 // Item details
                 Expanded(
                   child: Column(
@@ -881,21 +896,22 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: _selectedSegment == 0 
-                                  ? Colors.orange.withOpacity(0.1) 
+                              color: _selectedSegment == 0
+                                  ? Colors.orange.withOpacity(0.1)
                                   : lightAccent,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Row(
                               children: [
                                 Icon(
-                                  _selectedSegment == 0 
-                                      ? Icons.inventory_2_outlined 
+                                  _selectedSegment == 0
+                                      ? Icons.inventory_2_outlined
                                       : Icons.check_circle_outline,
-                                  color: _selectedSegment == 0 
-                                      ? Colors.orange 
+                                  color: _selectedSegment == 0
+                                      ? Colors.orange
                                       : primaryAccent,
                                   size: 12,
                                 ),
@@ -905,22 +921,22 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                                   style: GoogleFonts.nunito(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: _selectedSegment == 0 
-                                        ? Colors.orange 
+                                    color: _selectedSegment == 0
+                                        ? Colors.orange
                                         : primaryAccent,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          
+
                           // Date and delete button
                           Row(
                             children: [
                               Text(
                                 _formatDate(timestamp),
                                 style: GoogleFonts.nunito(
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w500,
                                   color: textLight,
                                 ),
@@ -930,12 +946,15 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                               InkWell(
                                 onTap: () {
                                   if (item.itemId != null) {
-                                    _showDeleteItemConfirmation(item.itemId!, item.title, collectionName);
+                                    _showDeleteItemConfirmation(item.itemId!,
+                                        item.title, collectionName);
                                   } else {
-                                    _showSnackBar('Cannot delete item: Missing item ID', isError: true);
+                                    _showSnackBar(
+                                        'Cannot delete item: Missing item ID',
+                                        isError: true);
                                   }
                                 },
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(2),
                                 child: Padding(
                                   padding: EdgeInsets.all(4),
                                   child: Icon(
@@ -949,9 +968,9 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                           ),
                         ],
                       ),
-                      
+
                       SizedBox(height: 8),
-                      
+
                       // Item title
                       Text(
                         item.title,
@@ -965,7 +984,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 6),
-                      
+
                       // Item description
                       Text(
                         item.description ?? "",
@@ -978,7 +997,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 10),
-                      
+
                       // Tags and price
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -986,29 +1005,36 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
                         children: [
                           // Tags in a row with limited width
                           Expanded(
-                            child: (item.category != null && item.category!.isNotEmpty) || 
-                                  (item.condition != null && item.condition!.isNotEmpty) ||
-                                  (item.itemType != null && item.itemType!.isNotEmpty)
-                              ? Wrap(
-                                  spacing: 4,
-                                  runSpacing: 4,
-                                  children: [
-                                    if (item.category != null && item.category!.isNotEmpty)
-                                      _buildChip(item.category!),
-                                    if (item.condition != null && item.condition!.isNotEmpty)
-                                      _buildChip(item.condition!),
-                                    if (item.itemType != null && item.itemType!.isNotEmpty)
-                                      _buildChip(item.itemType!),
-                                  ],
-                                )
-                              : SizedBox.shrink(),
+                            child: (item.category != null &&
+                                        item.category!.isNotEmpty) ||
+                                    (item.condition != null &&
+                                        item.condition!.isNotEmpty) ||
+                                    (item.itemType != null &&
+                                        item.itemType!.isNotEmpty)
+                                ? Wrap(
+                                    spacing: 4,
+                                    runSpacing: 4,
+                                    children: [
+                                      if (item.category != null &&
+                                          item.category!.isNotEmpty)
+                                        _buildChip(item.category!),
+                                      if (item.condition != null &&
+                                          item.condition!.isNotEmpty)
+                                        _buildChip(item.condition!),
+                                      if (item.itemType != null &&
+                                          item.itemType!.isNotEmpty)
+                                        _buildChip(item.itemType!),
+                                    ],
+                                  )
+                                : SizedBox.shrink(),
                           ),
-                          
+
                           SizedBox(width: 8),
-                          
+
                           // Price
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.grey[100],
                               borderRadius: BorderRadius.circular(6),
@@ -1030,7 +1056,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
               ],
             ),
           ),
-          
+
           // Footer with favorite count if present
           if (item.favoriteCount > 0)
             Padding(
@@ -1067,7 +1093,7 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       ),
     );
   }
-  
+
   Widget _buildChip(String label) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1085,8 +1111,9 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
       ),
     );
   }
-  
-  void _showSnackBar(String message, {bool isError = false, bool isSuccess = false}) {
+
+  void _showSnackBar(String message,
+      {bool isError = false, bool isSuccess = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -1096,20 +1123,23 @@ class _ItemHistoryScreenState extends State<ItemHistoryScreen> with SingleTicker
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: isError ? Colors.red : (isSuccess ? Colors.grey[200] : Colors.grey[200]),
+        backgroundColor: isError
+            ? Colors.red
+            : (isSuccess ? Colors.grey[200] : Colors.grey[200]),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
         margin: EdgeInsets.all(16),
         elevation: 2,
-        action: isSuccess ? SnackBarAction(
-          label: 'DISMISS',
-          textColor: primaryAccent,
-          onPressed: () {},
-        ) : null,
+        action: isSuccess
+            ? SnackBarAction(
+                label: 'DISMISS',
+                textColor: primaryAccent,
+                onPressed: () {},
+              )
+            : null,
       ),
     );
   }
 }
-

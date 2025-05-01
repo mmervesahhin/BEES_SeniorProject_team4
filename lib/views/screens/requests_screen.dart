@@ -259,6 +259,7 @@ class _RequestsScreenState extends State<RequestsScreen>
           ),
           currentIndex: _selectedIndex,
           elevation: 0,
+          iconSize: 22,
           onTap: _onItemTapped,
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(

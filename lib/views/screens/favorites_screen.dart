@@ -86,7 +86,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+            ))
           : favoriteItems.isEmpty
               ? Center(
                   child: Column(
@@ -258,6 +262,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: primaryYellow,
         unselectedItemColor: textLight,
+        backgroundColor: Colors.white,
         selectedLabelStyle: GoogleFonts.nunito(
           fontWeight: FontWeight.bold,
           fontSize: 12,
@@ -266,6 +271,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           fontSize: 12,
         ),
         currentIndex: _selectedIndex,
+        iconSize: 22,
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

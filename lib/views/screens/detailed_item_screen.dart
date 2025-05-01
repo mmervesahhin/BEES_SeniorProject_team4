@@ -7,6 +7,7 @@ import 'package:bees/views/screens/home_screen.dart';
 import 'package:bees/views/screens/requests_screen.dart';
 import 'package:bees/views/screens/user_profile_screen.dart';
 import 'package:bees/views/screens/others_user_profile_screen.dart';
+import 'package:bees/views/screens/edit_item_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bees/controllers/detailed_item_controller.dart';
@@ -459,13 +460,25 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
         ),
       ),
       actions: [
-        Container(
-          margin: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            shape: BoxShape.circle,
+        if (itemDetails!["itemOwnerId"] !=
+            FirebaseAuth.instance.currentUser!.uid)
+          Container(
+            margin: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.report_problem_outlined,
+                color: AppColors.accentRed,
+              ),
+              onPressed: () {
+                _showReportDialog(context);
+              },
+              tooltip: "Report Item",
+            ),
           ),
-        ),
         Container(
           margin: EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -587,7 +600,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                         padding:
                             EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryYellow.withOpacity(0.1),
+                          color: AppColors.primaryYellow.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
@@ -641,6 +654,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
           if (itemDetails!["description"] != null &&
               itemDetails!["description"].toString().trim().isNotEmpty)
             Container(
+              width: double.infinity,
               padding: EdgeInsets.all(16),
               color: Colors.white,
               child: Column(
@@ -669,7 +683,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
 
           SizedBox(height: 8),
 
-          // Departments section
+          // Departments section - UPDATED TO SHOW COMPACT FORMAT
           if (item!.departments != null &&
               (item!.departments as List).isNotEmpty)
             Container(
@@ -678,34 +692,22 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Departments",
-                    style: GoogleFonts.nunito(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
+                  Row(
+                    children: [
+                      Icon(Icons.school, color: AppColors.primaryYellow),
+                      SizedBox(width: 8),
+                      Text(
+                        "Departments",
+                        style: GoogleFonts.nunito(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: List.generate(itemDetails!["departments"].length,
-                        (index) {
-                      return Chip(
-                        label: Text(
-                          itemDetails!["departments"][index],
-                          style: GoogleFonts.nunito(
-                            fontSize: 14,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        backgroundColor: AppColors.lightYellow,
-                        padding: EdgeInsets.symmetric(horizontal: 4),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      );
-                    }),
-                  ),
+                  _buildCompactDepartmentsList(itemDetails!["departments"]),
                 ],
               ),
             ),
@@ -809,6 +811,31 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                         ],
                       ),
                     ),
+                    Spacer(),
+                    if (itemDetails!["itemOwnerId"] !=
+                        FirebaseAuth.instance.currentUser!.uid)
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          _navigateToMessageScreen(item, "Item");
+                        },
+                        icon: Icon(Icons.message, size: 18),
+                        label: Text(
+                          "Contact",
+                          style: GoogleFonts.nunito(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryYellow,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                        ),
+                      ),
                   ],
                 ),
               ],
@@ -826,7 +853,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.security, color: AppColors.accentBlue),
+                    Icon(Icons.security, color: AppColors.primaryYellow),
                     SizedBox(width: 8),
                     Text(
                       "Safety Tips",
@@ -876,6 +903,47 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
         ],
       ),
     );
+  }
+
+  // New method to display departments in compact format
+  Widget _buildCompactDepartmentsList(List<dynamic> departments) {
+    if (departments.length <= 3) {
+      // If there are only 1-3 departments, show them all
+      return Text(
+        departments.join(", "),
+        style: GoogleFonts.nunito(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textDark,
+        ),
+      );
+    } else {
+      // If there are more than 3 departments, show first 3 + count of remaining
+      return Row(
+        children: [
+          Text(
+            "${departments[0]}, ${departments[1]}, ${departments[2]}",
+            style: GoogleFonts.nunito(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textDark,
+            ),
+          ),
+          SizedBox(width: 4),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+            child: Text(
+              "+${departments.length - 3}",
+              style: GoogleFonts.nunito(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildTag(String text, Color color) {
@@ -945,14 +1013,11 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // Edit item functionality
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "Edit functionality coming soon!",
-                        style: GoogleFonts.nunito(),
-                      ),
-                      behavior: SnackBarBehavior.floating,
+                  // Navigate to edit item screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditItemScreen(item: item!),
                     ),
                   );
                 },
@@ -964,7 +1029,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accentBlue,
+                  backgroundColor: AppColors.primaryYellow,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(

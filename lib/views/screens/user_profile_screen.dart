@@ -2627,8 +2627,10 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'First name is required';
+                  } else if (value.length < 2) {
+                    return 'First name must be at least 2 characters long';
+                    return null;
                   }
-                  return null;
                 },
                 style: GoogleFonts.nunito(color: textDark),
               ),
@@ -2659,6 +2661,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Last name is required';
+                  } else if (value.length < 2) {
+                    return 'Last name must be at least 2 characters long';
                   }
                   return null;
                 },
@@ -2956,7 +2960,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         selectedItemColor: primaryYellow,
         unselectedItemColor: textMedium,
         backgroundColor: Colors.white,
-        elevation: 0,
         iconSize: 22,
         currentIndex: _controller.selectedIndex,
         onTap: (index) => _controller.navigateTo(context, index),

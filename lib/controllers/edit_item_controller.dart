@@ -128,16 +128,6 @@ class EditItemController extends ChangeNotifier {
     try {
       await model.saveItem();
 
-      // Show success message
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Item updated successfully'),
-            backgroundColor: const Color(0xFFFFD700),
-          ),
-        );
-      }
-
       return true;
     } catch (e) {
       print('Error updating item: $e');

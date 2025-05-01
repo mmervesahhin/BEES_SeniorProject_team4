@@ -283,6 +283,7 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
                             ),
                           ),
                           SizedBox(height: 4),
+                          Row(),
                         ],
                       ),
                     ),
@@ -374,8 +375,8 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
           SizedBox(height: 8),
 
           // Departments section
-          if (itemDetails!["departments"] != null &&
-              (itemDetails!["departments"] as List).isNotEmpty)
+          if (item!.departments != null &&
+              (item!.departments as List).isNotEmpty)
             Container(
               padding: EdgeInsets.all(16),
               color: Colors.white,
@@ -384,7 +385,7 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.school, color: AppColors.accentBlue),
+                      Icon(Icons.school, color: AppColors.primaryYellow),
                       SizedBox(width: 8),
                       Text(
                         "Departments",
@@ -397,60 +398,29 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
                     ],
                   ),
                   SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.backgroundColor,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.dividerColor),
-                    ),
-                    padding: EdgeInsets.all(12),
-                    child: Column(
-                      children: List.generate(
-                          itemDetails!["departments"].length, (index) {
-                        return Padding(
-                          padding: EdgeInsets.only(
-                              bottom:
-                                  index < itemDetails!["departments"].length - 1
-                                      ? 8
-                                      : 0),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: AppColors.lightYellow,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    "${index + 1}",
-                                    style: GoogleFonts.nunito(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primaryYellow,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  itemDetails!["departments"][index],
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 16,
-                                    color: AppColors.textDark,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
+                  _buildCompactDepartmentsList(itemDetails!["departments"]),
                 ],
               ),
             ),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.dividerColor),
+            ),
+            padding: EdgeInsets.all(12),
+            child: Column(
+              children:
+                  List.generate(itemDetails!["departments"].length, (index) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                      bottom: index < itemDetails!["departments"].length - 1
+                          ? 8
+                          : 0),
+                );
+              }),
+            ),
+          ),
 
           SizedBox(height: 8),
 
@@ -586,6 +556,66 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
               ],
             ),
           ),
+
+          SizedBox(height: 16),
+
+          // Admin actions
+          Container(
+            padding: EdgeInsets.all(16),
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.admin_panel_settings,
+                        color: AppColors.accentBlue),
+                    SizedBox(width: 8),
+                    Text(
+                      "Admin Actions",
+                      style: GoogleFonts.nunito(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          _adminController.showItemRemoveOptions(context,
+                              Item.fromJson(itemDetails!, widget.itemId));
+                        },
+                        icon: Icon(Icons.delete, size: 18),
+                        label: Text(
+                          "Remove Item",
+                          style: GoogleFonts.nunito(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accentRed,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Bottom padding
+          SizedBox(height: 24),
         ],
       ),
     );
@@ -608,6 +638,46 @@ class _AdminDetailedItemScreenState extends State<AdminDetailedItemScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildCompactDepartmentsList(List<dynamic> departments) {
+    if (departments.length <= 3) {
+      // If there are only 1-3 departments, show them all
+      return Text(
+        departments.join(", "),
+        style: GoogleFonts.nunito(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textDark,
+        ),
+      );
+    } else {
+      // If there are more than 3 departments, show first 3 + count of remaining
+      return Row(
+        children: [
+          Text(
+            "${departments[0]}, ${departments[1]}, ${departments[2]}",
+            style: GoogleFonts.nunito(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textDark,
+            ),
+          ),
+          SizedBox(width: 4),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+            child: Text(
+              "+${departments.length - 3}",
+              style: GoogleFonts.nunito(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildBottomNavigationBar() {

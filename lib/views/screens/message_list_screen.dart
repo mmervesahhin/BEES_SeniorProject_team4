@@ -197,7 +197,87 @@ class _MessageListScreenState extends State<MessageListScreen> {
           var userData = snapshot.data!.data() as Map<String, dynamic>?;
 
           if (userData == null) {
-            return _buildErrorChatItem("User data not found");
+            return Dismissible(
+              key: Key("error_$chatRoomId"),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.delete, color: Colors.white),
+                    SizedBox(height: 4),
+                    Text(
+                      'Delete',
+                      style: GoogleFonts.nunito(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              confirmDismiss: (direction) async {
+                return await showDialog<bool>(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text(
+                        "Delete Conversation",
+                        style: GoogleFonts.nunito(
+                          fontWeight: FontWeight.bold,
+                          color: textDark,
+                        ),
+                      ),
+                      content: Text(
+                        "Are you sure you want to delete this conversation?",
+                        style: GoogleFonts.nunito(color: textDark),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text(
+                            "Cancel",
+                            style: GoogleFonts.nunito(
+                              color: textLight,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            "Delete",
+                            style:
+                                GoogleFonts.nunito(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    );
+                  },
+                );
+              },
+              onDismissed: (direction) async {
+                await FirebaseFirestore.instance
+                    .collection('chatRooms')
+                    .doc(chatRoomId)
+                    .delete();
+              },
+              child: _buildErrorChatItem("User data not found"),
+            );
           }
 
           String firstName = userData['firstName'] ?? 'Unknown';
