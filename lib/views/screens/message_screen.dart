@@ -85,19 +85,41 @@ class _MessageScreenState extends State<MessageScreen> {
     }
   }
 
-  void _navigateToProfile(String userId, BuildContext context) {
+  void _navigateToProfile(String userId, BuildContext context) async {
+    // Don't navigate if it's the current user
     if (userId == auth_user.FirebaseAuth.instance.currentUser!.uid) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => UserProfileScreen()),
       );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => OthersUserProfileScreen(userId: userId)),
-      );
+      return;
     }
+
+    // Check if the other user is blocked by current user or has blocked current user
+    bool isBlockedByMe = await _blockedUserController.isUserBlocked(userId);
+    bool isBlockedByThem = await _blockedUserController.isBlockedByUser(
+        auth_user.FirebaseAuth.instance.currentUser!.uid, userId);
+
+    if (isBlockedByMe || isBlockedByThem) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You cannot view this profile',
+            style: GoogleFonts.nunito(),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // If not blocked, navigate to profile
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OthersUserProfileScreen(userId: userId),
+      ),
+    );
   }
 
   Future<void> _addUserToRemovedUserIds(
