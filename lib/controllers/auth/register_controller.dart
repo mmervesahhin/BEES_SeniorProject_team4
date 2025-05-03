@@ -27,7 +27,8 @@ class RegisterController {
     if (value == null || value.isEmpty) {
       return 'Please enter your email';
     }
-    if (!RegExp(r"^[a-zA-Z0-9._%+-]+@(?:ug\.)?bilkent\.edu\.tr$").hasMatch(value)) {
+    if (!RegExp(r"^[a-zA-Z0-9._%+-]+@(?:ug\.)?bilkent\.edu\.tr$")
+        .hasMatch(value)) {
       return 'Enter a valid Bilkent email address';
     }
     return null;
@@ -40,8 +41,11 @@ class RegisterController {
     if (value.length < 8 || value.length > 16) {
       return 'Password must be between 8 and 16 characters';
     }
-    if (!RegExp("^(?=.*[A-Z])(?=.*\\d)(?=.*[!\"#\$%&'()*+,-./:;<=>?@[\\]^_`{|}~]).{8,}\$").hasMatch(value)) {
-      return 'Password must be at least 8 characters long and contain at least one uppercase letter, one digit, and one special character.';}
+    if (!RegExp(
+            "^(?=.*[A-Z])(?=.*\\d)(?=.*[!\"#\$%&'()*+,-./:;<=>?@[\\]^_`{|}~]).{8,}\$")
+        .hasMatch(value)) {
+      return 'Password must be at least 8 characters long and contain at least one uppercase letter, one digit, and one special character.';
+    }
     return null;
   }
 
@@ -55,79 +59,90 @@ class RegisterController {
     return null;
   }
 
-void submitForm() async {
-  if (formKey.currentState?.validate() ?? false) {
-    try {
-      // Kullanıcıyı Firebase Auth'ta oluştur
-      auth.UserCredential userCredential = await auth.FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
-      );
-
-      auth.User? user = userCredential.user;
-      if (user != null) {
-        await user.sendEmailVerification();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification email sent! Please check your inbox.')),
+  void submitForm() async {
+    if (formKey.currentState?.validate() ?? false) {
+      try {
+        // Kullanıcıyı Firebase Auth'ta oluştur
+        auth.UserCredential userCredential =
+            await auth.FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: emailController.text,
+          password: passwordController.text,
         );
 
-        // **Kullanıcıyı çıkış yaptır**
-        await auth.FirebaseAuth.instance.signOut();
+        auth.User? user = userCredential.user;
+        if (user != null) {
+          await user.sendEmailVerification();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text('Verification email sent! Please check your inbox.')),
+          );
 
-        bool isVerified = false;
-        while (!isVerified) {
-          await Future.delayed(Duration(seconds: 3)); // 3 saniye bekleyerek Firebase'e yük bindirmeyelim
+          // **Kullanıcıyı çıkış yaptır**
+          await auth.FirebaseAuth.instance.signOut();
 
-          try {
-            // Kullanıcıyı tekrar giriş yaptır ve kontrol et
-            auth.UserCredential reLoginCredential = await auth.FirebaseAuth.instance.signInWithEmailAndPassword(
-              email: emailController.text,
-              password: passwordController.text,
-            );
+          bool isVerified = false;
+          while (!isVerified) {
+            await Future.delayed(Duration(
+                seconds:
+                    3)); // 3 saniye bekleyerek Firebase'e yük bindirmeyelim
 
-            auth.User? reUser = reLoginCredential.user;
-            if (reUser != null) {
-              await reUser.reload(); // **Kullanıcı verisini güncelle**
-              if (reUser.emailVerified) {
-                isVerified = true;
-              } else {
-                await auth.FirebaseAuth.instance.signOut(); // Hâlâ doğrulanmadıysa çıkış yap
+            try {
+              // Kullanıcıyı tekrar giriş yaptır ve kontrol et
+              auth.UserCredential reLoginCredential =
+                  await auth.FirebaseAuth.instance.signInWithEmailAndPassword(
+                email: emailController.text,
+                password: passwordController.text,
+              );
+
+              auth.User? reUser = reLoginCredential.user;
+              if (reUser != null) {
+                await reUser.reload(); // **Kullanıcı verisini güncelle**
+                if (reUser.emailVerified) {
+                  isVerified = true;
+                } else {
+                  await auth.FirebaseAuth.instance
+                      .signOut(); // Hâlâ doğrulanmadıysa çıkış yap
+                }
               }
+            } catch (e) {
+              print("Re-login failed: $e"); // Hata olursa terminale yaz
             }
-          } catch (e) {
-            print("Re-login failed: $e"); // Hata olursa terminale yaz
           }
+
+          // 🔥 Kullanıcı doğrulandıysa Firestore’a ekle
+          String hashedPassword =
+              BCrypt.hashpw(passwordController.text, BCrypt.gensalt());
+
+          User newUser = User(
+            userID: user.uid,
+            firstName: firstNameController.text,
+            lastName: lastNameController.text,
+            emailAddress: emailController.text,
+            hashedPassword: hashedPassword,
+            profilePicture: '',
+            userRating: 0.0,
+            accountStatus: 'active',
+            isAdmin: false,
+            favoriteItems: [],
+          );
+
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(newUser.userID)
+              .set(newUser.toMap());
+
+          // **Başarılı kayıt sonrası giriş ekranına yönlendir**
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
         }
-
-        // 🔥 Kullanıcı doğrulandıysa Firestore’a ekle
-        String hashedPassword = BCrypt.hashpw(passwordController.text, BCrypt.gensalt());
-
-        User newUser = User(
-          userID: user.uid,
-          firstName: firstNameController.text,
-          lastName: lastNameController.text,
-          emailAddress: emailController.text,
-          hashedPassword: hashedPassword,
-          profilePicture: '',
-          userRating: 0.0,
-          accountStatus: 'active',
-          isAdmin: false,
-          favoriteItems: [],
-        );
-
-        await FirebaseFirestore.instance.collection('users').doc(newUser.userID).set(newUser.toMap());
-
-        // **Başarılı kayıt sonrası giriş ekranına yönlendir**
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to register: $e')),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to register: $e')),
-      );
     }
   }
-}
 }

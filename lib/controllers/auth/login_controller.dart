@@ -17,7 +17,7 @@ class LoginController {
     if (formKey.currentState?.validate() == true) {
       try {
         // Show loading indicator
-        _showLoadingDialog(context);
+        _showLoadingDialog(context, "Logging in...");
 
         // Attempt to sign in with Firebase
         UserCredential userCredential = await _auth.signInWithEmailAndPassword(
@@ -32,7 +32,7 @@ class LoginController {
           // Check if email is verified
           if (!userCredential.user!.emailVerified) {
             await _auth.signOut();
-            _showVerificationDialog(context, emailAddress);
+            _showVerificationDialog(context, emailAddress, password);
             return;
           }
 
@@ -164,40 +164,9 @@ class LoginController {
     }
   }
 
-  // Show loading dialog
-  void _showLoadingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC857)),
-                ),
-                SizedBox(width: 20),
-                Text(
-                  "Logging in...",
-                  style: GoogleFonts.nunito(
-                    fontSize: 16,
-                    color: Color(0xFF333333),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   // Show email verification dialog
-  void _showVerificationDialog(BuildContext context, String email) {
+  void _showVerificationDialog(
+      BuildContext context, String email, String password) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -263,25 +232,77 @@ class LoginController {
                 ),
               ),
               onPressed: () async {
+                // Show loading indicator
+                _showLoadingDialog(context, "Sending verification email...");
+
                 try {
-                  // Get current user
-                  User? user = _auth.currentUser;
-                  if (user != null) {
+                  // Sign in the user again to get a fresh user object
+                  UserCredential userCredential =
+                      await _auth.signInWithEmailAndPassword(
+                    email: email,
+                    password: password,
+                  );
+
+                  if (userCredential.user != null) {
                     // Send verification email
-                    await user.sendEmailVerification();
-                    Navigator.of(context).pop();
-                    _showSuccess(context, "Verification email sent to $email");
+                    await userCredential.user!.sendEmailVerification();
+
+                    // Sign out the user after sending verification
+                    await _auth.signOut();
+
+                    // Close loading dialog and verification dialog
+                    Navigator.of(context).pop(); // Close loading dialog
+                    Navigator.of(context).pop(); // Close verification dialog
+
+                    // Show success message
+                    _showSuccess(context,
+                        "Verification email sent to $email. Please check your inbox and spam folder.");
                   } else {
-                    // Try to sign in again to get the user
-                    await _auth.signInWithEmailAndPassword(
-                      email: email,
-                      password: "", // This will fail but we just need the user
-                    );
+                    throw Exception("Failed to get user object");
                   }
-                } catch (e) {
+                } on FirebaseAuthException catch (e) {
+                  // Close loading dialog if it's showing
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+
+                  // Handle specific errors
+                  String errorMessage;
+                  switch (e.code) {
+                    case 'too-many-requests':
+                      errorMessage =
+                          "Too many verification attempts. Please try again later.";
+                      break;
+                    case 'user-not-found':
+                      errorMessage =
+                          "User account not found. Please register first.";
+                      break;
+                    case 'wrong-password':
+                      errorMessage =
+                          "Incorrect password. Please try logging in again.";
+                      break;
+                    default:
+                      errorMessage =
+                          "Failed to send verification email: ${e.message}";
+                  }
+
+                  // Close verification dialog
                   Navigator.of(context).pop();
-                  _showError(context,
-                      "Failed to send verification email. Please try again later.");
+
+                  // Show error message
+                  _showError(context, errorMessage);
+                } catch (e) {
+                  // Close loading dialog if it's showing
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+
+                  // Close verification dialog
+                  Navigator.of(context).pop();
+
+                  // Show error message
+                  _showError(
+                      context, "An unexpected error occurred: ${e.toString()}");
                 }
               },
               child: Text(
@@ -423,6 +444,38 @@ class LoginController {
         margin: EdgeInsets.all(16),
         duration: Duration(seconds: 4),
       ),
+    );
+  }
+
+  // Show loading dialog
+  void _showLoadingDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC857)),
+                ),
+                SizedBox(width: 20),
+                Text(
+                  message,
+                  style: GoogleFonts.nunito(
+                    fontSize: 16,
+                    color: Color(0xFF333333),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
