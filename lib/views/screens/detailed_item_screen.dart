@@ -125,6 +125,7 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.7,
                 ),
+                color: Colors.white,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -572,10 +573,21 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
           // Title and price section
           Container(
             padding: EdgeInsets.all(16),
-            color: Colors.white,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title and price section with improved layout
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -586,22 +598,27 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                           Text(
                             itemDetails!["title"],
                             style: GoogleFonts.nunito(
-                              fontSize: 22,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: AppColors.textDark,
+                              height: 1.2,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          SizedBox(height: 8),
                         ],
                       ),
                     ),
                     if (itemDetails!["price"] != 0)
                       Container(
                         padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryYellow.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.primaryYellow.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primaryYellow.withOpacity(0.3),
+                            width: 1.5,
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -609,18 +626,27 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                             Text(
                               '₺${itemDetails!["price"]}',
                               style: GoogleFonts.nunito(
-                                fontSize: 24,
+                                fontSize: 26,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryYellow,
                               ),
                             ),
                             if (itemDetails!["paymentPlan"] != null)
-                              Text(
-                                itemDetails!["paymentPlan"],
-                                style: GoogleFonts.nunito(
-                                  fontSize: 14,
-                                  fontStyle: FontStyle.italic,
-                                  color: AppColors.textLight,
+                              Container(
+                                margin: EdgeInsets.only(top: 2),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.7),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  itemDetails!["paymentPlan"],
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textLight,
+                                  ),
                                 ),
                               ),
                           ],
@@ -629,26 +655,44 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                   ],
                 ),
 
-                SizedBox(height: 16),
+                SizedBox(height: 20),
 
-                // Tags row
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                // Tags row with improved styling
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTag(itemDetails!["category"], AppColors.accentBlue),
-                    _buildTag(itemDetails!["condition"], AppColors.accentGreen),
-                    if (itemDetails!["itemType"] != null &&
-                        itemDetails!["itemType"].toString().isNotEmpty)
-                      _buildTag(
-                          itemDetails!["itemType"], AppColors.primaryYellow),
+                    Text(
+                      "Item Details",
+                      style: GoogleFonts.nunito(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        _buildEnhancedTag(itemDetails!["category"],
+                            AppColors.accentBlue, Icons.category_outlined),
+                        _buildEnhancedTag(
+                            itemDetails!["condition"],
+                            AppColors.accentGreen,
+                            Icons.auto_fix_high_outlined),
+                        if (itemDetails!["itemType"] != null &&
+                            itemDetails!["itemType"].toString().isNotEmpty)
+                          _buildEnhancedTag(itemDetails!["itemType"],
+                              AppColors.primaryYellow, Icons.style_outlined),
+                      ],
+                    ),
                   ],
                 ),
               ],
             ),
           ),
 
-          SizedBox(height: 8),
+          SizedBox(height: 12),
 
           // Description section
           if (itemDetails!["description"] != null &&
@@ -683,33 +727,14 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
 
           SizedBox(height: 8),
 
-          // Departments section - UPDATED TO SHOW COMPACT FORMAT
+          // Departments section - UPDATED TO USE EXPANSION TILE
           if (item!.departments != null &&
               (item!.departments as List).isNotEmpty)
             Container(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.school, color: AppColors.primaryYellow),
-                      SizedBox(width: 8),
-                      Text(
-                        "Departments",
-                        style: GoogleFonts.nunito(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 12),
-                  _buildCompactDepartmentsList(itemDetails!["departments"]),
-                ],
-              ),
+              child:
+                  _buildDepartmentsExpansionTile(itemDetails!["departments"]),
             ),
 
           SizedBox(height: 8),
@@ -730,114 +755,87 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
                   ),
                 ),
                 SizedBox(height: 16),
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        if (itemDetails!["itemOwnerId"] != null) {
-                          if (itemDetails!["itemOwnerId"] ==
-                              FirebaseAuth.instance.currentUser!.uid) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => UserProfileScreen(),
-                              ),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => OthersUserProfileScreen(
-                                    userId: itemDetails!["itemOwnerId"]),
-                              ),
-                            );
-                          }
+                Row(children: [
+                  GestureDetector(
+                    onTap: () {
+                      if (itemDetails!["itemOwnerId"] != null) {
+                        if (itemDetails!["itemOwnerId"] ==
+                            FirebaseAuth.instance.currentUser!.uid) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => UserProfileScreen(),
+                            ),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OthersUserProfileScreen(
+                                  userId: itemDetails!["itemOwnerId"]),
+                            ),
+                          );
                         }
-                      },
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundImage:
-                                itemDetails!["ownerProfilePicture"] != null &&
-                                        itemDetails!["ownerProfilePicture"]
-                                            .isNotEmpty
-                                    ? NetworkImage(
-                                        itemDetails!["ownerProfilePicture"])
-                                    : null,
-                            radius: 24,
-                            backgroundColor: AppColors.lightYellow,
-                            child: itemDetails!["ownerProfilePicture"] ==
-                                        null ||
-                                    itemDetails!["ownerProfilePicture"].isEmpty
-                                ? Icon(Icons.person,
-                                    color: AppColors.primaryYellow)
-                                : null,
-                          ),
-                          SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                itemDetails!["ownerFullName"] != null &&
-                                        itemDetails!["ownerFullName"].isNotEmpty
-                                    ? itemDetails!["ownerFullName"]
-                                    : "No Name",
-                                style: GoogleFonts.nunito(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textDark,
-                                ),
+                      }
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage:
+                              itemDetails!["ownerProfilePicture"] != null &&
+                                      itemDetails!["ownerProfilePicture"]
+                                          .isNotEmpty
+                                  ? NetworkImage(
+                                      itemDetails!["ownerProfilePicture"])
+                                  : null,
+                          radius: 24,
+                          backgroundColor: AppColors.lightYellow,
+                          child: itemDetails!["ownerProfilePicture"] == null ||
+                                  itemDetails!["ownerProfilePicture"].isEmpty
+                              ? Icon(Icons.person,
+                                  color: AppColors.primaryYellow)
+                              : null,
+                        ),
+                        SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              itemDetails!["ownerFullName"] != null &&
+                                      itemDetails!["ownerFullName"].isNotEmpty
+                                  ? itemDetails!["ownerFullName"]
+                                  : "No Name",
+                              style: GoogleFonts.nunito(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
                               ),
-                              SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.verified_user,
-                                    size: 14,
+                            ),
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.verified_user,
+                                  size: 14,
+                                  color: AppColors.accentGreen,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  "Verified Seller",
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 14,
                                     color: AppColors.accentGreen,
                                   ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "Verified Seller",
-                                    style: GoogleFonts.nunito(
-                                      fontSize: 14,
-                                      color: AppColors.accentGreen,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    Spacer(),
-                    if (itemDetails!["itemOwnerId"] !=
-                        FirebaseAuth.instance.currentUser!.uid)
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          _navigateToMessageScreen(item, "Item");
-                        },
-                        icon: Icon(Icons.message, size: 18),
-                        label: Text(
-                          "Contact",
-                          style: GoogleFonts.nunito(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryYellow,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                        ),
-                      ),
-                  ],
-                ),
+                  ),
+                  Spacer(),
+                ]),
               ],
             ),
           ),
@@ -874,76 +872,73 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
           ),
 
           SizedBox(height: 16),
-
-          // Report button
-          if (itemDetails!["itemOwnerId"] !=
-              FirebaseAuth.instance.currentUser!.uid)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: TextButton.icon(
-                onPressed: () {
-                  _showReportDialog(context);
-                },
-                icon: Icon(Icons.report_problem_outlined, size: 18),
-                label: Text(
-                  "Report this item",
-                  style: GoogleFonts.nunito(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.accentRed,
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-
-          // Bottom padding
-          SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  // New method to display departments in compact format
-  Widget _buildCompactDepartmentsList(List<dynamic> departments) {
-    if (departments.length <= 3) {
-      // If there are only 1-3 departments, show them all
-      return Text(
-        departments.join(", "),
-        style: GoogleFonts.nunito(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: AppColors.textDark,
-        ),
-      );
+  // New method to display departments with ExpansionTile
+  Widget _buildDepartmentsExpansionTile(List<dynamic> departments) {
+    String compactDisplay = "";
+
+    if (departments.length <= 2) {
+      compactDisplay = departments.join(", ");
     } else {
-      // If there are more than 3 departments, show first 3 + count of remaining
-      return Row(
-        children: [
-          Text(
-            "${departments[0]}, ${departments[1]}, ${departments[2]}",
-            style: GoogleFonts.nunito(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textDark,
-            ),
-          ),
-          SizedBox(width: 4),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-            child: Text(
-              "+${departments.length - 3}",
+      compactDisplay =
+          "${departments[0]}, ${departments[1]}, +${departments.length - 2}";
+    }
+
+    return Theme(
+      data: Theme.of(context).copyWith(
+        dividerColor: Colors.transparent,
+      ),
+      child: ExpansionTile(
+        title: Row(
+          children: [
+            Icon(Icons.school, color: AppColors.primaryYellow),
+            SizedBox(width: 8),
+            Text(
+              "Departments",
               style: GoogleFonts.nunito(
-                fontSize: 14,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textDark,
               ),
             ),
+          ],
+        ),
+        subtitle: Text(
+          compactDisplay,
+          style: GoogleFonts.nunito(
+            fontSize: 16,
+            color: AppColors.textDark,
+          ),
+        ),
+        childrenPadding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        tilePadding: EdgeInsets.zero,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: departments.map((department) {
+              return Chip(
+                label: Text(
+                  department,
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                backgroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            }).toList(),
           ),
         ],
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildTag(String text, Color color) {
@@ -1173,5 +1168,35 @@ class _DetailedItemScreenState extends State<DetailedItemScreen> {
         );
         break;
     }
+  }
+
+  Widget _buildEnhancedTag(String text, Color color, IconData icon) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: color,
+          ),
+          SizedBox(width: 6),
+          Text(
+            text,
+            style: GoogleFonts.nunito(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -44,7 +44,7 @@ class UploadItemPage extends StatefulWidget {
 
 class _UploadItemPageState extends State<UploadItemPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  
+
   // Color scheme
   final Color primaryYellow = Color(0xFFFFC857);
   final Color lightYellow = Color(0xFFFFE3A9);
@@ -68,15 +68,42 @@ class _UploadItemPageState extends State<UploadItemPage> {
 
   // Department list for multi-select dropdown
   List<String> departments = [
-    'AMER', 'ARCH', 'CHEM', 'COMD', 'CS', 'CTIS', 'ECON', 'EDU', 'EEE', 
-    'ELIT', 'FA', 'GRA', 'HART', 'IAED', 'IE', 'IR', 'LAUD', 'LAW', 
-    'MAN', 'MATH', 'MBG', 'ME', 'MSC', 'PHIL', 'PHYS', 'POLS', 'PREP', 
-    'PSYC', 'THM', 'THR', 'TRIN'
+    'AMER',
+    'ARCH',
+    'CHEM',
+    'COMD',
+    'CS',
+    'CTIS',
+    'ECON',
+    'EDU',
+    'EEE',
+    'ELIT',
+    'FA',
+    'GRA',
+    'HART',
+    'IAED',
+    'IE',
+    'IR',
+    'LAUD',
+    'LAW',
+    'MAN',
+    'MATH',
+    'MBG',
+    'ME',
+    'MSC',
+    'PHIL',
+    'PHYS',
+    'POLS',
+    'PREP',
+    'PSYC',
+    'THM',
+    'THR',
+    'TRIN'
   ];
 
   // Add departmentList with All Departments option
   late List<String> departmentList;
-  
+
   // Selected departments
   List<String> selectedDepartments = [];
 
@@ -84,16 +111,17 @@ class _UploadItemPageState extends State<UploadItemPage> {
   Map<String, dynamic> _filters = {
     'departments': <String>[],
   };
-  
+
   // Payment plan options
   String paymentPlan = 'Per Hour';
   bool isPaymentPlanEnabled = false;
   bool showCoverError = false;
-  
+
   @override
   void initState() {
     super.initState();
-    selectedDepartments = List<String>.from(departments); // Default to all departments
+    selectedDepartments =
+        List<String>.from(departments); // Default to all departments
     departmentList = ['All Departments'];
     departmentList.addAll(departments);
   }
@@ -105,7 +133,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
 
   // Check if all departments are selected
   bool get allSelected => selectedDepartments.length == departments.length;
-  
+
   // Toggle all departments selection
   void toggleSelection() {
     setState(() {
@@ -119,101 +147,105 @@ class _UploadItemPageState extends State<UploadItemPage> {
 
   // Add the _showDepartmentDialog method after the toggleSelection method
   void _showDepartmentDialog(StateSetter parentSetState) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      List<String> tempSelection = selectedDepartments.length == departments.length
-          ? List.from(departments)
-          : List.from(selectedDepartments);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        List<String> tempSelection =
+            selectedDepartments.length == departments.length
+                ? List.from(departments)
+                : List.from(selectedDepartments);
 
-      return StatefulBuilder(
-        builder: (context, innerSetState) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(
-              'Select Departments',
-              style: GoogleFonts.nunito(fontWeight: FontWeight.bold, color: primaryYellow),
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  CheckboxListTile(
-                    value: tempSelection.length == departments.length,
-                    title: Text('All Departments', style: GoogleFonts.nunito()),
-                    activeColor: primaryYellow,
-                    onChanged: (bool? value) {
-                      innerSetState(() {
-                        if (value == true) {
-                          tempSelection = List.from(departments);
-                        } else {
-                          tempSelection.clear();
-                        }
-                      });
-                    },
-                  ),
-                  Divider(),
-                  ...departments.map((dept) {
-                    return CheckboxListTile(
-                      value: tempSelection.contains(dept),
-                      title: Text(dept, style: GoogleFonts.nunito()),
+        return StatefulBuilder(
+          builder: (context, innerSetState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                'Select Departments',
+                style: GoogleFonts.nunito(
+                    fontWeight: FontWeight.bold, color: primaryYellow),
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    CheckboxListTile(
+                      value: tempSelection.length == departments.length,
+                      title:
+                          Text('All Departments', style: GoogleFonts.nunito()),
                       activeColor: primaryYellow,
                       onChanged: (bool? value) {
                         innerSetState(() {
                           if (value == true) {
-                            tempSelection.add(dept);
+                            tempSelection = List.from(departments);
                           } else {
-                            tempSelection.remove(dept);
+                            tempSelection.clear();
                           }
                         });
                       },
-                    );
-                  }).toList(),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: primaryYellow,
-                  textStyle: GoogleFonts.nunito(fontWeight: FontWeight.bold),
+                    ),
+                    Divider(),
+                    ...departments.map((dept) {
+                      return CheckboxListTile(
+                        value: tempSelection.contains(dept),
+                        title: Text(dept, style: GoogleFonts.nunito()),
+                        activeColor: primaryYellow,
+                        onChanged: (bool? value) {
+                          innerSetState(() {
+                            if (value == true) {
+                              tempSelection.add(dept);
+                            } else {
+                              tempSelection.remove(dept);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ],
                 ),
-                child: Text('Cancel'),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  parentSetState(() {
-                    selectedDepartments = tempSelection;
-                    // Keep All Departments in UI but not in filters
-                    _filters['departments'] = selectedDepartments;
-                  });
-                  Navigator.of(context).pop();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryYellow,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: primaryYellow,
+                    textStyle: GoogleFonts.nunito(fontWeight: FontWeight.bold),
+                  ),
+                  child: Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    parentSetState(() {
+                      selectedDepartments = tempSelection;
+                      // Keep All Departments in UI but not in filters
+                      _filters['departments'] = selectedDepartments;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryYellow,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Apply',
+                    style: GoogleFonts.nunito(fontWeight: FontWeight.bold),
                   ),
                 ),
-                child: Text(
-                  'Apply',
-                  style: GoogleFonts.nunito(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   // Upload cover image
   Widget uploadCoverImagePlaceholder() {
@@ -237,7 +269,8 @@ class _UploadItemPageState extends State<UploadItemPage> {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: primaryYellow, width: 2, style: BorderStyle.solid),
+          border: Border.all(
+              color: primaryYellow, width: 2, style: BorderStyle.solid),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -279,7 +312,10 @@ class _UploadItemPageState extends State<UploadItemPage> {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: textLight.withOpacity(0.3), width: 1, style: BorderStyle.solid),
+          border: Border.all(
+              color: textLight.withOpacity(0.3),
+              width: 1,
+              style: BorderStyle.solid),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -350,7 +386,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
       if (_imageCover == null) {
         return; // Stop if no cover image
       }
-      
+
       // Show loading indicator
       showDialog(
         context: context,
@@ -384,7 +420,6 @@ class _UploadItemPageState extends State<UploadItemPage> {
           );
         },
       );
-      
 
       // Upload the item
       await itemController.validateAndUploadItem(
@@ -397,9 +432,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
         selectedDepartments: selectedDepartments,
         context: context,
       );
-      
     }
-    
   }
 
   @override
@@ -452,7 +485,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
                   ],
                 ),
               ),
-              
+
               // Main content
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -460,177 +493,186 @@ class _UploadItemPageState extends State<UploadItemPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Photos section
-_buildSectionHeader('Photos', true),
-SizedBox(height: 12),
+                    _buildSectionHeader('Photos', true),
+                    SizedBox(height: 12),
 
 // Cover photo and additional photos in a row
-Row(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    // Cover photo
-    _imageCover == null
-        ? uploadCoverImagePlaceholder()
-        : Stack(
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    _imageCover!,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: -5,
-                right: -5,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 2,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: Icon(Icons.close, color: Colors.red, size: 18),
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(
-                      minWidth: 24,
-                      minHeight: 24,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _imageCover = null;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-    
-    SizedBox(width: 12),
-    
-    // Additional photos in a row
-    if (_additionalImages.isNotEmpty)
-      Expanded(
-        child: SizedBox(
-          height: 120,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              ..._additionalImages.map((image) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            image,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: -5,
-                        right: -5,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 2,
-                                offset: Offset(0, 1),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Cover photo
+                        _imageCover == null
+                            ? uploadCoverImagePlaceholder()
+                            : Stack(
+                                children: [
+                                  Container(
+                                    width: 120,
+                                    height: 120,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.file(
+                                        _imageCover!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: -5,
+                                    right: -5,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.1),
+                                            blurRadius: 2,
+                                            offset: Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: IconButton(
+                                        icon: Icon(Icons.close,
+                                            color: Colors.red, size: 18),
+                                        padding: EdgeInsets.zero,
+                                        constraints: BoxConstraints(
+                                          minWidth: 24,
+                                          minHeight: 24,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _imageCover = null;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.close, color: Colors.red, size: 18),
-                            padding: EdgeInsets.zero,
-                            constraints: BoxConstraints(
-                              minWidth: 24,
-                              minHeight: 24,
+
+                        SizedBox(width: 12),
+
+                        // Additional photos in a row
+                        if (_additionalImages.isNotEmpty)
+                          Expanded(
+                            child: SizedBox(
+                              height: 120,
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                children: [
+                                  ..._additionalImages.map((image) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          Container(
+                                            width: 100,
+                                            height: 100,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.1),
+                                                  blurRadius: 4,
+                                                  offset: Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              child: Image.file(
+                                                image,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            top: -5,
+                                            right: -5,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                shape: BoxShape.circle,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    blurRadius: 2,
+                                                    offset: Offset(0, 1),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: IconButton(
+                                                icon: Icon(Icons.close,
+                                                    color: Colors.red,
+                                                    size: 18),
+                                                padding: EdgeInsets.zero,
+                                                constraints: BoxConstraints(
+                                                  minWidth: 24,
+                                                  minHeight: 24,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _additionalImages
+                                                        .remove(image);
+                                                  });
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+
+                                  // Add more photos button at the end
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 12),
+                                    child: addMorePhotosPlaceholder(),
+                                  ),
+                                ],
+                              ),
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _additionalImages.remove(image);
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              
-              // Add more photos button at the end
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: addMorePhotosPlaceholder(),
-              ),
-            ],
-          ),
-        ),
-      )
-    else
-      addMorePhotosPlaceholder(),
-  ],
-),
+                          )
+                        else
+                          addMorePhotosPlaceholder(),
+                      ],
+                    ),
 
 // Cover photo error
-if (showCoverError)
-  Padding(
-    padding: const EdgeInsets.only(top: 8),
-    child: Text(
-      'Please upload a cover photo',
-      style: GoogleFonts.nunito(
-        color: Colors.red,
-        fontSize: 12,
-      ),
-    ),
-  ),
+                    if (showCoverError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Please upload a cover photo',
+                          style: GoogleFonts.nunito(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
 
-SizedBox(height: 16),
-                    
+                    SizedBox(height: 16),
+
                     // Item details section
                     _buildSectionHeader('Item Details', true),
                     SizedBox(height: 16),
-                    
+
                     // Category
                     _buildFormLabel('Category', true),
                     Container(
@@ -642,7 +684,8 @@ SizedBox(height: 16),
                         value: category,
                         isExpanded: true,
                         decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           border: InputBorder.none,
                         ),
                         style: GoogleFonts.nunito(
@@ -659,13 +702,14 @@ SizedBox(height: 16),
                         onChanged: (newValue) {
                           setState(() {
                             category = newValue!;
-                            itemController.updatePriceField(category, itemController.priceController);
+                            itemController.updatePriceField(
+                                category, itemController.priceController);
                           });
                         },
                       ),
                     ),
                     SizedBox(height: 16),
-                    
+
                     // Title
                     _buildFormLabel('Title', true),
                     TextFormField(
@@ -681,14 +725,17 @@ SizedBox(height: 16),
                           color: textLight,
                           fontSize: 16,
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                          borderSide:
+                              BorderSide(color: Colors.grey.withOpacity(0.3)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                          borderSide:
+                              BorderSide(color: Colors.grey.withOpacity(0.3)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -701,7 +748,7 @@ SizedBox(height: 16),
                       ),
                     ),
                     SizedBox(height: 16),
-                    
+
                     // Description
                     _buildFormLabel('Description', false),
                     TextFormField(
@@ -717,14 +764,17 @@ SizedBox(height: 16),
                           color: textLight,
                           fontSize: 16,
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                          borderSide:
+                              BorderSide(color: Colors.grey.withOpacity(0.3)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                          borderSide:
+                              BorderSide(color: Colors.grey.withOpacity(0.3)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -733,7 +783,7 @@ SizedBox(height: 16),
                       ),
                     ),
                     SizedBox(height: 16),
-                    
+
                     // Item Type
                     _buildFormLabel('Item Type', false),
                     Container(
@@ -745,7 +795,8 @@ SizedBox(height: 16),
                         value: itemType,
                         isExpanded: true,
                         decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           border: InputBorder.none,
                         ),
                         style: GoogleFonts.nunito(
@@ -753,7 +804,13 @@ SizedBox(height: 16),
                           fontSize: 16,
                         ),
                         icon: Icon(Icons.arrow_drop_down, color: primaryYellow),
-                        items: ['Notes', 'Books', 'Electronics', 'Stationary', 'Other']
+                        items: [
+                          'Notes',
+                          'Books',
+                          'Electronics',
+                          'Stationary',
+                          'Other'
+                        ]
                             .map((value) => DropdownMenuItem(
                                   value: value,
                                   child: Text(value),
@@ -767,49 +824,52 @@ SizedBox(height: 16),
                       ),
                     ),
                     SizedBox(height: 24),
-                    
+
                     // Departments section
                     _buildSectionHeader('Departments', false),
                     SizedBox(height: 12),
-                    
+
                     // Replace the Department selection UI in the build method with this improved version
                     // Find the section that starts with "// Department selection UI - matching home screen filter style"
                     // and replace it with:
 
                     // Department selection UI - matching home screen filter style
                     Container(
-                     
-                      
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          
                           SizedBox(height: 8),
                           GestureDetector(
                             onTap: () => _showDepartmentDialog(setState),
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                                border: Border.all(
+                                    color: Colors.grey.withOpacity(0.3)),
                               ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      selectedDepartments.length == departments.length
+                                      selectedDepartments.length ==
+                                              departments.length
                                           ? 'All Departments'
                                           : selectedDepartments.isEmpty
                                               ? 'Select Departments'
                                               : '${selectedDepartments.length} selected',
                                       style: GoogleFonts.nunito(
-                                        color: selectedDepartments.isEmpty ? textLight : textDark,
+                                        color: selectedDepartments.isEmpty
+                                            ? textLight
+                                            : textDark,
                                         fontSize: 14,
                                       ),
                                     ),
                                   ),
-                                  Icon(Icons.arrow_drop_down, color: primaryYellow),
+                                  Icon(Icons.arrow_drop_down,
+                                      color: primaryYellow),
                                 ],
                               ),
                             ),
@@ -820,13 +880,16 @@ SizedBox(height: 16),
                               spacing: 6,
                               runSpacing: 6,
                               children: [
-                                if (selectedDepartments.length == departments.length)
+                                if (selectedDepartments.length ==
+                                    departments.length)
                                   Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: backgroundColor,
                                       borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: textLight.withOpacity(0.3)),
+                                      border: Border.all(
+                                          color: textLight.withOpacity(0.3)),
                                     ),
                                     child: Text(
                                       'All Departments',
@@ -838,29 +901,37 @@ SizedBox(height: 16),
                                     ),
                                   )
                                 else ...[
-                                  ...selectedDepartments.take(3).map((dept) => Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: backgroundColor,
-                                          borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(color: textLight.withOpacity(0.3)),
-                                        ),
-                                        child: Text(
-                                          dept,
-                                          style: GoogleFonts.nunito(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: textDark,
-                                          ),
-                                        ),
-                                      )),
+                                  ...selectedDepartments
+                                      .take(3)
+                                      .map((dept) => Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: backgroundColor,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                  color: textLight
+                                                      .withOpacity(0.3)),
+                                            ),
+                                            child: Text(
+                                              dept,
+                                              style: GoogleFonts.nunito(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: textDark,
+                                              ),
+                                            ),
+                                          )),
                                   if (selectedDepartments.length > 3)
                                     Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: backgroundColor,
                                         borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: textLight.withOpacity(0.3)),
+                                        border: Border.all(
+                                            color: textLight.withOpacity(0.3)),
                                       ),
                                       child: Text(
                                         '+${selectedDepartments.length - 3} more',
@@ -878,7 +949,7 @@ SizedBox(height: 16),
                       ),
                     ),
                     SizedBox(height: 24),
-                    
+
                     // Condition
                     _buildFormLabel('Condition', false),
                     Container(
@@ -890,7 +961,8 @@ SizedBox(height: 16),
                         value: condition,
                         isExpanded: true,
                         decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           border: InputBorder.none,
                         ),
                         style: GoogleFonts.nunito(
@@ -899,8 +971,19 @@ SizedBox(height: 16),
                         ),
                         icon: Icon(Icons.arrow_drop_down, color: primaryYellow),
                         items: (itemType == 'Other'
-                                ? ['New', 'Lightly Used', 'Moderately Used', 'Heavily Used', '']
-                                : ['New', 'Lightly Used', 'Moderately Used', 'Heavily Used'])
+                                ? [
+                                    'New',
+                                    'Lightly Used',
+                                    'Moderately Used',
+                                    'Heavily Used',
+                                    ''
+                                  ]
+                                : [
+                                    'New',
+                                    'Lightly Used',
+                                    'Moderately Used',
+                                    'Heavily Used'
+                                  ])
                             .map((value) => DropdownMenuItem<String>(
                                   value: value,
                                   child: Text(value),
@@ -914,11 +997,11 @@ SizedBox(height: 16),
                       ),
                     ),
                     SizedBox(height: 24),
-                    
+
                     // Price section
                     _buildSectionHeader('Pricing', true),
                     SizedBox(height: 16),
-                    
+
                     // Price and Payment Plan
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -929,53 +1012,68 @@ SizedBox(height: 16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildFormLabel('Price (₺)', !isPriceFieldDisabled()),
+                              _buildFormLabel(
+                                  'Price (₺)', !isPriceFieldDisabled()),
                               TextFormField(
                                 controller: itemController.priceController,
                                 keyboardType: TextInputType.number,
                                 enabled: !isPriceFieldDisabled(),
-                                validator: (value) => itemController.validatePrice(value, category),
+                                validator: (value) => itemController
+                                    .validatePrice(value, category),
                                 style: GoogleFonts.nunito(
-                                  color: isPriceFieldDisabled() ? textLight : textDark,
+                                  color: isPriceFieldDisabled()
+                                      ? textLight
+                                      : textDark,
                                   fontSize: 16,
                                 ),
                                 decoration: InputDecoration(
-                                  hintText: isPriceFieldDisabled() ? 'N/A' : 'Enter price',
+                                  hintText: isPriceFieldDisabled()
+                                      ? 'N/A'
+                                      : 'Enter price',
                                   hintStyle: GoogleFonts.nunito(
                                     color: textLight,
                                     fontSize: 16,
                                   ),
                                   prefixText: '₺ ',
                                   prefixStyle: GoogleFonts.nunito(
-                                    color: isPriceFieldDisabled() ? textLight : textDark,
+                                    color: isPriceFieldDisabled()
+                                        ? textLight
+                                        : textDark,
                                     fontSize: 16,
                                   ),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 16),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                    borderSide: BorderSide(
+                                        color: Colors.grey.withOpacity(0.3)),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                    borderSide: BorderSide(
+                                        color: Colors.grey.withOpacity(0.3)),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: primaryYellow),
+                                    borderSide:
+                                        BorderSide(color: primaryYellow),
                                   ),
                                   disabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                                    borderSide: BorderSide(
+                                        color: Colors.grey.withOpacity(0.1)),
                                   ),
                                   filled: isPriceFieldDisabled(),
-                                  fillColor: isPriceFieldDisabled() ? backgroundColor : null,
+                                  fillColor: isPriceFieldDisabled()
+                                      ? backgroundColor
+                                      : null,
                                 ),
                               ),
                             ],
                           ),
                         ),
                         SizedBox(width: 16),
-                        
+
                         // Payment Plan
                         Expanded(
                           flex: 1,
@@ -987,26 +1085,33 @@ SizedBox(height: 16),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: category == 'Rent' 
-                                        ? Colors.grey.withOpacity(0.3) 
+                                    color: category == 'Rent'
+                                        ? Colors.grey.withOpacity(0.3)
                                         : Colors.grey.withOpacity(0.1),
                                   ),
-                                  color: category == 'Rent' ? null : backgroundColor,
+                                  color: category == 'Rent'
+                                      ? null
+                                      : backgroundColor,
                                 ),
                                 child: DropdownButtonFormField<String>(
                                   value: paymentPlan,
                                   isExpanded: true,
                                   decoration: InputDecoration(
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
                                     border: InputBorder.none,
                                   ),
                                   style: GoogleFonts.nunito(
-                                    color: category == 'Rent' ? textDark : textLight,
+                                    color: category == 'Rent'
+                                        ? textDark
+                                        : textLight,
                                     fontSize: 16,
                                   ),
                                   icon: Icon(
-                                    Icons.arrow_drop_down, 
-                                    color: category == 'Rent' ? primaryYellow : textLight,
+                                    Icons.arrow_drop_down,
+                                    color: category == 'Rent'
+                                        ? primaryYellow
+                                        : textLight,
                                   ),
                                   items: ['Per Hour', 'Per Day', 'Per Month']
                                       .map((value) => DropdownMenuItem(
@@ -1036,7 +1141,7 @@ SizedBox(height: 16),
                       ],
                     ),
                     SizedBox(height: 32),
-                    
+
                     // Upload button
                     SizedBox(
                       width: double.infinity,
