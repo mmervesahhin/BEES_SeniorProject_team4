@@ -21,21 +21,22 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
   final UserProfileController _controller = UserProfileController();
   bool _isLoading = true;
   List<Map<String, dynamic>> _blockedUsers = [];
-  
+
   @override
   void initState() {
     super.initState();
     _loadBlockedUsers();
   }
-  
+
   Future<void> _loadBlockedUsers() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      List<Map<String, dynamic>> blockedUsers = await _controller.getBlockedUsers();
-      
+      List<Map<String, dynamic>> blockedUsers =
+          await _controller.getBlockedUsers();
+
       setState(() {
         _blockedUsers = blockedUsers;
         _isLoading = false;
@@ -46,7 +47,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
         _blockedUsers = [];
         _isLoading = false;
       });
-      
+
       _showSnackBar('Error loading blocked users', isError: true);
     }
   }
@@ -102,7 +103,8 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
           barrierDismissible: false,
           builder: (context) => Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
             ),
           ),
         );
@@ -182,7 +184,8 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
               ),
             )
           : _blockedUsers.isEmpty
@@ -226,7 +229,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                   itemBuilder: (context, index) {
                     final user = _blockedUsers[index];
                     final fullName = "${user['firstName']} ${user['lastName']}";
-                    
+
                     return Card(
                       margin: EdgeInsets.only(bottom: 12),
                       elevation: 2,
@@ -242,11 +245,14 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                             CircleAvatar(
                               radius: 24,
                               backgroundColor: AppColors.lightYellow,
-                              backgroundImage: user['profilePicture'] != null && user['profilePicture'].isNotEmpty
+                              backgroundImage: user['profilePicture'] != null &&
+                                      user['profilePicture'].isNotEmpty
                                   ? NetworkImage(user['profilePicture'])
                                   : null,
-                              child: user['profilePicture'] == null || user['profilePicture'].isEmpty
-                                  ? Icon(Icons.person, color: AppColors.textDark)
+                              child: user['profilePicture'] == null ||
+                                      user['profilePicture'].isEmpty
+                                  ? Icon(Icons.person,
+                                      color: AppColors.textDark)
                                   : null,
                             ),
                             SizedBox(width: 16),
@@ -266,7 +272,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                                   Text(
                                     user['emailAddress'] ?? '',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 12,
                                       color: AppColors.textLight,
                                     ),
                                   ),
@@ -274,7 +280,8 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                               ),
                             ),
                             ElevatedButton(
-                              onPressed: () => _unblockUser(user['userId'], fullName),
+                              onPressed: () =>
+                                  _unblockUser(user['userId'], fullName),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryYellow,
                                 foregroundColor: AppColors.textDark,
@@ -282,7 +289,8 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                               ),
                               child: Text('Unblock'),
                             ),
