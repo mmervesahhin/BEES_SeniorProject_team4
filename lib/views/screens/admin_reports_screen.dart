@@ -19,7 +19,7 @@ class AdminReportsScreen extends StatefulWidget {
 class _AdminReportsScreenState extends State<AdminReportsScreen> {
   int _selectedIndex = 2;
   bool isLoading = false; // Change to false when loading is done
-  
+
   // Modern trading app color palette
   final Color primaryYellow = Color(0xFFFFC857);
   final Color secondaryYellow = Color(0xFFFFD166);
@@ -41,25 +41,28 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false, // Remove back button
-        title: Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: 'BEES ',
-                style: GoogleFonts.nunito(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: primaryYellow,
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'BEES ',
+                  style: GoogleFonts.nunito(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: primaryYellow,
+                  ),
                 ),
-              ),
-              TextSpan(
-                text: 'admin',
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  color: primaryYellow,
+                TextSpan(
+                  text: 'admin',
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    color: primaryYellow,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -74,31 +77,31 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                 Padding(
-                  padding: const EdgeInsets.only(left: 8.0, bottom: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Complaint Management",
-                        style: GoogleFonts.nunito(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: textDark,
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0, bottom: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Complaint Management",
+                          style: GoogleFonts.nunito(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: textDark,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        "Select a category to view and manage complaints",
-                        style: GoogleFonts.nunito(
-                          fontSize: 16,
-                          color: textMedium,
-                          fontWeight: FontWeight.w500,
+                        SizedBox(height: 12),
+                        Text(
+                          "Select a category to view and manage complaints",
+                          style: GoogleFonts.nunito(
+                            fontSize: 16,
+                            color: textMedium,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                   SizedBox(height: 24),
                   Expanded(
                     child: Center(
@@ -108,36 +111,45 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                           children: [
                             _buildReportCard(
                               title: 'Item Complaints',
-                              description: 'View and manage complaints about items',
+                              description:
+                                  'View and manage complaints about items',
                               icon: Icons.inventory_2_outlined,
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => ItemReportsScreen()),
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          ItemReportsScreen()),
                                 );
                               },
                             ),
                             SizedBox(height: 16),
                             _buildReportCard(
                               title: 'Request Complaints',
-                              description: 'View and manage complaints about requests',
+                              description:
+                                  'View and manage complaints about requests',
                               icon: Icons.assignment_outlined,
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => RequestReportsScreen()),
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          RequestReportsScreen()),
                                 );
                               },
                             ),
                             SizedBox(height: 16),
                             _buildReportCard(
                               title: 'User Complaints',
-                              description: 'View and manage complaints about users',
+                              description:
+                                  'View and manage complaints about users',
                               icon: Icons.person_outline,
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => UserReportsScreen()),
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          UserReportsScreen()),
                                 );
                               },
                             ),
@@ -149,52 +161,80 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                 ],
               ),
       ),
-      bottomNavigationBar: Container(
-        height: 60,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, -5),
-            ),
-          ],
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: primaryYellow,
+        unselectedItemColor: textLight,
+        selectedLabelStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
         ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: primaryYellow,
-          unselectedItemColor: textLight,
-          selectedLabelStyle: GoogleFonts.nunito(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
-          unselectedLabelStyle: GoogleFonts.nunito(
-            fontSize: 12,
-          ),
-          iconSize: 22,
-          elevation: 0,
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.shop), label: 'Items'),
-            BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Requests'),
-            BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Complaints'),
-            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analysis'),
-            BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
-          ],
+        unselectedLabelStyle: GoogleFonts.nunito(
+          fontSize: 12,
         ),
+        iconSize: 22,
+        elevation: 8, // shadow ekleyebilirsin
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: FaIcon(FontAwesomeIcons.shop),
+            label: 'Items',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Requests',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.report),
+            label: 'Complaints',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Analysis',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_circle),
+            label: 'Profile',
+          ),
+        ],
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminHomeScreen(),
+              ));
+              break;
+            case 1:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminRequestsScreen(),
+              ));
+              break;
+            case 2:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminReportsScreen(),
+              ));
+              break;
+            case 3:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminDataAnalysisScreen(),
+              ));
+              break;
+            case 4:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminProfileScreen(),
+              ));
+              break;
+          }
+        },
       ),
     );
   }
 
-  Widget _buildReportCard({
-    required String title, 
-    required String description,
-    required IconData icon,
-    required VoidCallback onTap
-  }) {
+  Widget _buildReportCard(
+      {required String title,
+      required String description,
+      required IconData icon,
+      required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -268,19 +308,24 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     if (index == _selectedIndex) return;
     switch (index) {
       case 0:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminHomeScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminHomeScreen()));
         break;
       case 1:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminRequestsScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminRequestsScreen()));
         break;
       case 2:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminReportsScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminReportsScreen()));
         break;
       case 3:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminDataAnalysisScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminDataAnalysisScreen()));
         break;
       case 4:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminProfileScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminProfileScreen()));
         break;
     }
   }

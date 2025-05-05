@@ -21,7 +21,7 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
   bool isLoading = true;
   List<Map<String, dynamic>> reports = [];
   final AdminController _adminController = AdminController();
-  
+
   // Modern trading app color palette
   final Color primaryYellow = Color(0xFFFFC857);
   final Color secondaryYellow = Color(0xFFFFD166);
@@ -43,7 +43,8 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
 
   Future<void> _fetchReports() async {
     try {
-      List<Map<String, dynamic>> fetchedReports = await _adminController.fetchItemReports();
+      List<Map<String, dynamic>> fetchedReports =
+          await _adminController.fetchItemReports();
       setState(() {
         reports = fetchedReports;
         isLoading = false;
@@ -59,155 +60,160 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textDark, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'Item Complaints',
-          style: GoogleFonts.nunito(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: textDark,
+        backgroundColor: backgroundColor,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: textDark, size: 20),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh_outlined, color: primaryYellow),
-            onPressed: () {
-              setState(() {
-                isLoading = true;
-              });
-              _fetchReports();
-            },
-            tooltip: 'Refresh',
+          title: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Item Complaints',
+              style: GoogleFonts.nunito(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: textDark,
+              ),
+            ),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Reported Items",
-                style: GoogleFonts.nunito(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: textDark,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                "Review and manage reported items",
-                style: GoogleFonts.nunito(
-                  fontSize: 16,
-                  color: textMedium,
-                ),
-              ),
-              SizedBox(height: 16),
-              Expanded(
-                child: isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
-                      ),
-                    )
-                  : reports.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline,
-                              size: 64,
-                              color: Colors.grey.shade300,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              "No reports found",
-                              style: GoogleFonts.nunito(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textMedium,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              "There are no reported items at this time",
-                              style: GoogleFonts.nunito(
-                                fontSize: 14,
-                                color: textMedium,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: reports.length,
-                        itemBuilder: (context, index) {
-                          final report = reports[index];
-                          return FutureBuilder<Map<String, dynamic>>(
-                            future: _adminController.getItemDetails(report['itemId'] ?? ''),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return _buildLoadingCard();
-                              }
-
-                              if (snapshot.hasError) {
-                                return _buildErrorCard("Error fetching item details");
-                              }
-
-                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                                return _buildErrorCard("Item details not found");
-                              }
-
-                              final itemDetails = snapshot.data!;
-                              final complaintDetails = report['complaintDetails'] ?? 'No complaint details provided';
-
-                              return _buildReportCard(
-                                itemTitle: itemDetails['title'] ?? 'Unknown Item',
-                                reportReason: report['reportReason'] ?? 'No reason provided',
-                                reporterName: report['reporterName'] ?? 'Unknown',
-                                photoUrl: itemDetails['photo'] ?? '',
-                                complaintDetails: complaintDetails,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => AdminDetailedItemScreen(itemId: itemDetails['itemId']),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        height: 60,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, -5),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.refresh_outlined, color: primaryYellow),
+              onPressed: () {
+                setState(() {
+                  isLoading = true;
+                });
+                _fetchReports();
+              },
+              tooltip: 'Refresh',
             ),
           ],
         ),
-        child: BottomNavigationBar(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Reported Items",
+                  style: GoogleFonts.nunito(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: textDark,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Review and manage reported items",
+                  style: GoogleFonts.nunito(
+                    fontSize: 16,
+                    color: textMedium,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Expanded(
+                  child: isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(primaryYellow),
+                          ),
+                        )
+                      : reports.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline,
+                                    size: 64,
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "No reports found",
+                                    style: GoogleFonts.nunito(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: textMedium,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    "There are no reported items at this time",
+                                    style: GoogleFonts.nunito(
+                                      fontSize: 14,
+                                      color: textMedium,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: reports.length,
+                              itemBuilder: (context, index) {
+                                final report = reports[index];
+                                return FutureBuilder<Map<String, dynamic>>(
+                                  future: _adminController
+                                      .getItemDetails(report['itemId'] ?? ''),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return _buildLoadingCard();
+                                    }
+
+                                    if (snapshot.hasError) {
+                                      return _buildErrorCard(
+                                          "Error fetching item details");
+                                    }
+
+                                    if (!snapshot.hasData ||
+                                        snapshot.data!.isEmpty) {
+                                      return _buildErrorCard(
+                                          "Item details not found");
+                                    }
+
+                                    final itemDetails = snapshot.data!;
+                                    final complaintDetails =
+                                        report['complaintDetails'] ??
+                                            'No complaint details provided';
+
+                                    return _buildReportCard(
+                                      itemTitle: itemDetails['title'] ??
+                                          'Unknown Item',
+                                      reportReason: report['reportReason'] ??
+                                          'No reason provided',
+                                      reporterName:
+                                          report['reporterName'] ?? 'Unknown',
+                                      photoUrl: itemDetails['photo'] ?? '',
+                                      complaintDetails: complaintDetails,
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                AdminDetailedItemScreen(
+                                                    itemId:
+                                                        itemDetails['itemId']),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           selectedItemColor: primaryYellow,
@@ -220,10 +226,8 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
             fontSize: 12,
           ),
           iconSize: 22,
-          elevation: 0,
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          items: const [
+          elevation: 8, // shadow ekleyebilirsin
+          items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
               icon: FaIcon(FontAwesomeIcons.shop),
               label: 'Items',
@@ -245,9 +249,36 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
               label: 'Profile',
             ),
           ],
-        ),
-      ),
-    );
+          onTap: (index) {
+            switch (index) {
+              case 0:
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => AdminHomeScreen(),
+                ));
+                break;
+              case 1:
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => AdminRequestsScreen(),
+                ));
+                break;
+              case 2:
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => AdminReportsScreen(),
+                ));
+                break;
+              case 3:
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => AdminDataAnalysisScreen(),
+                ));
+                break;
+              case 4:
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => AdminProfileScreen(),
+                ));
+                break;
+            }
+          },
+        ));
   }
 
   Widget _buildLoadingCard() {
@@ -387,7 +418,8 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
                     width: 80,
                     height: 80,
                     color: Colors.grey.shade200,
-                    child: Icon(Icons.image_not_supported, size: 32, color: Colors.grey),
+                    child: Icon(Icons.image_not_supported,
+                        size: 32, color: Colors.grey),
                   ),
                 ),
               ),
@@ -410,11 +442,13 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
                     Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: errorColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: errorColor.withOpacity(0.2), width: 1),
+                            border: Border.all(
+                                color: errorColor.withOpacity(0.2), width: 1),
                           ),
                           child: Text(
                             reportReason,
@@ -480,19 +514,24 @@ class _ItemReportsScreenState extends State<ItemReportsScreen> {
     if (index == _selectedIndex) return;
     switch (index) {
       case 0:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminHomeScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminHomeScreen()));
         break;
       case 1:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminRequestsScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminRequestsScreen()));
         break;
       case 2:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminReportsScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminReportsScreen()));
         break;
       case 3:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminDataAnalysisScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminDataAnalysisScreen()));
         break;
       case 4:
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AdminProfileScreen()));
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AdminProfileScreen()));
         break;
     }
   }

@@ -874,74 +874,76 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 60, // Fixed height
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: primaryYellow,
-          unselectedItemColor: textLight,
-          selectedLabelStyle: GoogleFonts.nunito(
-            fontWeight: FontWeight.bold,
-            fontSize: 12, // Smaller font
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, -5),
+              ),
+            ],
           ),
-          unselectedLabelStyle: GoogleFonts.nunito(
-            fontSize: 12, // Smaller font
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: primaryYellow,
+            unselectedItemColor: textLight,
+            selectedLabelStyle: GoogleFonts.nunito(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+            unselectedLabelStyle: GoogleFonts.nunito(
+              fontSize: 12,
+            ),
+            iconSize: 22,
+            elevation: 0,
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: FaIcon(FontAwesomeIcons.shop),
+                label: 'Items',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.assignment),
+                label: 'Requests',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.favorite),
+                label: 'Favorites',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.account_circle),
+                label: 'Profile',
+              ),
+            ],
+            onTap: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => HomeScreen(),
+                  ));
+                  break;
+                case 1:
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => RequestsScreen(),
+                  ));
+                  break;
+                case 2:
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => FavoritesScreen(),
+                  ));
+                  break;
+                case 3:
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => UserProfileScreen(),
+                  ));
+                  break;
+              }
+            },
           ),
-          iconSize: 22, // Smaller icons
-          elevation: 0,
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: FaIcon(FontAwesomeIcons.shop),
-              label: 'Items',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.assignment),
-              label: 'Requests',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.favorite),
-              label: 'Favorites',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle),
-              label: 'Profile',
-            ),
-          ],
-          onTap: (index) {
-            switch (index) {
-              case 0:
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => HomeScreen(),
-                ));
-                break;
-              case 1:
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => RequestsScreen(),
-                ));
-                break;
-              case 2:
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => FavoritesScreen(),
-                ));
-                break;
-              case 3:
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => UserProfileScreen(),
-                ));
-                break;
-            }
-          },
         ),
       ),
     );

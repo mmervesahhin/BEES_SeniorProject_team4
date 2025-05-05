@@ -58,7 +58,9 @@ class _AdminDataAnalysisScreenState extends State<AdminDataAnalysisScreen> {
         elevation: 2,
         shadowColor: Colors.black.withOpacity(0.05),
         automaticallyImplyLeading: false,
+        centerTitle: false,
         title: Row(
+          mainAxisSize: MainAxisSize.min, // Başlık genişliğini metinle sınırla
           children: [
             Text.rich(
               TextSpan(
@@ -66,7 +68,7 @@ class _AdminDataAnalysisScreenState extends State<AdminDataAnalysisScreen> {
                   TextSpan(
                     text: 'BEES ',
                     style: GoogleFonts.nunito(
-                      fontSize: 22,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
                       color: primaryYellow,
                     ),

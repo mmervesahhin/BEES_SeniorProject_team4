@@ -98,12 +98,16 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
           icon: Icon(Icons.arrow_back, color: textDark, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          'Request Complaints',
-          style: GoogleFonts.nunito(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: textDark,
+        centerTitle: false,
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Request Complaints',
+            style: GoogleFonts.nunito(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: textDark,
+            ),
           ),
         ),
         actions: [
@@ -188,57 +192,71 @@ class _RequestReportsScreenState extends State<RequestReportsScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 60,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, -5),
-            ),
-          ],
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: primaryYellow,
+        unselectedItemColor: textLight,
+        selectedLabelStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
         ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: primaryYellow,
-          unselectedItemColor: textLight,
-          selectedLabelStyle: GoogleFonts.nunito(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
-          unselectedLabelStyle: GoogleFonts.nunito(
-            fontSize: 12,
-          ),
-          iconSize: 22,
-          elevation: 0,
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          items: const [
-            BottomNavigationBarItem(
-              icon: FaIcon(FontAwesomeIcons.shop),
-              label: 'Items',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.assignment),
-              label: 'Requests',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.report),
-              label: 'Complaints',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
-              label: 'Analysis',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle),
-              label: 'Profile',
-            ),
-          ],
+        unselectedLabelStyle: GoogleFonts.nunito(
+          fontSize: 12,
         ),
+        iconSize: 22,
+        elevation: 8, // shadow ekleyebilirsin
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: FaIcon(FontAwesomeIcons.shop),
+            label: 'Items',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Requests',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.report),
+            label: 'Complaints',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Analysis',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_circle),
+            label: 'Profile',
+          ),
+        ],
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminHomeScreen(),
+              ));
+              break;
+            case 1:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminRequestsScreen(),
+              ));
+              break;
+            case 2:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminReportsScreen(),
+              ));
+              break;
+            case 3:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminDataAnalysisScreen(),
+              ));
+              break;
+            case 4:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminProfileScreen(),
+              ));
+              break;
+          }
+        },
       ),
     );
   }

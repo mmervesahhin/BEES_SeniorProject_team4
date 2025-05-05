@@ -61,12 +61,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Text(
-          'Favorites',
-          style: GoogleFonts.nunito(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: textDark,
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Favorites',
+            style: GoogleFonts.nunito(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: textDark,
+            ),
           ),
         ),
         iconTheme: IconThemeData(color: textDark),

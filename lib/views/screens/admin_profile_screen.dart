@@ -16,10 +16,11 @@ class AdminProfileScreen extends StatefulWidget {
   _AdminProfileScreenState createState() => _AdminProfileScreenState();
 }
 
-class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProviderStateMixin {
+class _AdminProfileScreenState extends State<AdminProfileScreen>
+    with TickerProviderStateMixin {
   final UserProfileController _controller = UserProfileController();
   late TabController _tabController;
-  
+
   // Modern trading app color palette
   final Color primaryYellow = Color(0xFFFFC857);
   final Color secondaryYellow = Color(0xFFFFD166);
@@ -28,40 +29,40 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
   final Color cardColor = Colors.white;
   final Color textDark = Color(0xFF1F2937);
   final Color textMedium = Color(0xFF6B7280);
-   final Color textLight = Color(0xFF8A8A8A);
+  final Color textLight = Color(0xFF8A8A8A);
   final Color errorColor = Color(0xFFEF4444);
   final Color successColor = Color(0xFF10B981);
   final Color borderColor = Color(0xFFE5E7EB);
-  
+
   // Animation controller for profile stats
   late AnimationController _animationController;
   late Animation<double> _animation;
-  
+
   // Initialize scroll controller directly instead of using late
   final ScrollController _scrollController = ScrollController();
-  
+
   @override
   void initState() {
     super.initState();
     _controller.initializeUserData();
-    
+
     // Initialize animation controller
     _animationController = AnimationController(
       duration: Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     _animation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-    
+
     // Initialize tab controller with a separate vsync
     _tabController = TabController(length: 2, vsync: this);
-    
+
     _animationController.forward();
   }
-  
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -71,13 +72,18 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
     super.dispose();
   }
 
-  void _showSnackBar(String message, {bool isError = false, bool isSuccess = false}) {
+  void _showSnackBar(String message,
+      {bool isError = false, bool isSuccess = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             Icon(
-              isError ? Icons.error_outline : (isSuccess ? Icons.check_circle_outline : Icons.info_outline),
+              isError
+                  ? Icons.error_outline
+                  : (isSuccess
+                      ? Icons.check_circle_outline
+                      : Icons.info_outline),
               color: Colors.white,
             ),
             SizedBox(width: 8),
@@ -92,7 +98,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
             ),
           ],
         ),
-        backgroundColor: isError ? errorColor : (isSuccess ? successColor : primaryYellow),
+        backgroundColor:
+            isError ? errorColor : (isSuccess ? successColor : primaryYellow),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -140,7 +147,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
-                  
+
                   // Title
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -157,9 +164,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                       ],
                     ),
                   ),
-                  
+
                   Divider(height: 1, thickness: 1, color: borderColor),
-                  
+
                   // Settings list - make it scrollable
                   Expanded(
                     child: SingleChildScrollView(
@@ -185,8 +192,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                               _showChangeEmailDialog();
                             },
                           ),
-                          
-                          _buildSettingsCategory("Account Actions", isDanger: true),
+                          _buildSettingsCategory("Account Actions",
+                              isDanger: true),
                           _buildSettingsListTile(
                             icon: Icons.logout,
                             title: "Log Out",
@@ -229,7 +236,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
           Expanded(
             child: Container(
               height: 1,
-              color: isDanger ? errorColor.withOpacity(0.2) : primaryYellow.withOpacity(0.2),
+              color: isDanger
+                  ? errorColor.withOpacity(0.2)
+                  : primaryYellow.withOpacity(0.2),
             ),
           ),
         ],
@@ -250,7 +259,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: isDestructive ? errorColor.withOpacity(0.1) : primaryYellow.withOpacity(0.1),
+          color: isDestructive
+              ? errorColor.withOpacity(0.1)
+              : primaryYellow.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
@@ -334,7 +345,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                   _pickImage(ImageSource.camera);
                 },
               ),
-              if (_controller.currentProfilePictureUrl != null || _controller.image != null)
+              if (_controller.currentProfilePictureUrl != null ||
+                  _controller.image != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
                   child: _buildImagePickerOption(
@@ -367,10 +379,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
-          color: isDestructive ? errorColor.withOpacity(0.05) : primaryYellow.withOpacity(0.05),
+          color: isDestructive
+              ? errorColor.withOpacity(0.05)
+              : primaryYellow.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDestructive ? errorColor.withOpacity(0.1) : primaryYellow.withOpacity(0.1),
+            color: isDestructive
+                ? errorColor.withOpacity(0.1)
+                : primaryYellow.withOpacity(0.1),
             width: 1,
           ),
         ),
@@ -437,7 +453,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
     _controller.currentPasswordController.clear();
     _controller.newPasswordController.clear();
     _controller.confirmPasswordController.clear();
-    
+
     setState(() {
       _controller.currentPasswordVisible = false;
       _controller.newPasswordVisible = false;
@@ -471,7 +487,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                         controller: _controller.currentPasswordController,
                         decoration: InputDecoration(
                           labelText: 'Current Password',
-                          labelStyle: GoogleFonts.nunito(color: textMedium, fontSize: 14),
+                          labelStyle: GoogleFonts.nunito(
+                              color: textMedium, fontSize: 14),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: borderColor),
@@ -482,35 +499,43 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: primaryYellow, width: 1),
+                            borderSide:
+                                BorderSide(color: primaryYellow, width: 1),
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
                           filled: true,
                           fillColor: Colors.grey.shade50,
-                          prefixIcon: Icon(Icons.lock_outline, color: textMedium),
+                          prefixIcon:
+                              Icon(Icons.lock_outline, color: textMedium),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _controller.currentPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              _controller.currentPasswordVisible
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               color: textMedium,
                             ),
                             onPressed: () {
                               setDialogState(() {
-                                _controller.currentPasswordVisible = !_controller.currentPasswordVisible;
+                                _controller.currentPasswordVisible =
+                                    !_controller.currentPasswordVisible;
                               });
                             },
                           ),
                         ),
                         obscureText: !_controller.currentPasswordVisible,
-                        validator: (value) => value?.isEmpty ?? true ? 'Current password is required' : null,
+                        validator: (value) => value?.isEmpty ?? true
+                            ? 'Current password is required'
+                            : null,
                         style: GoogleFonts.nunito(color: textDark),
                       ),
                       SizedBox(height: 16),
-                      
                       TextFormField(
                         controller: _controller.newPasswordController,
                         decoration: InputDecoration(
                           labelText: 'New Password',
-                          labelStyle: GoogleFonts.nunito(color: textMedium, fontSize: 14),
+                          labelStyle: GoogleFonts.nunito(
+                              color: textMedium, fontSize: 14),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: borderColor),
@@ -521,20 +546,26 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: primaryYellow, width: 1),
+                            borderSide:
+                                BorderSide(color: primaryYellow, width: 1),
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
                           filled: true,
                           fillColor: Colors.grey.shade50,
-                          prefixIcon: Icon(Icons.lock_outline, color: textMedium),
+                          prefixIcon:
+                              Icon(Icons.lock_outline, color: textMedium),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _controller.newPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              _controller.newPasswordVisible
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               color: textMedium,
                             ),
                             onPressed: () {
                               setDialogState(() {
-                                _controller.newPasswordVisible = !_controller.newPasswordVisible;
+                                _controller.newPasswordVisible =
+                                    !_controller.newPasswordVisible;
                               });
                             },
                           ),
@@ -552,12 +583,12 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                         style: GoogleFonts.nunito(color: textDark),
                       ),
                       SizedBox(height: 16),
-                      
                       TextFormField(
                         controller: _controller.confirmPasswordController,
                         decoration: InputDecoration(
                           labelText: 'Confirm New Password',
-                          labelStyle: GoogleFonts.nunito(color: textMedium, fontSize: 14),
+                          labelStyle: GoogleFonts.nunito(
+                              color: textMedium, fontSize: 14),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: borderColor),
@@ -568,20 +599,26 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: primaryYellow, width: 1),
+                            borderSide:
+                                BorderSide(color: primaryYellow, width: 1),
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
                           filled: true,
                           fillColor: Colors.grey.shade50,
-                          prefixIcon: Icon(Icons.lock_outline, color: textMedium),
+                          prefixIcon:
+                              Icon(Icons.lock_outline, color: textMedium),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _controller.confirmPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              _controller.confirmPasswordVisible
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               color: textMedium,
                             ),
                             onPressed: () {
                               setDialogState(() {
-                                _controller.confirmPasswordVisible = !_controller.confirmPasswordVisible;
+                                _controller.confirmPasswordVisible =
+                                    !_controller.confirmPasswordVisible;
                               });
                             },
                           ),
@@ -599,7 +636,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                         style: GoogleFonts.nunito(color: textDark),
                       ),
                       SizedBox(height: 16),
-                      
                       Container(
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -609,7 +645,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                            Icon(Icons.info_outline,
+                                color: Colors.blue.shade700, size: 20),
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -644,11 +681,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
               ),
               ElevatedButton(
                 onPressed: () async {
-                  if (_controller.passwordFormKey.currentState?.validate() ?? false) {
+                  if (_controller.passwordFormKey.currentState?.validate() ??
+                      false) {
                     String? error = await _controller.changePassword();
                     if (error == null) {
                       Navigator.of(context).pop();
-                      _showSnackBar('Password changed successfully', isSuccess: true);
+                      _showSnackBar('Password changed successfully',
+                          isSuccess: true);
                     } else {
                       _showSnackBar(error, isError: true);
                     }
@@ -683,7 +722,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
 
     // Check if there's a pending email verification
     User? user = FirebaseAuth.instance.currentUser;
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user?.uid).get();
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user?.uid)
+        .get();
     Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
     String? pendingEmail = userData['pendingEmail'];
 
@@ -704,225 +746,250 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
           ),
           child: SingleChildScrollView(
             child: pendingEmail != null
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.amber[700], size: 20),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'You have a pending email change to: $pendingEmail\n\nPlease check your email and click the verification link to complete the change.',
-                              style: GoogleFonts.nunito(
-                                fontSize: 13,
-                                color: Colors.amber[800],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Resend verification email
-                        _controller.resendEmailVerification(pendingEmail!);
-                        Navigator.of(context).pop();
-                        _showSnackBar('Verification email resent to $pendingEmail', isSuccess: true);
-                      },
-                      icon: Icon(Icons.send, size: 18),
-                      label: Text('Resend Verification Email'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryYellow,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: () async {
-                        // Cancel the pending email change
-                        await FirebaseFirestore.instance.collection('users').doc(user?.uid).update({
-                          'pendingEmail': FieldValue.delete(),
-                          'emailChangeRequestTime': FieldValue.delete(),
-                        });
-                        Navigator.of(context).pop();
-                        _showSnackBar('Email change request cancelled');
-                      },
-                      icon: Icon(Icons.cancel_outlined, size: 18),
-                      label: Text('Cancel Email Change'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: errorColor,
-                      ),
-                    ),
-                  ],
-                )
-              : Form(
-                  key: _controller.emailFormKey,
-                  child: Column(
+                ? Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextFormField(
-                        controller: _controller.currentPasswordController,
-                        decoration: InputDecoration(
-                          labelText: 'Current Password',
-                          labelStyle: GoogleFonts.nunito(color: textMedium, fontSize: 14),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: borderColor),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: borderColor),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: primaryYellow, width: 1),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          prefixIcon: Icon(Icons.lock_outline, color: textMedium),
-                        ),
-                        obscureText: true,
-                        validator: (value) => value?.isEmpty ?? true ? 'Password is required for verification' : null,
-                        style: GoogleFonts.nunito(color: textDark),
-                      ),
-                      SizedBox(height: 16),
-                      TextFormField(
-                        controller: _controller.newEmailController,
-                        decoration: InputDecoration(
-                          labelText: 'New Email Address',
-                          labelStyle: GoogleFonts.nunito(color: textMedium, fontSize: 14),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: borderColor),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: borderColor),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: primaryYellow, width: 1),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          prefixIcon: Icon(Icons.email_outlined, color: textMedium),
-                          helperText: 'Must be a Bilkent email (example@bilkent.edu.tr)',
-                          helperStyle: GoogleFonts.nunito(fontSize: 12, color: textMedium),
-                          errorMaxLines: 4,
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Email is required';
-                          }
-                          if (!RegExp(r"^[a-zA-Z0-9._%+-]+@(?:ug\.)?bilkent\.edu\.tr$").hasMatch(value)) {
-                            return 'Please enter a valid Bilkent email address';
-                          }
-                          return null;
-                        },
-                        style: GoogleFonts.nunito(color: textDark),
-                      ),
-                      SizedBox(height: 16),
                       Container(
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: Colors.amber.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                            Icon(Icons.info_outline,
+                                color: Colors.amber[700], size: 20),
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'A verification email will be sent to the new address. Your email will only be updated after you verify the new address and log in again.',
+                                'You have a pending email change to: $pendingEmail\n\nPlease check your email and click the verification link to complete the change.',
                                 style: GoogleFonts.nunito(
                                   fontSize: 13,
-                                  color: Colors.blue.shade700,
+                                  color: Colors.amber[800],
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
+                      SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          // Resend verification email
+                          _controller.resendEmailVerification(pendingEmail!);
+                          Navigator.of(context).pop();
+                          _showSnackBar(
+                              'Verification email resent to $pendingEmail',
+                              isSuccess: true);
+                        },
+                        icon: Icon(Icons.send, size: 18),
+                        label: Text('Resend Verification Email'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryYellow,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: () async {
+                          // Cancel the pending email change
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user?.uid)
+                              .update({
+                            'pendingEmail': FieldValue.delete(),
+                            'emailChangeRequestTime': FieldValue.delete(),
+                          });
+                          Navigator.of(context).pop();
+                          _showSnackBar('Email change request cancelled');
+                        },
+                        icon: Icon(Icons.cancel_outlined, size: 18),
+                        label: Text('Cancel Email Change'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: errorColor,
+                        ),
+                      ),
                     ],
+                  )
+                : Form(
+                    key: _controller.emailFormKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          controller: _controller.currentPasswordController,
+                          decoration: InputDecoration(
+                            labelText: 'Current Password',
+                            labelStyle: GoogleFonts.nunito(
+                                color: textMedium, fontSize: 14),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: borderColor),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: borderColor),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide:
+                                  BorderSide(color: primaryYellow, width: 1),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            prefixIcon:
+                                Icon(Icons.lock_outline, color: textMedium),
+                          ),
+                          obscureText: true,
+                          validator: (value) => value?.isEmpty ?? true
+                              ? 'Password is required for verification'
+                              : null,
+                          style: GoogleFonts.nunito(color: textDark),
+                        ),
+                        SizedBox(height: 16),
+                        TextFormField(
+                          controller: _controller.newEmailController,
+                          decoration: InputDecoration(
+                            labelText: 'New Email Address',
+                            labelStyle: GoogleFonts.nunito(
+                                color: textMedium, fontSize: 14),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: borderColor),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: borderColor),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide:
+                                  BorderSide(color: primaryYellow, width: 1),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            prefixIcon:
+                                Icon(Icons.email_outlined, color: textMedium),
+                            helperText:
+                                'Must be a Bilkent email (example@bilkent.edu.tr)',
+                            helperStyle: GoogleFonts.nunito(
+                                fontSize: 12, color: textMedium),
+                            errorMaxLines: 4,
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Email is required';
+                            }
+                            if (!RegExp(
+                                    r"^[a-zA-Z0-9._%+-]+@(?:ug\.)?bilkent\.edu\.tr$")
+                                .hasMatch(value)) {
+                              return 'Please enter a valid Bilkent email address';
+                            }
+                            return null;
+                          },
+                          style: GoogleFonts.nunito(color: textDark),
+                        ),
+                        SizedBox(height: 16),
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline,
+                                  color: Colors.blue.shade700, size: 20),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'A verification email will be sent to the new address. Your email will only be updated after you verify the new address and log in again.',
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 13,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
           ),
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         actions: pendingEmail != null
-          ? [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  'Close',
-                  style: GoogleFonts.nunito(
-                    color: textMedium,
-                    fontWeight: FontWeight.w600,
+            ? [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    'Close',
+                    style: GoogleFonts.nunito(
+                      color: textMedium,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-            ]
-          : [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  'Cancel',
-                  style: GoogleFonts.nunito(
-                    color: textMedium,
-                    fontWeight: FontWeight.w600,
+              ]
+            : [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.nunito(
+                      color: textMedium,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_controller.emailFormKey.currentState?.validate() ?? false) {
-                    String? error = await _controller.changeEmail();
-                    if (error == null) {
-                      // Start checking for email verification
-                      _controller.startEmailVerificationCheck();
-                      Navigator.of(context).pop();
-                      _showSnackBar('Verification email sent to ${_controller.newEmailController.text}. Please check your inbox and verify the new email address.', isSuccess: true);
-                    } else {
-                      _showSnackBar(error, isError: true);
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_controller.emailFormKey.currentState?.validate() ??
+                        false) {
+                      String? error = await _controller.changeEmail();
+                      if (error == null) {
+                        // Start checking for email verification
+                        _controller.startEmailVerificationCheck();
+                        Navigator.of(context).pop();
+                        _showSnackBar(
+                            'Verification email sent to ${_controller.newEmailController.text}. Please check your inbox and verify the new email address.',
+                            isSuccess: true);
+                      } else {
+                        _showSnackBar(error, isError: true);
+                      }
                     }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryYellow,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryYellow,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                child: Text(
-                  'Send Verification',
-                  style: GoogleFonts.nunito(
-                    fontWeight: FontWeight.bold,
+                  child: Text(
+                    'Send Verification',
+                    style: GoogleFonts.nunito(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
       ),
     );
   }
@@ -1032,52 +1099,61 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(50),
                     child: _controller.image != null
-                      ? Image.file(
-                          _controller.image!,
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                        )
-                      : (_controller.currentProfilePictureUrl != null && 
-                          _controller.currentProfilePictureUrl!.isNotEmpty
-                          ? Image.network(
-                              _controller.currentProfilePictureUrl!,
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  width: 100,
-                                  height: 100,
-                                  color: Colors.grey[200],
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded / 
-                                            loadingProgress.expectedTotalBytes!
-                                          : null,
-                                      valueColor: AlwaysStoppedAnimation<Color>(primaryYellow),
-                                      strokeWidth: 2,
+                        ? Image.file(
+                            _controller.image!,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          )
+                        : (_controller.currentProfilePictureUrl != null &&
+                                _controller.currentProfilePictureUrl!.isNotEmpty
+                            ? Image.network(
+                                _controller.currentProfilePictureUrl!,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    width: 100,
+                                    height: 100,
+                                    color: Colors.grey[200],
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress
+                                                    .expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                    .cumulativeBytesLoaded /
+                                                loadingProgress
+                                                    .expectedTotalBytes!
+                                            : null,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                primaryYellow),
+                                        strokeWidth: 2,
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  width: 100,
-                                  height: 100,
-                                  color: Colors.grey[200],
-                                  child: Icon(Icons.person, color: Colors.grey, size: 50),
-                                );
-                              },
-                            )
-                          : Container(
-                              width: 100,
-                              height: 100,
-                              color: Colors.grey[200],
-                              child: Icon(Icons.person, color: Colors.grey, size: 50),
-                            )),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 100,
+                                    height: 100,
+                                    color: Colors.grey[200],
+                                    child: Icon(Icons.person,
+                                        color: Colors.grey, size: 50),
+                                  );
+                                },
+                              )
+                            : Container(
+                                width: 100,
+                                height: 100,
+                                color: Colors.grey[200],
+                                child: Icon(Icons.person,
+                                    color: Colors.grey, size: 50),
+                              )),
                   ),
                 ),
               ),
@@ -1101,14 +1177,15 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                     child: CircleAvatar(
                       backgroundColor: primaryYellow,
                       radius: 16,
-                      child: Icon(Icons.camera_alt_outlined, color: Colors.white, size: 16),
+                      child: Icon(Icons.camera_alt_outlined,
+                          color: Colors.white, size: 16),
                     ),
                   ),
                 ),
             ],
           ),
           SizedBox(height: 16),
-          
+
           // User name
           Text(
             "${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}",
@@ -1121,7 +1198,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 4),
-          
+
           // User email
           Text(
             userData['emailAddress'] ?? 'No email',
@@ -1133,7 +1210,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 8),
-          
+
           // Admin badge
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1145,7 +1222,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.admin_panel_settings, color: primaryYellow, size: 16),
+                Icon(Icons.admin_panel_settings,
+                    color: primaryYellow, size: 16),
                 SizedBox(width: 4),
                 Text(
                   "Administrator",
@@ -1158,9 +1236,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
               ],
             ),
           ),
-          
+
           SizedBox(height: 24),
-          
+
           // Edit profile button
           if (_controller.isEditing)
             _buildEditProfileForm()
@@ -1208,7 +1286,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: primaryYellow, width: 1),
                   ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   filled: true,
                   fillColor: Colors.grey.shade50,
                   prefixIcon: Icon(Icons.person_outline, color: textMedium),
@@ -1239,7 +1318,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: primaryYellow, width: 1),
                   ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   filled: true,
                   fillColor: Colors.grey.shade50,
                   prefixIcon: Icon(Icons.person_outline, color: textMedium),
@@ -1361,25 +1441,29 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: 'BEES ',
-                style: GoogleFonts.nunito(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: primaryYellow,
+        centerTitle: false,
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'BEES ',
+                  style: GoogleFonts.nunito(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: primaryYellow,
+                  ),
                 ),
-              ),
-              TextSpan(
-                text: 'admin',
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  color: primaryYellow,
+                TextSpan(
+                  text: 'admin',
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    color: primaryYellow,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -1391,7 +1475,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
         ],
       ),
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).get(),
+        future: FirebaseFirestore.instance
+            .collection('users')
+            .doc(firebaseUser.uid)
+            .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
@@ -1401,7 +1488,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
               ),
             );
           }
-          if (!snapshot.hasData || snapshot.data == null || !snapshot.data!.exists) {
+          if (!snapshot.hasData ||
+              snapshot.data == null ||
+              !snapshot.data!.exists) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1479,7 +1568,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.admin_panel_settings, color: primaryYellow, size: 24),
+                            Icon(Icons.admin_panel_settings,
+                                color: primaryYellow, size: 24),
                             SizedBox(width: 16),
                             Expanded(
                               child: Column(
@@ -1516,83 +1606,71 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> with TickerProv
           );
         },
       ),
-      bottomNavigationBar: Container(
-        height: 60,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, -5),
-            ),
-          ],
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: primaryYellow,
+        unselectedItemColor: textLight,
+        selectedLabelStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
         ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: primaryYellow,
-          unselectedItemColor: textLight,
-          selectedLabelStyle: GoogleFonts.nunito(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
-          unselectedLabelStyle: GoogleFonts.nunito(
-            fontSize: 12,
-          ),
-          iconSize: 22,
-          elevation: 0,
-          currentIndex: 4, // Set the selected index to Profile
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: FaIcon(FontAwesomeIcons.shop),
-              label: 'Items',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.assignment),
-              label: 'Requests',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.report),
-              label: 'Complaints',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
-              label: 'Analysis',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle),
-              label: 'Profile',
-            ),
-          ],
-          onTap: (index) {
-            switch (index) {
-              case 0:
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => AdminHomeScreen(),
-                ));
-                break;
-              case 1:
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => AdminRequestsScreen(),
-                ));
-                break;
-              case 2:
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => AdminReportsScreen(),
-                ));
-                break;
-              case 3:
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => AdminDataAnalysisScreen(),
-                ));
-                break;
-              case 4:
-                // Already on profile screen
-                break;
-            }
-          },
+        unselectedLabelStyle: GoogleFonts.nunito(
+          fontSize: 12,
         ),
+        iconSize: 22,
+        elevation: 8, // shadow ekleyebilirsin
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: FaIcon(FontAwesomeIcons.shop),
+            label: 'Items',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Requests',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.report),
+            label: 'Complaints',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Analysis',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_circle),
+            label: 'Profile',
+          ),
+        ],
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminHomeScreen(),
+              ));
+              break;
+            case 1:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminRequestsScreen(),
+              ));
+              break;
+            case 2:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminReportsScreen(),
+              ));
+              break;
+            case 3:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminDataAnalysisScreen(),
+              ));
+              break;
+            case 4:
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AdminProfileScreen(),
+              ));
+              break;
+          }
+        },
       ),
     );
   }
