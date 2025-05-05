@@ -6,7 +6,7 @@ linter:
     file_names: true
     camel_case_types: true
     library_prefixes: true
-    constant_identifier_names: true
+    constant_identifier_names: false
     non_constant_identifier_names: false
 
     # Style & structure
