@@ -1,6 +1,6 @@
 # 🐝 BEES
 
-The Bilkent Educational Exchange for Sustainability (BEES) is a mobile application designed to foster sustainability and resource-sharing within the Bilkent University community. BEES empowers students by providing a secure, student-only platform where they can buy, sell, rent, donate or exchange academic materials such as textbooks, calculators, notes, T-squares, and even laptops. This initiative not only reduces the need to purchase new resources but also minimizes waste, promoting a circular economy within the university. BEES is a solution to inefficiencies in material access, tackling both environmental and economic concerns through its innovative approach. Key features of the platform include department-specific searches that allow students to find materials relevant to their field, a built-in auction system for competitive pricing, and dynamic pricing algorithms that adjust based on supply, demand, and condition of the items. BEES's goal is to cultivate a sustainable, collaborative environment that encourages students to make environmentally conscious decisions, while also alleviating the financial pressure that comes with buying new academic materials.
+The Bilkent Educational Exchange for Sustainability (BEES) is a mobile application designed to foster sustainability and resource-sharing within the Bilkent University community. BEES empowers Bilkent University community by providing a secure platform where they can buy, sell, rent, donate or exchange academic materials such as textbooks, calculators, notes, T-squares, and even laptops. This initiative not only reduces the need to purchase new resources but also minimizes waste, promoting a circular economy within the university. BEES is a solution to inefficiencies in material access, tackling both environmental and economic concerns through its innovative approach. Key features of the platform include department-specific searches that allow students to find materials relevant to their field, a built-in auction system for competitive pricing, and dynamic pricing algorithms that adjust based on supply, demand, and condition of the items. BEES's goal is to cultivate a sustainable, collaborative environment that encourages students to make environmentally conscious decisions, while also alleviating the financial pressure that comes with buying new academic materials.
 
 # Coding Standard
 
@@ -39,8 +39,8 @@ We follow the **MVC (Model-View-Controller)** architectural pattern:
   e.g., `fetchItems()`, `userRating`, `isBanned`
 
 ### Constants
-- Use `UPPER_CASE_WITH_UNDERSCORES` for constants  
-  e.g., `PRIMARY_YELLOW`, `DEFAULT_TIMEOUT`
+- Use `camelCase` for constants  
+  e.g., `primaryYellow`, `textDark`
 
 ---
 
