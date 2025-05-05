@@ -257,6 +257,24 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   Future<void> _sendImageMessage(XFile image) async {
+    // Önce dosya boyutunu kontrol et
+    final file = File(image.path);
+    final fileSizeInBytes = await file.length();
+    const maxFileSize = 5 * 1024 * 1024; // 5MB maksimum boyut
+
+    if (fileSizeInBytes > maxFileSize) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Image size is too large (max 5MB)',
+            style: GoogleFonts.nunito(),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isSending = true;
       _isAttachmentMenuOpen = false;
