@@ -257,6 +257,28 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   Future<void> _sendImageMessage(XFile image) async {
+    // Blok kontrolü ekle
+    String currentUserId = auth_user.FirebaseAuth.instance.currentUser!.uid;
+    String finalReceiverId =
+        (currentUserId == widget.senderId) ? currentUserId : widget.senderId;
+
+    bool isBlockedByReceiver =
+        await _blockedUserController.isUserBlocked(finalReceiverId);
+    bool isCurrentUserBlocked = await _blockedUserController.isBlockedByUser(
+        currentUserId, finalReceiverId);
+
+    if (isCurrentUserBlocked || isBlockedByReceiver) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You cannot send media to this user.',
+            style: GoogleFonts.nunito(),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     // Önce dosya boyutunu kontrol et
     final file = File(image.path);
     final fileSizeInBytes = await file.length();
