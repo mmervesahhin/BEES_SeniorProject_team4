@@ -1607,6 +1607,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 4, // şu anki sayfa Profile ise bu 4 olmalı
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         selectedItemColor: primaryYellow,
@@ -1619,7 +1620,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
           fontSize: 12,
         ),
         iconSize: 22,
-        elevation: 8, // shadow ekleyebilirsin
+        elevation: 8,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: FaIcon(FontAwesomeIcons.shop),

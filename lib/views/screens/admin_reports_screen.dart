@@ -162,6 +162,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
               ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 2, // Complaints sayfası için 2
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         selectedItemColor: primaryYellow,
@@ -174,7 +175,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
           fontSize: 12,
         ),
         iconSize: 22,
-        elevation: 8, // shadow ekleyebilirsin
+        elevation: 8,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: FaIcon(FontAwesomeIcons.shop),
